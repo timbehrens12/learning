@@ -5,11 +5,7 @@ import { Menu, X as XIcon, User } from 'lucide-react';
 import { Logo } from './Logo';
 import { supabase } from '../lib/supabase';
 
-interface NavbarProps {
-  showPricingLink?: boolean;
-}
-
-export const Navbar = ({ showPricingLink = true }: NavbarProps) => {
+export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -38,9 +34,7 @@ export const Navbar = ({ showPricingLink = true }: NavbarProps) => {
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
           <Link to="/features" className="hover:text-white transition-colors">Features</Link>
           <Link to="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
-          {showPricingLink && (
-            <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-          )}
+          <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link to="/faq" className="hover:text-white transition-colors">FAQ</Link>
         </div>
         
@@ -96,9 +90,7 @@ export const Navbar = ({ showPricingLink = true }: NavbarProps) => {
             <div className="flex flex-col gap-4">
               <Link to="/features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Features</Link>
               <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">How It Works</Link>
-              {showPricingLink && (
-                <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Pricing</Link>
-              )}
+              <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Pricing</Link>
               <Link to="/faq" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2">FAQ</Link>
               {user ? (
                 <Link
