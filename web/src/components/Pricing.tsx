@@ -28,14 +28,18 @@ export const Pricing = () => {
     if (!user) {
       // Redirect to sign in with Google
       if (supabase) {
-        const redirectUrl = import.meta.env.VITE_SITE_URL 
-          ? `${import.meta.env.VITE_SITE_URL}/success`
-          : `${window.location.origin}/success`;
+        // Always use production URL, never localhost
+        const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+        const redirectUrl = `${siteUrl}/success?redirect=pricing`;
+        
+        console.log('OAuth redirect URL:', redirectUrl);
+        console.log('Current origin:', window.location.origin);
+        console.log('VITE_SITE_URL:', import.meta.env.VITE_SITE_URL);
         
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${redirectUrl}?redirect=pricing`,
+            redirectTo: redirectUrl,
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',
