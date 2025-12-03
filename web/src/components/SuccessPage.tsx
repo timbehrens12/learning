@@ -52,6 +52,9 @@ export const SuccessPage = () => {
           if (session) {
             console.log('User signed in:', session.user.email);
             
+            // Check if we should redirect to pricing (check URL params directly)
+            const shouldRedirect = urlParams.get('redirect') === 'pricing';
+            
             // Clean up the URL hash after processing
             if (window.location.hash) {
               const newUrl = window.location.pathname + (window.location.search || '');
@@ -61,7 +64,7 @@ export const SuccessPage = () => {
             setIsLoading(false);
             
             // If user was trying to buy credits, redirect to pricing page
-            if (redirectToPricing) {
+            if (shouldRedirect) {
               setTimeout(() => {
                 window.location.href = '/#pricing';
               }, 500);
@@ -89,8 +92,11 @@ export const SuccessPage = () => {
                   console.log('User signed in (retry):', retrySession.user.email);
                   setIsLoading(false);
                   
+                  // Check if we should redirect to pricing (check URL params directly)
+                  const shouldRedirect = urlParams.get('redirect') === 'pricing';
+                  
                   // If user was trying to buy credits, redirect to pricing page
-                  if (redirectToPricing) {
+                  if (shouldRedirect) {
                     setTimeout(() => {
                       window.location.href = '/#pricing';
                     }, 500);
