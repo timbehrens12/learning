@@ -15,6 +15,11 @@ const supabase = createClient(
 
 // Helper function to handle checkout completion
 async function handleCheckoutCompleted(session) {
+  console.log('=== CHECKOUT COMPLETED ===');
+  console.log('Session ID:', session.id);
+  console.log('Session metadata:', JSON.stringify(session.metadata, null, 2));
+  console.log('Line items:', session.line_items?.data ? JSON.stringify(session.line_items.data, null, 2) : 'No line items');
+  
   const customerId = session.customer;
   const customerEmail = session.customer_email || session.customer_details?.email;
   const amountTotal = session.amount_total / 100; // Convert from cents to dollars
@@ -22,12 +27,25 @@ async function handleCheckoutCompleted(session) {
 
   // Get userId from metadata (set when user is signed in)
   let userId = metadata.userId || null;
+  console.log('UserId from metadata:', userId);
 
-  // Determine credits based on price ID
+  // Determine credits based on price ID or metadata
   let creditsToAdd = 0;
   const priceId = session.line_items?.data[0]?.price?.id || metadata.price_id;
+  console.log('Price ID:', priceId);
+  console.log('Available price env vars:', {
+    PRICE_10: process.env.STRIPE_PRICE_10_CREDITS ? 'SET' : 'NOT SET',
+    PRICE_20: process.env.STRIPE_PRICE_20_CREDITS ? 'SET' : 'NOT SET',
+    PRICE_50: process.env.STRIPE_PRICE_50_CREDITS ? 'SET' : 'NOT SET',
+    PRICE_100: process.env.STRIPE_PRICE_100_CREDITS ? 'SET' : 'NOT SET',
+    PRICE_250: process.env.STRIPE_PRICE_250_CREDITS ? 'SET' : 'NOT SET',
+  });
 
-  if (priceId === process.env.STRIPE_PRICE_10_CREDITS) {
+  // Also check metadata for credits amount (fallback)
+  if (metadata.credits) {
+    creditsToAdd = parseInt(metadata.credits, 10);
+    console.log('Using credits from metadata:', creditsToAdd);
+  } else if (priceId === process.env.STRIPE_PRICE_10_CREDITS) {
     creditsToAdd = 10;
   } else if (priceId === process.env.STRIPE_PRICE_20_CREDITS) {
     creditsToAdd = 20;
@@ -38,6 +56,8 @@ async function handleCheckoutCompleted(session) {
   } else if (priceId === process.env.STRIPE_PRICE_250_CREDITS) {
     creditsToAdd = 250;
   }
+  
+  console.log('Credits to add:', creditsToAdd);
 
   // If no userId in metadata, try to find by Stripe customer ID (fallback)
   if (!userId && customerId) {
@@ -87,6 +107,8 @@ async function handleCheckoutCompleted(session) {
   }
 
   if (creditsToAdd > 0) {
+    console.log(`Processing ${creditsToAdd} credits for user ${userId}`);
+    
     // Get current credits
     const { data: currentCredits, error: fetchError } = await supabase
       .from('user_credits')
@@ -99,9 +121,13 @@ async function handleCheckoutCompleted(session) {
       return;
     }
 
+    console.log('Current credits:', currentCredits?.credits_remaining || 0);
+    const newCreditsTotal = (currentCredits?.credits_remaining || 0) + creditsToAdd;
+    console.log('New credits total:', newCreditsTotal);
+
     // Update stripe_customer_id if we have it
     const updateData = {
-      credits_remaining: (currentCredits.credits_remaining || 0) + creditsToAdd,
+      credits_remaining: newCreditsTotal,
       updated_at: new Date().toISOString()
     };
     
@@ -120,8 +146,10 @@ async function handleCheckoutCompleted(session) {
       return;
     }
 
+    console.log('Credits updated successfully');
+
     // Log the purchase
-    await supabase.from('credit_purchases').insert({
+    const { error: purchaseError } = await supabase.from('credit_purchases').insert({
       user_id: userId,
       stripe_payment_id: session.id,
       credits_purchased: creditsToAdd,
@@ -129,7 +157,15 @@ async function handleCheckoutCompleted(session) {
       currency: 'usd'
     });
 
-    console.log(`Added ${creditsToAdd} credits to user ${userId}`);
+    if (purchaseError) {
+      console.error('Error logging purchase:', purchaseError);
+    } else {
+      console.log('Purchase logged successfully');
+    }
+
+    console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}. New total: ${newCreditsTotal}`);
+  } else {
+    console.error('No credits to add! Price ID:', priceId, 'Metadata:', metadata);
   }
 }
 
@@ -163,13 +199,19 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('=== WEBHOOK EVENT RECEIVED ===');
+    console.log('Event type:', event.type);
+    console.log('Event ID:', event.id);
+    
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log('Processing checkout.session.completed event');
         // For checkout sessions, we need to retrieve the full session
         const session = await stripe.checkout.sessions.retrieve(
           event.data.object.id,
           { expand: ['line_items'] }
         );
+        console.log('Retrieved session:', session.id);
         await handleCheckoutCompleted(session);
         break;
 
