@@ -4,6 +4,9 @@ import { supabase } from './lib/supabase';
 import { LandingPage } from './components/LandingPage';
 import { SignInPage } from './pages/SignInPage';
 import { AccountPage } from './pages/AccountPage';
+import { FeaturesPage } from './pages/FeaturesPage';
+import { HowItWorksPage } from './pages/HowItWorksPage';
+import { FAQPage } from './pages/FAQPage';
 import { SuccessPage } from './components/SuccessPage';
 import { Pricing } from './components/Pricing';
 import { LiquidBackground } from './components/LiquidBackground';
@@ -64,6 +67,9 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/account" element={<AccountPage />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/how-it-works" element={<HowItWorksPage />} />
+      <Route path="/faq" element={<FAQPage />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/success" element={
         <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>

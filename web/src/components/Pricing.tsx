@@ -5,6 +5,7 @@ import { Check, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Navbar } from './Navbar';
 import { LiquidBackground } from './LiquidBackground';
+import { SEO } from './SEO';
 
 export const Pricing = () => {
   const navigate = useNavigate();
@@ -134,6 +135,11 @@ export const Pricing = () => {
 
   return (
     <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
+      <SEO
+        title="Pricing - Visnly | Credit-Based Plans, No Subscriptions"
+        description="Start with 25 free credits. Buy more when you need them. Pay only for what you use with Visnly's credit-based pricing. No monthly fees, no commitment."
+        keywords="visnly pricing, study assistant cost, credit-based pricing, no subscription, student pricing"
+      />
       <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
       <LiquidBackground />
       <Navbar showPricingLink={false} />
