@@ -1,44 +1,65 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Sparkles, Zap } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 
 export const Pricing = () => {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-
-  const plans = {
-    starter: {
-      name: 'Starter',
-      monthly: { price: 0, period: 'Forever' },
-      annual: { price: 0, period: 'Forever' },
-      features: [
-        'Basic Transcription',
-        '5 Questions / Day',
-        'Community Support',
-      ],
-      cta: 'Get Started',
+  const creditPackages = [
+    {
+      name: 'Quick Fix',
+      credits: 10,
+      price: 2.99,
+      pricePerCredit: 0.30,
+      badge: null,
+      features: ['Perfect for one question', 'Instant access', 'No commitment'],
+      cta: 'Buy 10 Credits',
       ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
-      icon: null,
     },
-    pro: {
-      name: 'Pro Scholar',
-      monthly: { price: 9, period: '/mo' },
-      annual: { price: 90, period: '/year', savings: 'Save 17%' },
-      features: [
-        'Unlimited Transcription',
-        'Unlimited Auto-Solve',
-        'Ghost Mode Enabled',
-        'Priority Support',
-      ],
-      cta: 'Upgrade to Pro',
+    {
+      name: 'Starter',
+      credits: 20,
+      price: 4.99,
+      pricePerCredit: 0.25,
+      badge: null,
+      features: ['One assignment covered', 'Quick help when needed', 'Flexible usage'],
+      cta: 'Buy 20 Credits',
+      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
+    },
+    {
+      name: 'Student Pack',
+      credits: 50,
+      price: 9.99,
+      pricePerCredit: 0.20,
+      badge: null,
+      features: ['Week of homework help', 'Regular student needs', 'Best for casual use'],
+      cta: 'Buy 50 Credits',
+      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
+    },
+    {
+      name: 'Value Pack',
+      credits: 100,
+      price: 16.99,
+      pricePerCredit: 0.17,
+      badge: 'Best Value',
+      features: ['Month of study help', 'Regular students', '15% savings'],
+      cta: 'Buy 100 Credits',
       ctaStyle: 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]',
       popular: true,
-      icon: <Sparkles className="w-5 h-5" />,
     },
-  };
+    {
+      name: 'Power Pack',
+      credits: 250,
+      price: 34.99,
+      pricePerCredit: 0.14,
+      badge: 'Most Popular',
+      features: ['Semester coverage', 'Serious students', '44% savings'],
+      cta: 'Buy 250 Credits',
+      ctaStyle: 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]',
+      popular: true,
+    },
+  ];
 
   return (
     <section id="pricing" className="py-24 md:py-32 px-4 relative z-10">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -47,148 +68,96 @@ export const Pricing = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 tracking-tight">
-            Simple pricing, <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">unlimited potential.</span>
+            Pay only for what you use, <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">no subscriptions.</span>
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Start for free, upgrade when you're ready to dominate your exams.
+            Start with 25 free credits. Buy more when you need them. No monthly fees, no commitment.
           </p>
         </motion.div>
 
-        {/* Billing Toggle */}
+        {/* Free Tier Banner */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
-          className="flex justify-center mb-16"
+          className="mb-12 max-w-2xl mx-auto"
         >
-          <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-full p-1.5 inline-flex relative">
-            <div
-                className={`absolute top-1.5 bottom-1.5 rounded-full bg-indigo-600 transition-all duration-300 ease-out shadow-lg ${
-                    billingCycle === 'monthly' ? 'left-1.5 w-[110px]' : 'left-[120px] w-[110px]'
-                }`} 
-            />
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`relative px-6 py-2 rounded-full text-sm font-semibold transition-colors z-10 w-[115px] ${
-                billingCycle === 'monthly' ? 'text-white' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle('annual')}
-              className={`relative px-6 py-2 rounded-full text-sm font-semibold transition-colors z-10 w-[115px] flex items-center justify-center gap-2 ${
-                billingCycle === 'annual' ? 'text-white' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Annual
-            </button>
-            
-             {/* Savings Badge - positioned specifically */}
-             <div className="absolute -right-24 top-1/2 -translate-y-1/2 hidden sm:block">
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-1 rounded-full">
-                    Save 17%
-                </span>
-             </div>
+          <div className="bg-gradient-to-r from-indigo-900/30 to-cyan-900/30 border border-indigo-500/20 rounded-2xl p-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-indigo-400" />
+              <h3 className="text-xl font-bold text-white">Free to Start</h3>
+            </div>
+            <p className="text-gray-300">Every new account gets <span className="font-bold text-white">25 free credits</span> to try StudyLayer. No credit card required.</p>
           </div>
         </motion.div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Starter Plan */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent rounded-3xl -z-10" />
-            <div className="h-full p-8 sm:p-10 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl hover:border-white/20 transition-all duration-300 flex flex-col">
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-white mb-2">{plans.starter.name}</h3>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-white">${plans.starter[billingCycle].price}</span>
-                  <span className="text-gray-500">/forever</span>
+        {/* Credit Packages Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {creditPackages.map((pkg, index) => (
+            <motion.div
+              key={pkg.credits}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 + index * 0.1 }}
+              className={`relative group ${pkg.popular ? 'lg:col-span-1' : ''}`}
+            >
+              {/* Popular Badge */}
+              {pkg.badge && (
+                <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
+                  <div className="bg-indigo-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg shadow-indigo-500/30 border border-indigo-400">
+                    {pkg.badge}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-400 mt-4">Perfect for trying out Visnly without any commitment.</p>
-              </div>
+              )}
 
-              <div className="flex-grow">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Features</div>
-                <ul className="space-y-4 mb-8">
-                    {plans.starter.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                        <Check size={18} className="text-gray-500 mt-0.5 shrink-0" />
-                        <span className="text-gray-300 text-sm">{feature}</span>
-                    </li>
-                    ))}
-                </ul>
-              </div>
-
-              <button className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all ${plans.starter.ctaStyle}`}>
-                {plans.starter.cta}
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Pro Plan */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-            className="relative group"
-          >
-            {/* Popular Badge */}
-            <div className="absolute -top-4 left-0 right-0 flex justify-center z-20">
-                <div className="bg-indigo-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg shadow-indigo-500/30 border border-indigo-400">
-                    Most Popular
-                </div>
-            </div>
-
-            {/* Glow Effect */}
-            <div className="absolute -inset-[1px] bg-gradient-to-b from-indigo-500 to-indigo-500/20 rounded-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
-            
-            <div className="relative h-full p-8 sm:p-10 rounded-3xl border border-indigo-500/30 bg-[#0B0B15] backdrop-blur-xl flex flex-col overflow-hidden">
-              {/* Background Gradient */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 blur-[80px] rounded-full pointer-events-none" />
+              {/* Glow Effect for Popular */}
+              {pkg.popular && (
+                <div className="absolute -inset-[1px] bg-gradient-to-b from-indigo-500 to-indigo-500/20 rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+              )}
               
-              <div className="mb-8 relative z-10">
-                <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                        {plans.pro.name}
-                        <Zap size={16} className="text-yellow-400 fill-yellow-400" />
-                    </h3>
+              <div className={`relative h-full p-6 rounded-2xl border backdrop-blur-xl flex flex-col transition-all duration-300 ${
+                pkg.popular 
+                  ? 'border-indigo-500/30 bg-[#0B0B15] hover:border-indigo-400/50' 
+                  : 'border-white/10 bg-black/40 hover:border-white/20'
+              }`}>
+                {/* Background Gradient for Popular */}
+                {pkg.popular && (
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 blur-[60px] rounded-full pointer-events-none" />
+                )}
+                
+                <div className="mb-6 relative z-10">
+                  <h3 className="text-lg font-bold text-white mb-1">{pkg.name}</h3>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-3xl font-bold text-white">${pkg.price}</span>
+                    <span className="text-gray-400 text-sm">one-time</span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl font-bold text-indigo-400">{pkg.credits}</span>
+                    <span className="text-gray-400 text-sm">credits</span>
+                  </div>
+                  <p className="text-xs text-gray-400">${pkg.pricePerCredit.toFixed(2)} per credit</p>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-white">${plans.pro[billingCycle].price}</span>
-                  <span className="text-gray-400">{plans.pro[billingCycle].period}</span>
-                </div>
-                <p className="text-sm text-indigo-200/70 mt-4">Unlock the full power of the AI. Undetectable & unlimited.</p>
-              </div>
 
-              <div className="flex-grow relative z-10">
-                <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-4">Everything in Starter, plus:</div>
-                <ul className="space-y-4 mb-8">
-                    {plans.pro.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                        <div className="mt-0.5 rounded-full bg-indigo-500/20 p-0.5">
-                            <Check size={14} className="text-indigo-400 shrink-0" />
-                        </div>
-                        <span className="text-white text-sm font-medium">{feature}</span>
-                    </li>
+                <div className="flex-grow mb-6 relative z-10">
+                  <ul className="space-y-2">
+                    {pkg.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <Check size={14} className={`mt-0.5 shrink-0 ${pkg.popular ? 'text-indigo-400' : 'text-gray-500'}`} />
+                        <span className={`text-sm ${pkg.popular ? 'text-white' : 'text-gray-300'}`}>{feature}</span>
+                      </li>
                     ))}
-                </ul>
-              </div>
+                  </ul>
+                </div>
 
-              <button className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all relative z-10 hover:scale-[1.02] active:scale-[0.98] ${plans.pro.ctaStyle}`}>
-                {plans.pro.cta}
-              </button>
-            </div>
-          </motion.div>
+                <button className={`w-full py-3 rounded-xl font-semibold text-sm transition-all relative z-10 hover:scale-[1.02] active:scale-[0.98] ${pkg.ctaStyle}`}>
+                  {pkg.cta}
+                </button>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>
