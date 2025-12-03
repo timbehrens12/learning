@@ -61,7 +61,7 @@ export const SuccessPage = () => {
             setIsLoading(false);
             
             // If user was trying to buy credits, redirect to pricing page
-            if (shouldRedirectToPricing) {
+            if (redirectToPricing) {
               setTimeout(() => {
                 window.location.href = '/#pricing';
               }, 500);
@@ -90,7 +90,7 @@ export const SuccessPage = () => {
                   setIsLoading(false);
                   
                   // If user was trying to buy credits, redirect to pricing page
-                  if (shouldRedirectToPricing) {
+                  if (redirectToPricing) {
                     setTimeout(() => {
                       window.location.href = '/#pricing';
                     }, 500);
