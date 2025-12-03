@@ -7,6 +7,14 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Visnly - The Invisible Advantage</title>
+    <script>
+      // Immediate logging before React loads
+      console.log('=== HTML SCRIPT RUNNING ===');
+      console.log('Full URL:', window.location.href);
+      console.log('Hash:', window.location.hash);
+      console.log('Pathname:', window.location.pathname);
+      console.log('Search:', window.location.search);
+    </script>
   </head>
   <body style="background-color: #050505; margin: 0; padding: 0;">
     <div id="root" style="min-height: 100vh;"></div>
