@@ -55,6 +55,7 @@ function App() {
           // Retry after a delay
           if (supabase) {
             setTimeout(() => {
+              if (!supabase) return;
               supabase.auth.getSession().then(({ data: { session: retrySession } }) => {
                 if (retrySession) {
                   console.log('Session found on retry');
