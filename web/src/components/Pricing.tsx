@@ -1,22 +1,31 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export const Pricing = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    // Clear any stuck loading state on mount (handles case where user returns after redirect)
+    setLoading(null);
+
     // Check if user is signed in
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user || null);
+        // Clear loading in case user just returned from sign-in
+        setLoading(null);
       });
 
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         setUser(session?.user || null);
+        // Clear loading state when auth state changes (user just signed in)
+        setLoading(null);
       });
 
       return () => subscription.unsubscribe();
@@ -26,42 +35,14 @@ export const Pricing = () => {
   const handleBuy = async (credits: number) => {
     // Check if user is signed in
     if (!user) {
-      // Redirect to sign in with Google
-      if (supabase) {
-        // Redirect to root - Supabase will append hash, then we redirect to pricing
-        const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
-        // Must use root path without hash - Supabase adds the hash
-        const redirectUrl = siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`;
-        
-        console.log('OAuth redirect URL:', redirectUrl);
-        console.log('Site URL env:', import.meta.env.VITE_SITE_URL);
-        console.log('Current origin:', window.location.origin);
-        
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectUrl,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
-            }
-          }
-        });
-
-        if (error) {
-          alert('Please sign in to purchase credits.');
-          return;
-        }
-
-        if (data?.url) {
-          window.location.href = data.url;
-        }
-      } else {
-        alert('Please sign in to purchase credits.');
-      }
+      // Clear any loading state before redirecting
+      setLoading(null);
+      // Redirect to sign in page
+      navigate('/signin?redirect=pricing');
       return;
     }
 
+    // Only set loading if we're actually proceeding with checkout
     setLoading(credits);
     try {
       const response = await fetch('/api/create-checkout', {
@@ -73,7 +54,7 @@ export const Pricing = () => {
           credits,
           userId: user.id,
           successUrl: `${window.location.origin}/success`,
-          cancelUrl: `${window.location.origin}#pricing`,
+          cancelUrl: `${window.location.origin}/pricing`,
         }),
       });
 

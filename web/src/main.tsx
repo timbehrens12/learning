@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { supabase } from './lib/supabase'
@@ -13,11 +14,15 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
     // Process OAuth callback immediately
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        console.log('Session found, redirecting to pricing');
+        // Check for redirect parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get('redirect');
+        
+        console.log('Session found, redirecting to:', redirectTo || 'account');
         // Clean hash and redirect
         const newUrl = window.location.pathname + window.location.search;
         window.history.replaceState(null, '', newUrl);
-        window.location.href = '/#pricing';
+        window.location.href = redirectTo === 'pricing' ? '/pricing' : '/account';
       }
     });
   }
@@ -36,6 +41,8 @@ document.body.style.padding = '0'
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>,
 )
