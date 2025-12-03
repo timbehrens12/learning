@@ -184,38 +184,6 @@ async function handleSubscriptionUpdate(subscription) {
 }
 
 // Main webhook handler
-// For Vercel: We need to read the raw body before it's parsed
-// Vercel automatically parses JSON, so we'll read from the request stream
-async function getRawBody(req) {
-  // If body is already a Buffer, use it
-  if (Buffer.isBuffer(req.body)) {
-    return req.body;
-  }
-  
-  // If body is a string, convert to Buffer
-  if (typeof req.body === 'string') {
-    return Buffer.from(req.body, 'utf8');
-  }
-  
-  // Try to read from request stream
-  // Note: This may not work if Vercel has already consumed the stream
-  const chunks = [];
-  try {
-    // Check if we can read from the stream
-    if (req[Symbol.asyncIterator]) {
-      for await (const chunk of req) {
-        chunks.push(Buffer.from(chunk));
-      }
-      return Buffer.concat(chunks);
-    }
-  } catch (err) {
-    console.error('Error reading request stream:', err);
-  }
-  
-  // If we can't get raw body, return null
-  return null;
-}
-
 export default async function handler(req, res) {
   // Allow GET for health check
   if (req.method === 'GET') {
@@ -234,24 +202,48 @@ export default async function handler(req, res) {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   // Get raw body for webhook verification
-  let body = await getRawBody(req);
+  // Vercel may parse JSON bodies automatically, so we need to read the raw body
+  let body;
   
-  if (!body) {
-    // If we can't get raw body, we can't verify the signature
-    // For now, we'll skip verification and log a warning
-    // In production, you should fix this by configuring Vercel properly
-    console.error('WARNING: Cannot get raw body for webhook signature verification.');
+  // Try multiple methods to get the raw body
+  if (req.body instanceof Buffer) {
+    // Already a Buffer - perfect
+    body = req.body;
+  } else if (typeof req.body === 'string') {
+    // String - convert to Buffer
+    body = Buffer.from(req.body, 'utf8');
+  } else if (req.rawBody) {
+    // Some setups provide rawBody
+    body = Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.from(req.rawBody, 'utf8');
+  } else {
+    // Body was parsed as JSON - we need to reconstruct it
+    // This is not ideal but sometimes necessary with Vercel
+    // Note: This will fail signature verification, so we'll need to skip it
+    console.error('ERROR: Body was parsed as JSON object.');
     console.error('Body type:', typeof req.body);
-    console.error('Proceeding without signature verification (NOT RECOMMENDED FOR PRODUCTION)');
+    console.error('Attempting to read raw body from request...');
     
-    // Try to use parsed body as fallback (signature verification will fail)
-    if (req.body && typeof req.body === 'object') {
-      body = Buffer.from(JSON.stringify(req.body), 'utf8');
-      console.warn('Using parsed body - signature verification will likely fail');
-    } else {
+    // Try to read from request stream (may not work if already consumed)
+    try {
+      const chunks = [];
+      // Check if req is a stream
+      if (req.readable) {
+        for await (const chunk of req) {
+          chunks.push(chunk);
+        }
+        body = Buffer.concat(chunks);
+      } else {
+        // Can't get raw body - return error
+        return res.status(400).json({ 
+          error: 'Cannot verify webhook signature: body was parsed as JSON.',
+          hint: 'Vercel is auto-parsing the request body. The webhook endpoint needs raw body access.'
+        });
+      }
+    } catch (streamError) {
+      console.error('Failed to read request stream:', streamError);
       return res.status(400).json({ 
-        error: 'Cannot access raw request body for webhook verification.',
-        hint: 'Vercel is parsing the request body. Consider using Vercel Edge Functions or configuring the function to receive raw body.'
+        error: 'Cannot verify webhook signature: unable to access raw body.',
+        hint: 'Contact support or check Vercel function configuration.'
       });
     }
   }
@@ -261,30 +253,8 @@ export default async function handler(req, res) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
   } catch (err) {
-    // If signature verification fails and body was parsed, log but continue
-    // This is a temporary workaround for Vercel's body parsing
-    if (err.message.includes('Webhook payload must be provided')) {
-      console.error('Webhook signature verification failed: Body was parsed by Vercel');
-      console.error('Attempting to process webhook without signature verification (TEMPORARY)');
-      
-      // Try to construct event from parsed body (skip signature check)
-      // WARNING: This is not secure and should be fixed in production
-      try {
-        // Use the parsed body directly if available
-        if (req.body && typeof req.body === 'object' && req.body.type) {
-          event = req.body;
-          console.warn('Processing webhook without signature verification - FIX THIS IN PRODUCTION');
-        } else {
-          throw new Error('Cannot process webhook: body parsing issue');
-        }
-      } catch (fallbackError) {
-        console.error('Cannot process webhook:', fallbackError);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-      }
-    } else {
-      console.error(`Webhook signature verification failed:`, err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
+    console.error(`Webhook signature verification failed:`, err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {

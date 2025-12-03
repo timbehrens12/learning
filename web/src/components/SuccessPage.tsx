@@ -82,7 +82,7 @@ export const SuccessPage = () => {
             // If user was trying to buy credits, redirect to pricing page immediately
             if (shouldRedirect) {
               console.log('Redirecting to pricing page...');
-              window.location.href = '/#pricing';
+              window.location.href = '/pricing';
               return;
             }
           } else {
@@ -114,7 +114,7 @@ export const SuccessPage = () => {
                   // If user was trying to buy credits, redirect to pricing page immediately
                   if (shouldRedirect) {
                     console.log('Redirecting to pricing page (retry)...');
-                    window.location.href = '/#pricing';
+                    window.location.href = '/pricing';
                     return;
                   }
                 } else {
@@ -203,7 +203,7 @@ export const SuccessPage = () => {
             {isAuthSuccess ? (
               redirectToPricing ? (
                 <a
-                  href="/#pricing"
+                  href="/pricing"
                   className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
                 >
                   Continue to Pricing
@@ -224,7 +224,7 @@ export const SuccessPage = () => {
               )
             ) : (
               <a
-                href="/#pricing"
+                href="/pricing"
                 className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
               >
                 Back to Pricing
