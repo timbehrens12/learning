@@ -13,6 +13,11 @@ export const SuccessPage = () => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
 
+    console.log('SuccessPage mounted');
+    console.log('Current URL:', window.location.href);
+    console.log('Hash:', window.location.hash);
+    console.log('Search:', window.location.search);
+
     // Check if this is an auth callback (has hash with tokens)
     const urlParams = new URLSearchParams(window.location.search);
     const hasAuthHash = window.location.hash.includes('access_token') || window.location.hash.includes('error');
@@ -22,7 +27,13 @@ export const SuccessPage = () => {
     setRedirectToPricing(shouldRedirectToPricing);
     const isAuthCallback = urlParams.get('auth') === 'success' || hasAuthHash;
 
+    console.log('isAuthCallback:', isAuthCallback);
+    console.log('hasAuthHash:', hasAuthHash);
+    console.log('shouldRedirectToPricing:', shouldRedirectToPricing);
+    console.log('supabase available:', !!supabase);
+
     if (isAuthCallback && supabase) {
+      console.log('Processing OAuth callback...');
       setIsAuthSuccess(true);
       
       // Process OAuth callback - Supabase will automatically parse the hash
@@ -42,6 +53,9 @@ export const SuccessPage = () => {
           
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           
+          console.log('Session retrieved:', !!session);
+          console.log('Session error:', sessionError);
+          
           if (sessionError) {
             console.error('Auth error:', sessionError);
             setError('Failed to sign in. Please try again.');
@@ -54,6 +68,7 @@ export const SuccessPage = () => {
             
             // Check if we should redirect to pricing (check URL params directly)
             const shouldRedirect = urlParams.get('redirect') === 'pricing';
+            console.log('Should redirect to pricing:', shouldRedirect);
             
             // Clean up the URL hash after processing
             if (window.location.hash) {
@@ -63,11 +78,10 @@ export const SuccessPage = () => {
             
             setIsLoading(false);
             
-            // If user was trying to buy credits, redirect to pricing page
+            // If user was trying to buy credits, redirect to pricing page immediately
             if (shouldRedirect) {
-              setTimeout(() => {
-                window.location.href = '/#pricing';
-              }, 500);
+              console.log('Redirecting to pricing page...');
+              window.location.href = '/#pricing';
               return;
             }
           } else {
@@ -94,12 +108,12 @@ export const SuccessPage = () => {
                   
                   // Check if we should redirect to pricing (check URL params directly)
                   const shouldRedirect = urlParams.get('redirect') === 'pricing';
+                  console.log('Should redirect to pricing (retry):', shouldRedirect);
                   
-                  // If user was trying to buy credits, redirect to pricing page
+                  // If user was trying to buy credits, redirect to pricing page immediately
                   if (shouldRedirect) {
-                    setTimeout(() => {
-                      window.location.href = '/#pricing';
-                    }, 500);
+                    console.log('Redirecting to pricing page (retry)...');
+                    window.location.href = '/#pricing';
                     return;
                   }
                 } else {
@@ -118,6 +132,7 @@ export const SuccessPage = () => {
 
       handleAuth();
     } else {
+      console.log('Not an auth callback or supabase not available');
       setIsLoading(false);
     }
   }, []);
