@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LiquidBackground } from './LiquidBackground';
 import { HeroMockup } from './HeroMockup';
@@ -9,6 +10,7 @@ import { Pricing } from './Pricing';
 import { FAQ } from './FAQ';
 import { DownloadModal } from './DownloadModal';
 import { Navbar } from './Navbar';
+import { Logo } from './Logo';
 import { ArrowRight } from 'lucide-react';
 
 export const LandingPage = () => {
