@@ -7,13 +7,19 @@ export const SuccessPage = () => {
   const [isAuthSuccess, setIsAuthSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [redirectToPricing, setRedirectToPricing] = useState(false);
 
   useEffect(() => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
 
     // Check if this is an auth callback (has hash with tokens)
+    const urlParams = new URLSearchParams(window.location.search);
     const hasAuthHash = window.location.hash.includes('access_token') || window.location.hash.includes('error');
+    
+    // Check if user was redirected here after sign-in to buy credits
+    const shouldRedirectToPricing = urlParams.get('redirect') === 'pricing';
+    setRedirectToPricing(shouldRedirectToPricing);
     const urlParams = new URLSearchParams(window.location.search);
     const isAuthCallback = urlParams.get('auth') === 'success' || hasAuthHash;
 
@@ -158,18 +164,27 @@ export const SuccessPage = () => {
           {!isLoading && !error && (
           <div className="space-y-4">
             {isAuthSuccess ? (
-              <a
-                href="/"
-                onClick={(e) => {
-                  e.preventDefault();
-                  // Open download modal or trigger download
-                  window.location.href = '/';
-                }}
-                className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
-              >
-                Download App
-                <ArrowRight className="w-4 h-4" />
-              </a>
+              redirectToPricing ? (
+                <a
+                  href="/#pricing"
+                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+                >
+                  Continue to Pricing
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              ) : (
+                <a
+                  href="/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = '/';
+                  }}
+                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+                >
+                  Download App
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              )
             ) : (
               <a
                 href="/#pricing"
