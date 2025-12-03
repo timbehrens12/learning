@@ -59,6 +59,14 @@ export const SuccessPage = () => {
             }
             
             setIsLoading(false);
+            
+            // If user was trying to buy credits, redirect to pricing page
+            if (shouldRedirectToPricing) {
+              setTimeout(() => {
+                window.location.href = '/#pricing';
+              }, 500);
+              return;
+            }
           } else {
             // Check if there's an error in the hash
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -80,6 +88,14 @@ export const SuccessPage = () => {
                 if (retrySession) {
                   console.log('User signed in (retry):', retrySession.user.email);
                   setIsLoading(false);
+                  
+                  // If user was trying to buy credits, redirect to pricing page
+                  if (shouldRedirectToPricing) {
+                    setTimeout(() => {
+                      window.location.href = '/#pricing';
+                    }, 500);
+                    return;
+                  }
                 } else {
                   setError('Session not found. Please try signing in again.');
                   setIsLoading(false);
