@@ -135,11 +135,15 @@ async function handleCheckoutCompleted(session) {
       updateData.stripe_customer_id = customerId;
     }
 
-    // Add credits
+    // Add credits using upsert to handle cases where row doesn't exist yet
     const { error: updateError } = await supabase
       .from('user_credits')
-      .update(updateData)
-      .eq('user_id', userId);
+      .upsert({
+        user_id: userId,
+        ...updateData
+      }, {
+        onConflict: 'user_id'
+      });
 
     if (updateError) {
       console.error('Error updating credits:', updateError);

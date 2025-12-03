@@ -80,34 +80,15 @@ export const Pricing = () => {
   };
   const creditPackages = [
     {
-      name: 'Quick Fix',
-      credits: 10,
-      price: 2.99,
-      pricePerCredit: 0.30,
-      badge: null,
-      features: ['Perfect for one question', 'Instant access', 'No commitment'],
-      cta: 'Buy 10 Credits',
-      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
-    },
-    {
-      name: 'Starter',
-      credits: 20,
-      price: 4.99,
-      pricePerCredit: 0.25,
-      badge: null,
-      features: ['One assignment covered', 'Quick help when needed', 'Flexible usage'],
-      cta: 'Buy 20 Credits',
-      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
-    },
-    {
-      name: 'Student Pack',
-      credits: 50,
-      price: 9.99,
-      pricePerCredit: 0.20,
-      badge: null,
-      features: ['Week of homework help', 'Regular student needs', 'Best for casual use'],
-      cta: 'Buy 50 Credits',
-      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
+      name: 'Power Pack',
+      credits: 250,
+      price: 34.99,
+      pricePerCredit: 0.14,
+      badge: 'Most Popular',
+      features: ['Semester coverage', 'Serious students', '44% savings'],
+      cta: 'Buy 250 Credits',
+      ctaStyle: 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]',
+      popular: true,
     },
     {
       name: 'Value Pack',
@@ -121,15 +102,34 @@ export const Pricing = () => {
       popular: true,
     },
     {
-      name: 'Power Pack',
-      credits: 250,
-      price: 34.99,
-      pricePerCredit: 0.14,
-      badge: 'Most Popular',
-      features: ['Semester coverage', 'Serious students', '44% savings'],
-      cta: 'Buy 250 Credits',
-      ctaStyle: 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]',
-      popular: true,
+      name: 'Student Pack',
+      credits: 50,
+      price: 9.99,
+      pricePerCredit: 0.20,
+      badge: null,
+      features: ['Week of homework help', 'Regular student needs', 'Best for casual use'],
+      cta: 'Buy 50 Credits',
+      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
+    },
+    {
+      name: 'Starter',
+      credits: 20,
+      price: 4.99,
+      pricePerCredit: 0.25,
+      badge: null,
+      features: ['One assignment covered', 'Quick help when needed', 'Flexible usage'],
+      cta: 'Buy 20 Credits',
+      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
+    },
+    {
+      name: 'Quick Fix',
+      credits: 10,
+      price: 2.99,
+      pricePerCredit: 0.30,
+      badge: null,
+      features: ['Perfect for one question', 'Instant access', 'No commitment'],
+      cta: 'Buy 10 Credits',
+      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
     },
   ];
 
@@ -180,7 +180,7 @@ export const Pricing = () => {
 
         {/* Credit Packages Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {creditPackages.slice(0, 3).map((pkg, index) => (
+          {creditPackages.map((pkg, index) => (
             <motion.div
               key={pkg.credits}
               initial={{ opacity: 0, y: 20 }}
