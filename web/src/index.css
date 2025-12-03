@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply text-white antialiased selection:bg-primary/30 selection:text-white;
+    background-color: #050505;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(76, 29, 149, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply backdrop-blur-2xl bg-glass-bg border border-glass-border shadow-2xl;
+  }
+
+  .glass-card-hover {
+    @apply transition-all duration-300 hover:bg-white/[0.04] hover:border-white/10 hover:shadow-[0_0_30px_rgba(0,0,0,0.3)];
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/50;
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .mask-gradient-b {
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+/* Uiverse Button Design */
+.btn-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.btn {
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 14px 28px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: hsla(0, 0%, 90%, 1);
+  
+  /* HSL gradient matching study-layer - 240, 50%, 50% */
+  background: linear-gradient(
+    140deg,
+    hsla(240, 50%, 50%, 1) min(2em, 20%),
+    hsla(240, 50%, 50%, 0.6) min(8em, 100%)
+  );
+  
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  
+  /* Subtle glow/shadow effect matching study-layer */
+  box-shadow: inset 0.4px 1px 4px hsla(0, 0%, 50%, 0.8);
+  
+  transition: all 0.1s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.btn:hover {
+  background: linear-gradient(
+    140deg,
+    hsla(240, 50%, 50%, 1) min(2em, 20%),
+    hsla(240, 50%, 50%, 0.6) min(8em, 100%)
+  );
+  box-shadow: 
+    inset 0.4px 1px 4px hsla(0, 0%, 50%, 1),
+    2px 4px 8px hsla(0, 0%, 0%, 0.295);
+  text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.4);
+  transform: scale(1.02);
+  color: hsla(0, 0%, 90%, 1);
+}
+
+.btn:active {
+  background: linear-gradient(
+    140deg,
+    hsla(240, 50%, 50%, 1) min(2em, 20%),
+    hsla(240, 50%, 50%, 0.6) min(8em, 100%)
+  );
+  box-shadow: 
+    inset 0.4px 1px 8px hsla(0, 0%, 50%, 1),
+    0px 0px 8px hsla(240, 50%, 50%, 0.6);
+  text-shadow: 0px 0px 20px rgba(255, 255, 255, 1);
+  color: hsla(0, 0%, 100%, 1);
+  transform: scale(0.98);
+}
+
+.btn-svg {
+  flex-shrink: 0;
+  height: 20px;
+  width: 20px;
+  margin-right: 10px;
+  fill: #ffffff;
+}
+
+.btn-text {
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* Icon button style for circular social buttons */
+.icon-btn {
+  user-select: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: hsla(0, 0%, 90%, 1);
+  box-shadow: inset 0.4px 1px 3px hsla(0, 0%, 50%, 0.6);
+  transition: all 0.15s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.icon-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0.4px 1px 4px hsla(0, 0%, 50%, 0.9),
+    2px 4px 8px hsla(0, 0%, 0%, 0.35);
+  transform: scale(1.05);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+  box-shadow:
+    inset 0.4px 1px 6px hsla(0, 0%, 50%, 1),
+    0px 0px 6px hsla(0, 0%, 100%, 0.35);
+}
+
+/* Pill CTA button (e.g., Start for Free in navbar) */
+.cta-pill {
+  transition: all 0.15s cubic-bezier(0.22, 0.61, 0.36, 1);
+  box-shadow: inset 0.4px 1px 3px hsla(0, 0%, 70%, 0.6);
+}
+
+.cta-pill:hover {
+  box-shadow:
+    inset 0.4px 1px 4px hsla(0, 0%, 70%, 0.9),
+    2px 4px 8px hsla(0, 0%, 0%, 0.25);
+  transform: translateY(-1px);
+}
+
+.cta-pill:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow:
+    inset 0.4px 1px 6px hsla(0, 0%, 70%, 1),
+    0px 0px 4px hsla(0, 0%, 100%, 0.4);
+}
+
+/* Responsive button styles */
+@media (max-width: 640px) {
+  .btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .btn-svg {
+    height: 18px;
+    width: 18px;
+    margin-right: 8px;
+  }
+}
