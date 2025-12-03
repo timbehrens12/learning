@@ -25,20 +25,20 @@ export const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 md:pt-6 px-4">
-      <div className="flex items-center justify-between w-full max-w-6xl gap-4 md:gap-8 px-4 md:px-6 py-3 rounded-full backdrop-blur-xl bg-black/40 border border-white/10 shadow-2xl">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <div className="flex items-center justify-between w-full max-w-6xl gap-4 md:gap-6 px-4 md:px-6 py-3 rounded-full backdrop-blur-xl bg-black/40 border border-white/10 shadow-2xl">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
           <Logo size={24} showText={false} />
           <span className="font-bold text-lg tracking-tight">Visnly</span>
         </Link>
         
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
-          <Link to="/features" className="hover:text-white transition-colors">Features</Link>
-          <Link to="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
-          <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-          <Link to="/faq" className="hover:text-white transition-colors">FAQ</Link>
+        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300 flex-shrink-0">
+          <Link to="/features" className="hover:text-white transition-colors whitespace-nowrap">Features</Link>
+          <Link to="/how-it-works" className="hover:text-white transition-colors whitespace-nowrap">How it works</Link>
+          <Link to="/pricing" className="hover:text-white transition-colors whitespace-nowrap">Pricing</Link>
+          <Link to="/faq" className="hover:text-white transition-colors whitespace-nowrap">FAQ</Link>
         </div>
         
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4 flex-shrink-0">
           {user ? (
             <Link
               to="/account"
