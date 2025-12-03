@@ -18,6 +18,9 @@ async function handleCheckoutCompleted(session) {
   console.log('=== CHECKOUT COMPLETED ===');
   console.log('Session ID:', session.id);
   console.log('Session metadata:', JSON.stringify(session.metadata, null, 2));
+  console.log('Customer ID:', session.customer);
+  console.log('Customer Email:', session.customer_email || session.customer_details?.email);
+  console.log('Payment Status:', session.payment_status);
   console.log('Line items:', session.line_items?.data ? JSON.stringify(session.line_items.data, null, 2) : 'No line items');
   
   const customerId = session.customer;
@@ -116,7 +119,7 @@ async function handleCheckoutCompleted(session) {
       .eq('user_id', userId)
       .single();
 
-    if (fetchError) {
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found
       console.error('Error fetching current credits:', fetchError);
       return;
     }
