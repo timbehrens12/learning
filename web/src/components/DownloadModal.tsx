@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, LogIn, UserPlus } from 'lucide-react';
+import { X, Download } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 
 interface DownloadModalProps {
@@ -9,7 +9,6 @@ interface DownloadModalProps {
 }
 
 export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
-  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleDownload = () => {
     // TODO: Replace with actual download URL (GitHub releases, S3, etc.)
