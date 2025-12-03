@@ -53,16 +53,18 @@ function App() {
         } else {
           console.log('No session found, retrying...');
           // Retry after a delay
-          setTimeout(() => {
-            supabase.auth.getSession().then(({ data: { retrySession } }) => {
-              if (retrySession) {
-                console.log('Session found on retry');
-                window.location.href = '/#pricing';
-              } else {
-                console.error('Still no session after retry');
-              }
-            });
-          }, 1000);
+          if (supabase) {
+            setTimeout(() => {
+              supabase.auth.getSession().then(({ data: { session: retrySession } }) => {
+                if (retrySession) {
+                  console.log('Session found on retry');
+                  window.location.href = '/#pricing';
+                } else {
+                  console.error('Still no session after retry');
+                }
+              });
+            }, 1000);
+          }
         }
       });
     } else {
