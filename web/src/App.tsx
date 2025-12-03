@@ -36,18 +36,16 @@ function App() {
         
         if (session) {
           console.log('User signed in via OAuth:', session.user.email);
-          // Clean up the hash and redirect
+          
+          // Clean up the hash
           const newUrl = window.location.pathname + window.location.search;
           window.history.replaceState(null, '', newUrl);
           
-          // Redirect to pricing if that's where they were going
-          if (hash.includes('pricing') || window.location.pathname === '/') {
-            console.log('Redirecting to pricing...');
+          // Always redirect to pricing after OAuth (user was trying to buy credits)
+          console.log('Redirecting to pricing after OAuth...');
+          setTimeout(() => {
             window.location.href = '/#pricing';
-          } else {
-            // Just reload to show signed in state
-            window.location.reload();
-          }
+          }, 100);
         } else if (error) {
           console.error('Session error:', error);
         } else {
@@ -58,7 +56,7 @@ function App() {
               if (!supabase) return;
               supabase.auth.getSession().then(({ data: { session: retrySession } }) => {
                 if (retrySession) {
-                  console.log('Session found on retry');
+                  console.log('Session found on retry, redirecting to pricing');
                   window.location.href = '/#pricing';
                 } else {
                   console.error('Still no session after retry');

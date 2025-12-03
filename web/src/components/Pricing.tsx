@@ -28,9 +28,10 @@ export const Pricing = () => {
     if (!user) {
       // Redirect to sign in with Google
       if (supabase) {
-        // Redirect directly back to pricing page after OAuth
+        // Redirect directly back to pricing page after OAuth (with hash for OAuth callback)
         const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
-        const redirectUrl = `${siteUrl}/#pricing`;
+        // Use the root path - Supabase will append the hash fragment
+        const redirectUrl = `${siteUrl}/`;
         
         console.log('OAuth redirect URL:', redirectUrl);
         
