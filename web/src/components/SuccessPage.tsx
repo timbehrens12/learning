@@ -1,11 +1,31 @@
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 export const SuccessPage = () => {
+  const [isAuthSuccess, setIsAuthSuccess] = useState(false);
+  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
+
   useEffect(() => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
+
+    // Check if this is an auth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('auth') === 'success' || window.location.hash.includes('access_token')) {
+      setIsAuthSuccess(true);
+      // Handle OAuth callback
+      if (supabase) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            console.log('User signed in:', session.user.email);
+          }
+        });
+      }
+    } else {
+      setIsPaymentSuccess(true);
+    }
   }, []);
 
   return (
@@ -26,21 +46,38 @@ export const SuccessPage = () => {
           </motion.div>
 
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Payment Successful!
+            {isAuthSuccess ? 'Account Created!' : 'Payment Successful!'}
           </h1>
           
           <p className="text-gray-400 mb-8 text-lg">
-            Your credits have been added to your account. You can now use them in the StudyLayer app.
+            {isAuthSuccess 
+              ? 'Your account has been created successfully. Download the app to get started with 25 free credits!'
+              : 'Your credits have been added to your account. You can now use them in the StudyLayer app.'}
           </p>
 
           <div className="space-y-4">
-            <a
-              href="/#pricing"
-              className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
-            >
-              Back to Pricing
-              <ArrowRight className="w-4 h-4" />
-            </a>
+            {isAuthSuccess ? (
+              <a
+                href="/"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Open download modal or trigger download
+                  window.location.href = '/';
+                }}
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+              >
+                Download App
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            ) : (
+              <a
+                href="/#pricing"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+              >
+                Back to Pricing
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            )}
             
             <a
               href="/"

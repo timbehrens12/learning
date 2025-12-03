@@ -17,8 +17,11 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Check if we're on the success page
-  const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('success=true');
+  // Check if we're on the success page (payment or auth)
+  const isSuccessPage = window.location.pathname === '/success' || 
+    window.location.search.includes('success=true') || 
+    window.location.search.includes('auth=success') ||
+    window.location.hash.includes('access_token');
 
   // Show success page if on success route
   if (isSuccessPage) {
