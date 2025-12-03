@@ -142,7 +142,7 @@ export const Pricing = () => {
       />
       <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
       <LiquidBackground />
-      <Navbar showPricingLink={false} />
+      <Navbar />
       <section id="pricing" className="pt-36 md:pt-48 pb-24 md:pb-32 px-4 relative z-10">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
