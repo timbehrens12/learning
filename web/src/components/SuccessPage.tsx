@@ -20,7 +20,6 @@ export const SuccessPage = () => {
     // Check if user was redirected here after sign-in to buy credits
     const shouldRedirectToPricing = urlParams.get('redirect') === 'pricing';
     setRedirectToPricing(shouldRedirectToPricing);
-    const urlParams = new URLSearchParams(window.location.search);
     const isAuthCallback = urlParams.get('auth') === 'success' || hasAuthHash;
 
     if (isAuthCallback && supabase) {

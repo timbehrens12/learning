@@ -6,14 +6,12 @@ import { supabase } from '../lib/supabase';
 export const Pricing = () => {
   const [loading, setLoading] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
     // Check if user is signed in
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user || null);
-        setCheckingAuth(false);
       });
 
       // Listen for auth changes
@@ -22,8 +20,6 @@ export const Pricing = () => {
       });
 
       return () => subscription.unsubscribe();
-    } else {
-      setCheckingAuth(false);
     }
   }, []);
 
