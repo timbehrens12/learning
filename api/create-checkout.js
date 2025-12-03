@@ -1,8 +1,16 @@
 // Vercel serverless function to create Stripe checkout sessions
-const Stripe = require('stripe');
+let Stripe;
+let stripe;
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+try {
+  Stripe = require('stripe');
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+  }
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+} catch (err) {
+  console.error('Failed to initialize Stripe:', err);
+}
 
 // Map credit amounts to price IDs
 const PRICE_ID_MAP = {
@@ -14,18 +22,44 @@ const PRICE_ID_MAP = {
 };
 
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Check if Stripe is initialized
+  if (!stripe) {
+    console.error('Stripe not initialized. Check STRIPE_SECRET_KEY environment variable.');
+    return res.status(500).json({ 
+      error: 'Payment service not configured. Please contact support.' 
+    });
   }
 
   try {
     const { credits, successUrl, cancelUrl } = req.body;
 
-    if (!credits || !PRICE_ID_MAP[credits]) {
-      return res.status(400).json({ error: 'Invalid credit amount' });
+    if (!credits) {
+      return res.status(400).json({ error: 'Credits amount is required' });
     }
 
     const priceId = PRICE_ID_MAP[credits];
+    
+    if (!priceId) {
+      console.error(`No price ID found for ${credits} credits. Available:`, Object.keys(PRICE_ID_MAP));
+      return res.status(400).json({ 
+        error: `Invalid credit amount: ${credits}. Available: 10, 20, 50, 100, 250` 
+      });
+    }
+
+    const origin = req.headers.origin || req.headers.host ? `https://${req.headers.host}` : 'https://your-site.vercel.app';
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -37,17 +71,20 @@ export default async function handler(req, res) {
           quantity: 1,
         },
       ],
-      success_url: successUrl || `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl || `${req.headers.origin}/pricing`,
+      success_url: successUrl || `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl || `${origin}/#pricing`,
       metadata: {
         credits: credits.toString(),
       },
     });
 
-    res.status(200).json({ sessionId: session.id, url: session.url });
+    return res.status(200).json({ sessionId: session.id, url: session.url });
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ 
+      error: error.message || 'Failed to create checkout session',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }
 
