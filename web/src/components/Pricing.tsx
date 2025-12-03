@@ -1,7 +1,42 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Sparkles, Loader2 } from 'lucide-react';
 
 export const Pricing = () => {
+  const [loading, setLoading] = useState<number | null>(null);
+
+  const handleBuy = async (credits: number) => {
+    setLoading(credits);
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          credits,
+          successUrl: `${window.location.origin}/success`,
+          cancelUrl: `${window.location.origin}#pricing`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else if (data.sessionId) {
+        // Fallback: redirect with session ID
+        window.location.href = `https://checkout.stripe.com/pay/${data.sessionId}`;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      alert('Failed to start checkout. Please try again.');
+      setLoading(null);
+    }
+  };
   const creditPackages = [
     {
       name: 'Quick Fix',
@@ -152,8 +187,19 @@ export const Pricing = () => {
                   </ul>
                 </div>
 
-                <button className={`w-full py-3 rounded-xl font-semibold text-sm transition-all relative z-10 hover:scale-[1.02] active:scale-[0.98] ${pkg.ctaStyle}`}>
-                  {pkg.cta}
+                <button 
+                  onClick={() => handleBuy(pkg.credits)}
+                  disabled={loading !== null}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all relative z-10 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${pkg.ctaStyle}`}
+                >
+                  {loading === pkg.credits ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    pkg.cta
+                  )}
                 </button>
               </div>
             </motion.div>

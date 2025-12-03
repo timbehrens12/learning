@@ -9,12 +9,27 @@ import { Pricing } from './components/Pricing';
 import { FAQ } from './components/FAQ';
 import { Logo } from './components/Logo';
 import { SubscriptionModal } from './components/SubscriptionModal';
+import { SuccessPage } from './components/SuccessPage';
 import { Menu, X as XIcon, ArrowRight } from 'lucide-react';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Check if we're on the success page
+  const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('success=true');
+
+  // Show success page if on success route
+  if (isSuccessPage) {
+    return (
+      <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
+        <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+        <LiquidBackground />
+        <SuccessPage />
+      </div>
+    );
+  }
 
   return (
     <div 
