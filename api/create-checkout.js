@@ -1,15 +1,13 @@
 // Vercel serverless function to create Stripe checkout sessions
-let Stripe;
-let stripe;
+const Stripe = require('stripe');
 
-try {
-  Stripe = require('stripe');
+// Initialize Stripe inside the handler to ensure env vars are loaded
+function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+    console.error('STRIPE_SECRET_KEY is missing. Available env vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')));
+    return null;
   }
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-} catch (err) {
-  console.error('Failed to initialize Stripe:', err);
+  return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
 // Map credit amounts to price IDs
@@ -35,15 +33,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Check if Stripe is initialized
-  if (!stripe) {
-    console.error('Stripe not initialized. Check STRIPE_SECRET_KEY environment variable.');
-    return res.status(500).json({ 
-      error: 'Payment service not configured. Please contact support.' 
-    });
-  }
-
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      console.error('Stripe initialization failed. STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'SET (but may be invalid)' : 'NOT SET');
+      return res.status(500).json({ 
+        error: 'Payment service not configured. Please contact support.',
+        debug: process.env.NODE_ENV === 'development' ? 'STRIPE_SECRET_KEY not found in environment' : undefined
+      });
+    }
+
     const { credits, successUrl, cancelUrl } = req.body;
 
     if (!credits) {
@@ -53,13 +52,13 @@ export default async function handler(req, res) {
     const priceId = PRICE_ID_MAP[credits];
     
     if (!priceId) {
-      console.error(`No price ID found for ${credits} credits. Available:`, Object.keys(PRICE_ID_MAP));
+      console.error(`No price ID found for ${credits} credits. Available env vars:`, Object.keys(process.env).filter(k => k.startsWith('STRIPE_PRICE')));
       return res.status(400).json({ 
         error: `Invalid credit amount: ${credits}. Available: 10, 20, 50, 100, 250` 
       });
     }
 
-    const origin = req.headers.origin || req.headers.host ? `https://${req.headers.host}` : 'https://your-site.vercel.app';
+    const origin = req.headers.origin || (req.headers.host ? `https://${req.headers.host}` : 'https://your-site.vercel.app');
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
