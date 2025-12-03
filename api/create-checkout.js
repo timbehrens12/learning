@@ -43,10 +43,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const { credits, successUrl, cancelUrl } = req.body;
+    const { credits, userId, successUrl, cancelUrl } = req.body;
 
     if (!credits) {
       return res.status(400).json({ error: 'Credits amount is required' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User must be signed in to purchase credits' });
     }
 
     const priceId = PRICE_ID_MAP[credits];
@@ -74,6 +78,7 @@ export default async function handler(req, res) {
       cancel_url: cancelUrl || `${origin}/#pricing`,
       metadata: {
         credits: credits.toString(),
+        userId: userId,
       },
     });
 

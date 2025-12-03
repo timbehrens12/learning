@@ -1,11 +1,66 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export const Pricing = () => {
   const [loading, setLoading] = useState<number | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Check if user is signed in
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user || null);
+        setCheckingAuth(false);
+      });
+
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user || null);
+      });
+
+      return () => subscription.unsubscribe();
+    } else {
+      setCheckingAuth(false);
+    }
+  }, []);
 
   const handleBuy = async (credits: number) => {
+    // Check if user is signed in
+    if (!user) {
+      // Redirect to sign in with Google
+      if (supabase) {
+        const redirectUrl = import.meta.env.VITE_SITE_URL 
+          ? `${import.meta.env.VITE_SITE_URL}/success`
+          : `${window.location.origin}/success`;
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${redirectUrl}?redirect=pricing`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            }
+          }
+        });
+
+        if (error) {
+          alert('Please sign in to purchase credits.');
+          return;
+        }
+
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+      } else {
+        alert('Please sign in to purchase credits.');
+      }
+      return;
+    }
+
     setLoading(credits);
     try {
       const response = await fetch('/api/create-checkout', {
@@ -15,6 +70,7 @@ export const Pricing = () => {
         },
         body: JSON.stringify({
           credits,
+          userId: user.id,
           successUrl: `${window.location.origin}/success`,
           cancelUrl: `${window.location.origin}#pricing`,
         }),

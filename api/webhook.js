@@ -20,22 +20,10 @@ async function handleCheckoutCompleted(session) {
   const amountTotal = session.amount_total / 100; // Convert from cents to dollars
   const metadata = session.metadata || {};
 
-  let userId = null;
+  // Get userId from metadata (set when user is signed in)
+  let userId = metadata.userId || null;
 
-  // Try to find user by Stripe customer ID first
-  if (customerId) {
-    const { data: users, error: userError } = await supabase
-      .from('user_credits')
-      .select('user_id')
-      .eq('stripe_customer_id', customerId)
-      .single();
-
-    if (!userError && users) {
-      userId = users.user_id;
-    }
-  }
-
-  // Determine credits based on price ID first (we need this for pending credits)
+  // Determine credits based on price ID
   let creditsToAdd = 0;
   const priceId = session.line_items?.data[0]?.price?.id || metadata.price_id;
 
@@ -51,11 +39,23 @@ async function handleCheckoutCompleted(session) {
     creditsToAdd = 250;
   }
 
-  // If not found by customer ID, try to find by email or store as pending
+  // If no userId in metadata, try to find by Stripe customer ID (fallback)
+  if (!userId && customerId) {
+    const { data: userCredits, error: userError } = await supabase
+      .from('user_credits')
+      .select('user_id')
+      .eq('stripe_customer_id', customerId)
+      .single();
+
+    if (!userError && userCredits) {
+      userId = userCredits.user_id;
+    }
+  }
+
+  // If still no userId, store as pending credits (edge case - shouldn't happen with new flow)
   if (!userId && customerEmail) {
-    console.log('No user found, storing as pending credits for email:', customerEmail);
+    console.log('No userId found, storing as pending credits for email:', customerEmail);
     
-    // Store pending credits to be claimed when user signs up
     const { error: pendingError } = await supabase
       .from('pending_credits')
       .insert({
@@ -73,14 +73,15 @@ async function handleCheckoutCompleted(session) {
       console.log(`Stored ${creditsToAdd} pending credits for ${customerEmail}`);
     }
     
-    return; // Exit early - credits will be claimed on signup
+    return;
   }
 
   if (!userId) {
     console.error('User not found for checkout session:', {
       customerId,
       customerEmail,
-      sessionId: session.id
+      sessionId: session.id,
+      metadata
     });
     return;
   }
@@ -98,13 +99,20 @@ async function handleCheckoutCompleted(session) {
       return;
     }
 
+    // Update stripe_customer_id if we have it
+    const updateData = {
+      credits_remaining: (currentCredits.credits_remaining || 0) + creditsToAdd,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (customerId) {
+      updateData.stripe_customer_id = customerId;
+    }
+
     // Add credits
     const { error: updateError } = await supabase
       .from('user_credits')
-      .update({
-        credits_remaining: (currentCredits.credits_remaining || 0) + creditsToAdd,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('user_id', userId);
 
     if (updateError) {
