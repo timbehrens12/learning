@@ -185,6 +185,15 @@ async function handleSubscriptionUpdate(subscription) {
 
 // Main webhook handler
 export default async function handler(req, res) {
+  // Allow GET for health check
+  if (req.method === 'GET') {
+    return res.status(200).json({ 
+      status: 'ok', 
+      message: 'Webhook endpoint is active',
+      timestamp: new Date().toISOString()
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
