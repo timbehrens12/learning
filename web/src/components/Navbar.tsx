@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Menu, X as XIcon, User } from 'lucide-react';
 import { Logo } from './Logo';
@@ -12,8 +12,6 @@ interface NavbarProps {
 export const Navbar = ({ showPricingLink = true }: NavbarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const location = useLocation();
-  const isLandingPage = location.pathname === '/';
 
   useEffect(() => {
     if (supabase) {
@@ -38,23 +36,12 @@ export const Navbar = ({ showPricingLink = true }: NavbarProps) => {
         </Link>
         
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
-          {isLandingPage ? (
-            <>
-              <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
-              <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-              <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-            </>
-          ) : (
-            <>
-              <Link to="/features" className="hover:text-white transition-colors">Features</Link>
-              <Link to="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
-              {showPricingLink && (
-                <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              )}
-              <Link to="/faq" className="hover:text-white transition-colors">FAQ</Link>
-            </>
+          <Link to="/features" className="hover:text-white transition-colors">Features</Link>
+          <Link to="/how-it-works" className="hover:text-white transition-colors">How it works</Link>
+          {showPricingLink && (
+            <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           )}
+          <Link to="/faq" className="hover:text-white transition-colors">FAQ</Link>
         </div>
         
         <div className="hidden md:flex items-center gap-4">
@@ -107,23 +94,12 @@ export const Navbar = ({ showPricingLink = true }: NavbarProps) => {
             className="md:hidden fixed top-20 left-4 right-4 z-50 rounded-2xl backdrop-blur-xl bg-[#0A0A0A] border border-white/10 shadow-2xl p-6"
           >
             <div className="flex flex-col gap-4">
-              {isLandingPage ? (
-                <>
-                  <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Features</a>
-                  <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">How It Works</a>
-                  <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Pricing</a>
-                  <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2">FAQ</a>
-                </>
-              ) : (
-                <>
-                  <Link to="/features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Features</Link>
-                  <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">How It Works</Link>
-                  {showPricingLink && (
-                    <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Pricing</Link>
-                  )}
-                  <Link to="/faq" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2">FAQ</Link>
-                </>
+              <Link to="/features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Features</Link>
+              <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">How It Works</Link>
+              {showPricingLink && (
+                <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Pricing</Link>
               )}
+              <Link to="/faq" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2">FAQ</Link>
               {user ? (
                 <Link
                   to="/account"
