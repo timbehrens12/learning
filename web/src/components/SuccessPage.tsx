@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 
 export const SuccessPage = () => {
   const [isAuthSuccess, setIsAuthSuccess] = useState(false);
-  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
 
   useEffect(() => {
     // Scroll to top on mount
@@ -23,8 +22,6 @@ export const SuccessPage = () => {
           }
         });
       }
-    } else {
-      setIsPaymentSuccess(true);
     }
   }, []);
 
