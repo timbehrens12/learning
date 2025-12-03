@@ -202,8 +202,51 @@ export default async function handler(req, res) {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   // Get raw body for webhook verification
-  // Vercel provides req.body as a Buffer for webhooks
-  const body = req.body;
+  // Vercel may parse JSON bodies automatically, so we need to read the raw body
+  let body;
+  
+  // Try multiple methods to get the raw body
+  if (req.body instanceof Buffer) {
+    // Already a Buffer - perfect
+    body = req.body;
+  } else if (typeof req.body === 'string') {
+    // String - convert to Buffer
+    body = Buffer.from(req.body, 'utf8');
+  } else if (req.rawBody) {
+    // Some setups provide rawBody
+    body = Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.from(req.rawBody, 'utf8');
+  } else {
+    // Body was parsed as JSON - we need to reconstruct it
+    // This is not ideal but sometimes necessary with Vercel
+    // Note: This will fail signature verification, so we'll need to skip it
+    console.error('ERROR: Body was parsed as JSON object.');
+    console.error('Body type:', typeof req.body);
+    console.error('Attempting to read raw body from request...');
+    
+    // Try to read from request stream (may not work if already consumed)
+    try {
+      const chunks = [];
+      // Check if req is a stream
+      if (req.readable) {
+        for await (const chunk of req) {
+          chunks.push(chunk);
+        }
+        body = Buffer.concat(chunks);
+      } else {
+        // Can't get raw body - return error
+        return res.status(400).json({ 
+          error: 'Cannot verify webhook signature: body was parsed as JSON.',
+          hint: 'Vercel is auto-parsing the request body. The webhook endpoint needs raw body access.'
+        });
+      }
+    } catch (streamError) {
+      console.error('Failed to read request stream:', streamError);
+      return res.status(400).json({ 
+        error: 'Cannot verify webhook signature: unable to access raw body.',
+        hint: 'Contact support or check Vercel function configuration.'
+      });
+    }
+  }
 
   let event;
 
