@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "preview": "electron-vite preview"
+    "preview": "electron-vite preview",
+    "build:win": "electron-vite build && electron-builder --win",
+    "build:installer": "electron-vite build && electron-builder --win --publish never"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
@@ -14,6 +16,7 @@
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
     "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "electron-vite": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -32,5 +35,31 @@
     "react-router-dom": "^7.9.6",
     "stripe": "^15.4.0",
     "tesseract.js": "^5.0.4"
+  },
+  "build": {
+    "appId": "com.visnly.app",
+    "productName": "Visnly",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

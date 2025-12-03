@@ -52,7 +52,15 @@ export const LandingPage = () => {
           </p>
           
           <div className="btn-wrapper mb-16">
-            <button className="btn" tabIndex={0} onClick={() => setIsModalOpen(true)}>
+            <button 
+              className="btn" 
+              tabIndex={0} 
+              onClick={() => {
+                // Direct download - update this URL when you have the installer built
+                const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || 'https://github.com/timbehrens12/learning/releases/latest/download/StudyLayer-Setup.exe';
+                window.open(downloadUrl, '_blank');
+              }}
+            >
               <svg className="btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.606L24 0v11.551H10.949V1.843zm-10.949 11.4h9.75V21.9L0 20.551V13.243zm10.949 0H24V24L10.949 22.157V13.243z" fill="currentColor"/>
               </svg>
@@ -143,29 +151,32 @@ export const LandingPage = () => {
           >
             The choice is yours. Visnly adapts to how you learn—whether you're putting in real study hours or using it as an invisible edge during school exams.
           </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex justify-center"
-          >
-            <div className="btn-wrapper">
-              <button 
-                className="btn" 
-                tabIndex={0} 
-                onMouseDown={() => setIsDownloading(true)}
-                onMouseUp={() => setIsDownloading(false)}
-                onMouseLeave={() => setIsDownloading(false)}
-                onClick={() => setIsModalOpen(true)}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="flex justify-center"
               >
-                <svg className="btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.606L24 0v11.551H10.949V1.843zm-10.949 11.4h9.75V21.9L0 20.551V13.243zm10.949 0H24V24L10.949 22.157V13.243z" fill="currentColor"/>
-                </svg>
-                <span className="btn-text">{isDownloading ? 'Downloading' : 'Get for Windows'}</span>
-              </button>
-            </div>
-          </motion.div>
+                <div className="btn-wrapper">
+                  <button 
+                    className="btn" 
+                    tabIndex={0} 
+                    onMouseDown={() => setIsDownloading(true)}
+                    onMouseUp={() => setIsDownloading(false)}
+                    onMouseLeave={() => setIsDownloading(false)}
+                    onClick={() => {
+                      const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || 'https://github.com/timbehrens12/learning/releases/latest/download/StudyLayer-Setup.exe';
+                      window.open(downloadUrl, '_blank');
+                    }}
+                  >
+                    <svg className="btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.606L24 0v11.551H10.949V1.843zm-10.949 11.4h9.75V21.9L0 20.551V13.243zm10.949 0H24V24L10.949 22.157V13.243z" fill="currentColor"/>
+                    </svg>
+                    <span className="btn-text">{isDownloading ? 'Downloading' : 'Get for Windows'}</span>
+                  </button>
+                </div>
+              </motion.div>
         </div>
       </section>
 

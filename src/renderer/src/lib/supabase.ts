@@ -15,16 +15,21 @@ export const userCredits = {
   async getCredits(userId: string): Promise<{ credits: number; plan: string }> {
     try {
       const { data, error } = await supabase
-        .from('users')
-        .select('credits, subscription_status')
-        .eq('id', userId)
+        .from('user_credits')
+        .select('credits_remaining')
+        .eq('user_id', userId)
         .single();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+        throw error;
+      }
+
+      // If no record exists, return default (should be created by trigger, but handle gracefully)
+      const credits = data?.credits_remaining ?? 25;
 
       return {
-        credits: data.credits || 0,
-        plan: data.subscription_status === 'free' ? 'free' : 'unlimited'
+        credits: credits,
+        plan: 'free' // We're using credit-based system, not subscriptions
       };
     } catch (error) {
       console.error('Failed to get credits:', error);
@@ -33,33 +38,47 @@ export const userCredits = {
     }
   },
 
+  async canMakeRequest(userId: string): Promise<boolean> {
+    try {
+      const credits = await this.getCredits(userId);
+      return credits.credits > 0;
+    } catch (error) {
+      console.error('Failed to check credits:', error);
+      // Fail-safe: allow request if check fails
+      return true;
+    }
+  },
+
   async deductCredits(userId: string, amount: number): Promise<void> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('credits')
-        .eq('id', userId)
+      // Get current credits
+      const { data, error: fetchError } = await supabase
+        .from('user_credits')
+        .select('credits_remaining')
+        .eq('user_id', userId)
         .single();
 
-      if (error) throw error;
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
 
-      const currentCredits = data.credits || 0;
+      const currentCredits = data?.credits_remaining ?? 25;
+      const newCredits = Math.max(0, currentCredits - amount);
 
+      // Update credits using upsert to handle cases where record doesn't exist
       const { error: updateError } = await supabase
-        .from('users')
-        .update({ credits: Math.max(0, currentCredits - amount) })
-        .eq('id', userId);
+        .from('user_credits')
+        .upsert({
+          user_id: userId,
+          credits_remaining: newCredits,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (updateError) throw updateError;
 
-      // Log the usage
-      await supabase
-        .from('usage_logs')
-        .insert({
-          user_id: userId,
-          feature_used: 'ai_scan',
-          credits_spent: amount
-        });
+      console.log(`Deducted ${amount} credits. Remaining: ${newCredits}`);
 
     } catch (error) {
       console.error('Failed to deduct credits:', error);

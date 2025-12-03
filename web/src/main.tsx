@@ -42,7 +42,7 @@ document.body.style.padding = '0'
 createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+    <App />
     </BrowserRouter>
   </StrictMode>,
 )

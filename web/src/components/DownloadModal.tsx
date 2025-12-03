@@ -13,8 +13,8 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDownload = () => {
-    // TODO: Replace with actual download URL (GitHub releases, S3, etc.)
-    const downloadUrl = 'https://github.com/yourusername/study-layer/releases/latest/download/StudyLayer-Setup.exe';
+    // Download URL - update VITE_DOWNLOAD_URL in environment variables or use default
+    const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || 'https://github.com/timbehrens12/learning/releases/latest/download/StudyLayer-Setup.exe';
     window.open(downloadUrl, '_blank');
   };
 

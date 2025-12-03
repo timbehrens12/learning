@@ -58,7 +58,7 @@ function App() {
         <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
         <LiquidBackground />
         <SuccessPage />
-      </div>
+                    </div>
     );
   }
 

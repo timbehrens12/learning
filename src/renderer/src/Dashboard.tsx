@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userCredits, setUserCredits] = useState<{ credits: number; plan: string } | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-
+  
   // Session State
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
@@ -40,7 +40,7 @@ const Dashboard: React.FC = () => {
     const saved = localStorage.getItem('user_sessions');
     return saved ? JSON.parse(saved) : INITIAL_SESSIONS;
   });
-
+  
   const FREE_SESSION_LIMIT = 5;
 
   // Close dropdowns
@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
       // Logic to derive title from session context
       const context = localStorage.getItem('last_session_context') || '';
       const title = context.slice(0, 30).split('\n')[0] || `Session ${sessions.length + 1}`;
-      
+
       const newSession: Session = {
         id: Date.now(),
         title: title.trim() || "Untitled Session",
@@ -91,10 +91,10 @@ const Dashboard: React.FC = () => {
       
       const updated = [newSession, ...sessions];
       setSessions(updated);
-      localStorage.setItem('user_sessions', JSON.stringify(updated));
+        localStorage.setItem('user_sessions', JSON.stringify(updated));
     }
   };
-  
+
   // Load user data and credits
   useEffect(() => {
     const loadUserData = async () => {
@@ -111,6 +111,7 @@ const Dashboard: React.FC = () => {
         try {
           const credits = await userCredits.getCredits(user.id);
           setUserCredits(credits);
+          console.log('Loaded credits:', credits);
         } catch (error) {
           console.error('Failed to load credits:', error);
           // Set default credits for new users
@@ -144,7 +145,7 @@ const Dashboard: React.FC = () => {
     <div style={styles.container}>
       <LiquidBackground />
       <div style={styles.content}>
-        
+
         {/* HEADER */}
         <header style={styles.header}>
           <div style={styles.brand}>StudyLayer</div>
@@ -153,7 +154,7 @@ const Dashboard: React.FC = () => {
             {userCredits && (
               <div style={styles.creditBadge}>
                 {userCredits.plan === 'unlimited' ? 'PRO' : `${userCredits.credits} credits`}
-              </div>
+            </div>
             )}
 
             <button onClick={toggleDetectability} style={styles.stealthBtn} title={isDetectable ? "Visible" : "Stealth Mode Active"}>
@@ -164,14 +165,14 @@ const Dashboard: React.FC = () => {
             <div style={{position: 'relative'}} ref={profileRef}>
               <button onClick={() => setIsProfileOpen(!isProfileOpen)} style={styles.profileBtn}>
                 <div style={styles.avatar}>{userName.charAt(0).toUpperCase()}</div>
-              </button>
-              
-              {isProfileOpen && (
+            </button>
+
+            {isProfileOpen && (
                 <GlassCard style={styles.dropdown}>
                   <div style={styles.dropdownHeader}>
                     <div style={styles.ddName}>{userName}</div>
                     <div style={styles.ddEmail}>{userEmail}</div>
-                  </div>
+                </div>
                   <div style={styles.dropdownDivider}></div>
                   <button onClick={() => setShowSettingsModal(true)} style={styles.dropdownItem}>
                     <SettingsIcon size={14} /> Settings
@@ -179,11 +180,11 @@ const Dashboard: React.FC = () => {
                   <button onClick={() => {}} style={styles.dropdownItem}>
                     <HelpCircleIcon size={14} /> Help & Support
                   </button>
-                </GlassCard>
-              )}
-            </div>
+              </GlassCard>
+            )}
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* MAIN DASHBOARD CONTENT */}
         <div style={styles.mainGrid}>
@@ -191,7 +192,7 @@ const Dashboard: React.FC = () => {
           {/* Left Column: Hero Action */}
           <div style={styles.heroColumn}>
             <GlassCard style={styles.heroCard}>
-              {!isSessionActive ? (
+          {!isSessionActive ? (
                 <div style={styles.heroContent}>
                   <div style={styles.heroIconWrapper}>
                     <BoltIcon size={32} color="#fff" />
@@ -227,7 +228,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <button onClick={handleEndSession} style={styles.dangerBtn}>
                     End Session
-                  </button>
+                    </button>
                 </div>
               )}
             </GlassCard>
@@ -242,8 +243,8 @@ const Dashboard: React.FC = () => {
                 <div style={styles.statValue}>12h</div>
                 <div style={styles.statLabel}>Study Time</div>
               </GlassCard>
-            </div>
-          </div>
+              </div>
+        </div>
 
           {/* Right Column: History */}
           <div style={styles.historyColumn}>
@@ -261,13 +262,13 @@ const Dashboard: React.FC = () => {
                       <div style={styles.historyTitle}>{session.title}</div>
                       <div style={styles.historyMeta}>
                         {session.mode} • {session.time}
-                      </div>
+              </div>
                     </div>
                     <div style={styles.historyDuration}>{session.duration}</div>
                   </div>
                 ))
               )}
-            </div>
+              </div>
           </div>
         </div>
       </div>
@@ -281,7 +282,7 @@ const Dashboard: React.FC = () => {
 
 // --- MODERN MINIMALIST STYLES ---
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  container: { 
     height: '100vh', width: '100vw', backgroundColor: '#050505', color: '#fff',
     fontFamily: '"Inter", sans-serif', overflow: 'hidden', position: 'relative'
   },

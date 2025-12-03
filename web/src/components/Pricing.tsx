@@ -173,7 +173,7 @@ export const Pricing = () => {
             <div className="flex items-center justify-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-indigo-400" />
               <h3 className="text-xl font-bold text-white">Free to Start</h3>
-            </div>
+             </div>
             <p className="text-gray-300">Every new account gets <span className="font-bold text-white">25 free credits</span> to try StudyLayer. No credit card required.</p>
           </div>
         </motion.div>
@@ -181,18 +181,18 @@ export const Pricing = () => {
         {/* Credit Packages Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {creditPackages.map((pkg, index) => (
-            <motion.div
+          <motion.div
               key={pkg.credits}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+            viewport={{ once: true }}
               transition={{ delay: 0.1 + index * 0.1 }}
               className={`relative group ${pkg.popular ? 'lg:col-span-1' : ''}`}
-            >
-              {/* Popular Badge */}
+          >
+            {/* Popular Badge */}
               {pkg.badge && (
                 <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
-                  <div className="bg-indigo-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg shadow-indigo-500/30 border border-indigo-400">
+                <div className="bg-indigo-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg shadow-indigo-500/30 border border-indigo-400">
                     {pkg.badge}
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export const Pricing = () => {
               {pkg.popular && (
                 <div className="absolute -inset-[1px] bg-gradient-to-b from-indigo-500 to-indigo-500/20 rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
               )}
-              
+            
               <div className={`relative h-full p-6 rounded-2xl border backdrop-blur-xl flex flex-col transition-all duration-300 ${
                 pkg.popular 
                   ? 'border-indigo-500/30 bg-[#0B0B15] hover:border-indigo-400/50' 
@@ -212,7 +212,7 @@ export const Pricing = () => {
                 {pkg.popular && (
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 blur-[60px] rounded-full pointer-events-none" />
                 )}
-                
+              
                 <div className="mb-6 relative z-10">
                   <h3 className="text-lg font-bold text-white mb-1">{pkg.name}</h3>
                   <div className="flex items-baseline gap-1 mb-2">
@@ -222,9 +222,9 @@ export const Pricing = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-2xl font-bold text-indigo-400">{pkg.credits}</span>
                     <span className="text-gray-400 text-sm">credits</span>
-                  </div>
-                  <p className="text-xs text-gray-400">${pkg.pricePerCredit.toFixed(2)} per credit</p>
                 </div>
+                  <p className="text-xs text-gray-400">${pkg.pricePerCredit.toFixed(2)} per credit</p>
+              </div>
 
                 <div className="flex-grow mb-6 relative z-10">
                   <ul className="space-y-2">
@@ -232,10 +232,10 @@ export const Pricing = () => {
                       <li key={i} className="flex items-start gap-2">
                         <Check size={14} className={`mt-0.5 shrink-0 ${pkg.popular ? 'text-indigo-400' : 'text-gray-500'}`} />
                         <span className={`text-sm ${pkg.popular ? 'text-white' : 'text-gray-300'}`}>{feature}</span>
-                      </li>
+                    </li>
                     ))}
-                  </ul>
-                </div>
+                </ul>
+              </div>
 
                 <button 
                   onClick={() => handleBuy(pkg.credits)}
@@ -250,13 +250,13 @@ export const Pricing = () => {
                   ) : (
                     pkg.cta
                   )}
-                </button>
-              </div>
-            </motion.div>
+              </button>
+            </div>
+          </motion.div>
           ))}
         </div>
       </div>
-      </section>
+    </section>
     </div>
   );
 };

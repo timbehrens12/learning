@@ -10,7 +10,7 @@ let deepseekClient: OpenAI | null = null;
 function getDeepSeekClient(): OpenAI {
   if (!deepseekClient && API_KEY) {
     deepseekClient = new OpenAI({
-      apiKey: API_KEY,
+  apiKey: API_KEY,
       baseURL: 'https://api.deepseek.com',
       dangerouslyAllowBrowser: true
     });
@@ -30,7 +30,7 @@ function validateAPIKey(key: string): { valid: boolean; error?: string } {
     return { valid: false, error: "API key appears to be incomplete. Please check your .env file." };
   }
   return { valid: true };
-}
+    }
 
 // System prompts optimized for Claude's educational strengths
 const SYSTEM_PROMPTS: Record<string, string> = {
@@ -107,8 +107,9 @@ export async function askAI(
         return `🚫 Credits exhausted! You need more credits to continue.
 
 💡 **Quick Solutions:**
-• Buy 50 credits for $4.99 (instant access)
-• Upgrade to Pro for $9.99/month (unlimited)
+• Visit https://www.visnly.com/pricing to buy more credits
+• Start with 10 credits for $2.99 (instant access)
+• Best value: 250 credits for $34.99
 
 Your progress is saved - just add credits to keep going!`;
       }
@@ -134,21 +135,16 @@ Your progress is saved - just add credits to keep going!`;
   }
 
   try {
-    // Check and deduct credits if userId provided
+    // Check credits before making request
     if (userId) {
       try {
-        const creditsService = (await import('./lib/supabase')).userCredits;
-        const credits = await creditsService.getCredits(userId);
+        const credits = await userCredits.getCredits(userId);
 
-        if (credits.plan === 'free' && credits.credits <= 0) {
-          return "Error: You have no credits remaining. Please upgrade to Pro to continue using StudyLayer.";
-        }
-
-        if (credits.plan === 'free') {
-          await creditsService.deductCredits(userId, 1);
+        if (credits.credits <= 0) {
+          return "Error: You have no credits remaining. Please visit https://www.visnly.com/pricing to purchase more credits.";
         }
       } catch (creditError) {
-        console.error('Credit system error:', creditError);
+        console.error('Credit check error:', creditError);
         // Continue without credit check if system fails
       }
     }
@@ -195,9 +191,10 @@ Your progress is saved - just add credits to keep going!`;
     if (userId) {
       try {
         await userCredits.deductCredits(userId, 1);
+        console.log('Credits deducted successfully');
       } catch (creditError) {
         console.error('Credit deduction failed:', creditError);
-        // Don't fail the request if credit deduction fails
+        // Don't fail the request if credit deduction fails, but log it
       }
     }
 

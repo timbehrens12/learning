@@ -67,8 +67,8 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       </button>
       <div style={styles.legalRow}>
         <span style={styles.legalText}>By continuing, you agree to our Terms & Privacy Policy.</span>
+        </div>
       </div>
-    </div>
   );
 
   // Slide 2: Education
@@ -77,27 +77,27 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       <h2 style={styles.heading}>What are you studying?</h2>
       <div style={styles.chipGrid}>
         {['High School', 'University', 'Bootcamp', 'Self-Taught', 'Masters/PhD'].map((level) => (
-          <button
-            key={level}
-            onClick={() => setEducationLevel(level)}
-            style={{
+            <button
+              key={level}
+              onClick={() => setEducationLevel(level)}
+              style={{
               ...styles.chip,
               ...(educationLevel === level ? styles.chipActive : {})
-            }}
-          >
-            {level}
-          </button>
-        ))}
-      </div>
+              }}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
       <button 
-        onClick={handleNext} 
+        onClick={handleNext}
         disabled={!educationLevel}
         style={{...styles.primaryBtn, marginTop: '40px', opacity: educationLevel ? 1 : 0.5}}
       >
         Continue
       </button>
-    </div>
-  );
+      </div>
+    );
 
   // Slide 3: Auth
   const renderSlide3 = () => (
@@ -125,7 +125,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         <div style={styles.featureItem}><CheckIcon color="#4caf50" size={18}/> Advanced "Solve" Mode</div>
         <div style={styles.featureItem}><CheckIcon color="#4caf50" size={18}/> Invisible Overlay</div>
       </div>
-      
+
       <div style={styles.pricingCard}>
         <div style={styles.price}>$9.99<span style={styles.month}>/mo</span></div>
         <button onClick={onComplete} style={styles.upgradeBtn}>Upgrade to Pro</button>
@@ -133,13 +133,13 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
 
       <button onClick={onComplete} style={styles.skipBtn}>
         Start with Free Plan
-      </button>
-    </div>
+          </button>
+        </div>
   );
 
-  return (
+    return (
     <div style={styles.container}>
-      <LiquidBackground />
+        <LiquidBackground />
       <div style={styles.contentWrapper}>
         {step > 0 && (
           <button onClick={handleBack} style={styles.backBtn}>← Back</button>
@@ -165,12 +165,12 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
 
 // --- STYLES ---
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  container: { 
     width: '100vw', height: '100vh', backgroundColor: '#050505', color: '#fff',
     display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", sans-serif',
     overflow: 'hidden', position: 'relative'
   },
-  contentWrapper: {
+  contentWrapper: { 
     zIndex: 10, width: '100%', maxWidth: '500px', padding: '40px',
     display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '400px'
   },
@@ -178,7 +178,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', textAlign: 'center',
     animation: 'fadeIn 0.5s ease-out'
   },
-  backBtn: {
+  backBtn: { 
     position: 'absolute', top: '40px', left: '40px', background: 'none', border: 'none',
     color: '#666', cursor: 'pointer', fontSize: '14px', fontWeight: 500
   },
@@ -193,7 +193,7 @@ const styles: Record<string, React.CSSProperties> = {
   heading: { fontSize: '32px', fontWeight: 700, marginBottom: '24px', letterSpacing: '-0.5px' },
   text: { fontSize: '16px', color: '#888', marginBottom: '32px', lineHeight: '1.5' },
   
-  primaryBtn: {
+  primaryBtn: { 
     padding: '14px 48px', fontSize: '16px', fontWeight: 600, background: '#fff', color: '#000',
     border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'transform 0.2s',
     boxShadow: '0 4px 20px rgba(255,255,255,0.15)'

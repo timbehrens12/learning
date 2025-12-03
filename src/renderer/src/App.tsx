@@ -124,20 +124,23 @@ const MainFlow = () => {
              if (insertError) console.error('Error creating profile:', insertError);
           }
 
-          // Initialize user_credits if it doesn't exist
-          const { data: existingCredits } = await supabase
+          // Initialize user_credits if it doesn't exist (trigger should handle this, but ensure it exists)
+          const { data: existingCredits, error: creditsError } = await supabase
             .from('user_credits')
             .select('credits_remaining')
             .eq('user_id', session.user.id)
             .single();
 
-          if (!existingCredits) {
+          if (creditsError && creditsError.code === 'PGRST116') {
+            // No record exists, create it (trigger should handle this, but backup)
             await supabase
               .from('user_credits')
-              .insert({
+              .upsert({
                 user_id: session.user.id,
                 credits_remaining: 25, // Free starter credits
-                subscription_plan: 'free'
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'user_id'
               });
           }
 

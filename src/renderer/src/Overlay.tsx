@@ -185,7 +185,7 @@ const Overlay: React.FC = () => {
           try {
             recognitionRef.current.start();
           } catch (e) {}
-        } else {
+            } else {
           setIsListening(false);
           isListeningRef.current = false;
         }
@@ -220,7 +220,7 @@ const Overlay: React.FC = () => {
   // Logic Helpers - Screen Capture and OCR
   const scanScreen = useCallback(async (): Promise<string | null> => {
     try {
-      setIsScanning(true);
+      setIsScanning(true); 
       setScanError(null);
       
       // @ts-ignore - Electron API
@@ -239,21 +239,21 @@ const Overlay: React.FC = () => {
         } as any 
       });
       
-      const video = document.createElement('video');
+      const video = document.createElement('video'); 
       video.srcObject = stream;
       
       return new Promise((resolve) => {
-        video.onloadedmetadata = async () => {
-          try {
+      video.onloadedmetadata = async () => {
+        try {
             await video.play();
             await new Promise(r => setTimeout(r, 300));
             
-            const canvas = canvasRef.current;
+          const canvas = canvasRef.current;
             if (!canvas) throw new Error('Canvas not available');
             
-            canvas.width = video.videoWidth;
+            canvas.width = video.videoWidth; 
             canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d'); 
             ctx?.drawImage(video, 0, 0);
             
             stream.getTracks().forEach(track => track.stop());
@@ -272,22 +272,22 @@ const Overlay: React.FC = () => {
               setScanError('No text detected.');
               setIsScanning(false);
               resolve(null);
-            }
-          } catch (err) {
-            setScanError('Failed to read screen text.');
-            setIsScanning(false);
-            resolve(null);
           }
-        };
-        video.onerror = () => {
-          setScanError('Failed to capture screen.');
+        } catch (err) {
+            setScanError('Failed to read screen text.');
           setIsScanning(false);
+            resolve(null);
+        }
+      };
+      video.onerror = () => {
+          setScanError('Failed to capture screen.');
+        setIsScanning(false);
           resolve(null);
-        };
+      };
       });
     } catch (err: any) {
       setScanError(err?.message || 'Failed to capture screen.');
-      setIsScanning(false);
+      setIsScanning(false); 
       return null;
     }
   }, []);
@@ -320,11 +320,11 @@ const Overlay: React.FC = () => {
       // Legacy "Cheat" handling logic (now "Solve" handles similar)
       const answerMatch = response.match(/\*\*Answer:\*\*([\s\S]*?)(?=\n\*\*Steps:\*\*|$)/i);
       const stepsMatch = response.match(/\*\*Steps:\*\*([\s\S]*?)$/i);
-      
+        
       if (answerMatch) {
          // Structured response
          const answer = answerMatch[1].trim();
-         const steps = stepsMatch ? stepsMatch[1].trim() : undefined;
+        const steps = stepsMatch ? stepsMatch[1].trim() : undefined;
          setMessages(prev => [...prev, { sender: 'ai', text: answer, answer, steps, timestamp }]);
       } else {
          setMessages(prev => [...prev, {sender: 'ai', text: response, timestamp}]);
@@ -338,7 +338,7 @@ const Overlay: React.FC = () => {
       }]); 
     }
     
-    setIsThinking(false);
+    setIsThinking(false); 
     if (!promptOverride) setInputText("");
   };
   
@@ -346,7 +346,7 @@ const Overlay: React.FC = () => {
     if (isScanning || isThinking) return;
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    if (inputText.trim()) {
+    if (inputText.trim()) { 
       setMessages(prev => [...prev, {sender: 'user', text: inputText, timestamp}]);
     }
     
@@ -369,7 +369,7 @@ const Overlay: React.FC = () => {
     await runAI(mode, screenText || scannedText, autoPrompt, userId || undefined);
     setInputText("");
   }, [isScanning, isThinking, inputText, mode, scanScreen, transcriptLog, scannedText, scanError]);
-  
+
   const handleSendWithContext = useCallback(() => {
     if (!inputText.trim()) {
       handleAnalyze();
@@ -397,7 +397,7 @@ const Overlay: React.FC = () => {
     }
     if (action === 'summarize') {
       if (transcriptLog.length < 50) return;
-      setActiveTab('chat');
+        setActiveTab('chat');
       setMessages(prev => [...prev, {sender: 'user', text: "Summarize transcript", timestamp}]);
       await runAI("Explain", "", "Summarize the transcript so far.", userId || undefined);
     }
@@ -424,11 +424,11 @@ const Overlay: React.FC = () => {
       if (e.ctrlKey && e.key === '\\') { e.preventDefault(); setIsCardVisible(prev => !prev); return; }
       if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); handleQuickAnalysis(); return; }
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); handleManualScan(); return; }
-      
+
       if (e.ctrlKey) {
         const d = 50;
         if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
-          e.preventDefault();
+            e.preventDefault();
           const dir = e.key.replace('Arrow','').toLowerCase();
           (window as any).electron?.ipcRenderer?.send('move-overlay-window', { direction: dir, distance: d });
         }
@@ -466,80 +466,80 @@ const Overlay: React.FC = () => {
         <GlassCard style={styles.mainCard}>
           {/* Tabs */}
           <div style={styles.tabRow}>
-            <button 
-              onClick={() => setActiveTab('chat')} 
+          <button 
+            onClick={() => setActiveTab('chat')}
               style={activeTab === 'chat' ? styles.tabActive : styles.tab}
-            >
-              Chat
+          >
+            Chat
             </button>
             <button 
-              onClick={() => setActiveTab('transcript')} 
+            onClick={() => setActiveTab('transcript')}
               style={activeTab === 'transcript' ? styles.tabActive : styles.tab}
-            >
-              Transcript
+          >
+            Transcript
             </button>
             {activeTab === 'transcript' && (
                <div style={styles.recIndicator}>
                  <span style={{...styles.recDot, background: isListening ? '#ef4444' : '#555'}}></span>
                  {isListening ? (isAudioDetected ? "Listening..." : "On") : "Off"}
                </div>
-            )}
-          </div>
+          )}
+        </div>
 
           {/* Content */}
           <div style={styles.contentArea}>
             {activeTab === 'chat' ? (
               <div style={styles.chatScroll}>
-                {messages.length === 0 && !scannedText && (
-                  <div style={styles.emptyState}>
+              {messages.length === 0 && !scannedText && (
+                <div style={styles.emptyState}>
                     <div style={styles.emptyIcon}><CommandIcon size={32} color="rgba(255,255,255,0.2)" /></div>
                     <p style={styles.emptyText}>Ready to analyze.</p>
                     <div style={styles.shortcutsHint}>
                       <span>Ctrl + Enter</span> to scan & solve
-                    </div>
+                </div>
                   </div>
-                )}
-                
-                {messages.map((msg, i) => {
-                  const isUser = msg.sender === 'user';
-                  const isSystem = msg.sender === 'system';
+              )}
+
+              {messages.map((msg, i) => {
+                const isUser = msg.sender === 'user';
+                const isSystem = msg.sender === 'system';
                   const hasSteps = !!msg.steps;
                   const showSteps = showStepsForMessage[i];
-
-                  return (
+                
+                return (
                     <div key={i} style={{...styles.messageRow, justifyContent: isUser ? 'flex-end' : 'flex-start'}}>
                       {!isUser && !isSystem && <div style={styles.aiAvatar}>AI</div>}
                       <div style={{display:'flex', flexDirection:'column', alignItems: isUser ? 'flex-end' : 'flex-start', maxWidth: '85%'}}>
                         <div style={isUser ? styles.userBubble : (isSystem ? styles.systemBubble : styles.aiBubble)}>
-                          {msg.text}
-                        </div>
+                      {msg.text}
+                    </div>
                         {hasSteps && (
                           <div style={styles.stepsContainer}>
-                            <button 
+                        <button
                               onClick={() => setShowStepsForMessage(prev => ({...prev, [i]: !prev[i]}))}
                               style={styles.toggleStepsBtn}
                             >
                               {showSteps ? "Hide Steps" : "Show Steps"}
-                            </button>
+                        </button>
                             {showSteps && <div style={styles.stepsBubble}>{msg.steps}</div>}
                           </div>
                         )}
                         {msg.timestamp && <div style={styles.timestamp}>{msg.timestamp}</div>}
                       </div>
-                    </div>
-                  );
-                })}
-                
-                {isThinking && (
+                  </div>
+                );
+              })}
+
+              {isThinking && (
                   <div style={styles.messageRow}>
                     <div style={styles.aiAvatar}>AI</div>
                     <div style={styles.thinkingBubble}>
                       <div style={styles.dot}></div><div style={styles.dot}></div><div style={styles.dot}></div>
                     </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
             ) : (
               <div style={styles.transcriptScroll}>
                 {transcriptSegments.length === 0 ? (
@@ -548,13 +548,13 @@ const Overlay: React.FC = () => {
                     <button onClick={toggleListening} style={styles.primaryBtn}>
                       {isListening ? "Stop Recording" : "Start Recording"}
                     </button>
-                  </div>
+              </div>
                 ) : (
                   transcriptSegments.map((seg, i) => (
                     <div key={i} style={styles.transcriptItem}>
                       <span style={styles.timeTag}>{seg.time}</span>
                       <span>{seg.text}</span>
-                    </div>
+                </div>
                   ))
                 )}
                 <div ref={transcriptEndRef} />
@@ -563,15 +563,15 @@ const Overlay: React.FC = () => {
                 <div style={styles.transcriptFloatBar}>
                    <button onClick={toggleListening} style={styles.iconBtnBig} title={isListening ? "Stop" : "Record"}>
                      {isListening ? <StopIcon /> : <PlayIcon />}
-                   </button>
+                </button>
                    <div style={styles.vSep}></div>
                    <button onClick={() => handleTranscriptAction('copy')} style={styles.iconBtn} title="Copy"><CopyIcon size={14}/></button>
                    <button onClick={() => handleTranscriptAction('summarize')} style={styles.iconBtn} title="Summarize"><ZapIcon size={14}/></button>
                    <button onClick={() => handleTranscriptAction('clear')} style={styles.iconBtn} title="Clear"><ClearIcon size={14}/></button>
-                </div>
               </div>
-            )}
-          </div>
+            </div>
+        )}
+            </div>
 
           {/* Footer Input */}
           {activeTab === 'chat' && (
@@ -582,26 +582,26 @@ const Overlay: React.FC = () => {
                   {scannedText && <span style={styles.contextPill} title={lastScanPreview}>📷 Screen</span>}
                   {transcriptLog && <span style={styles.contextPill}>🎙️ Transcript</span>}
                   <button onClick={() => { setScannedText(""); setLastScanPreview(""); }} style={styles.clearContextBtn}>Clear Context</button>
-                </div>
-              )}
+                    </div>
+                  )}
               
               <div style={styles.inputBar}>
                 {/* Mode Switcher */}
                 <div style={styles.modeSwitch}>
-                  <button 
+          <button 
                     onClick={() => setMode('Explain')}
                     style={mode === 'Explain' ? styles.modeBtnActive : styles.modeBtn}
-                  >
+          >
                     Explain
-                  </button>
-                  <button 
+          </button>
+            <button 
                     onClick={() => setMode('Solve')}
                     style={mode === 'Solve' ? styles.modeBtnActive : styles.modeBtn}
                   >
                     Solve
-                  </button>
-                </div>
-
+            </button>
+          </div>
+          
                 <div style={styles.inputFieldWrapper}>
                   <input
                     ref={inputRef}
@@ -611,24 +611,24 @@ const Overlay: React.FC = () => {
                       if (e.key === 'Enter' && !e.ctrlKey) {
                         e.preventDefault();
                         inputText.trim() ? handleSendWithContext() : handleAnalyze();
-                      }
-                    }}
+                }
+              }}
                     placeholder={scannedText ? "Ask a follow-up..." : "Type or click Analyze"}
                     style={styles.inputField}
                     disabled={isScanning || isThinking}
                   />
-                  <button 
+            <button 
                     onClick={inputText.trim() ? handleSendWithContext : handleAnalyze}
                     disabled={isScanning || isThinking}
                     style={styles.actionBtn}
                   >
                     {isScanning ? "..." : (inputText.trim() ? <SendIcon size={14} /> : <ScreenIcon size={14} />)}
-                  </button>
-                </div>
-              </div>
-            </div>
+            </button>
+          </div>
+          </div>
+        </div>
           )}
-          
+
           {/* Resize Handle (Visual) */}
           <div style={styles.resizeHandle}></div>
         </GlassCard>
