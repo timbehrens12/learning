@@ -20,21 +20,53 @@ function App() {
 
   // Handle OAuth callback directly in App.tsx if hash contains access_token
   useEffect(() => {
-    if (window.location.hash.includes('access_token') && supabase) {
-      console.log('OAuth callback detected in App.tsx');
-      // Process the OAuth callback
-      supabase.auth.getSession().then(({ data: { session } }) => {
+    console.log('App.tsx useEffect running');
+    console.log('Current hash:', window.location.hash);
+    console.log('Current URL:', window.location.href);
+    console.log('Supabase available:', !!supabase);
+    
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token') && supabase) {
+      console.log('=== OAuth callback detected ===');
+      console.log('Full hash:', hash.substring(0, 100) + '...');
+      
+      // Process the OAuth callback immediately
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        console.log('Session result:', { hasSession: !!session, error });
+        
         if (session) {
           console.log('User signed in via OAuth:', session.user.email);
-          // Clean up the hash
+          // Clean up the hash and redirect
           const newUrl = window.location.pathname + window.location.search;
           window.history.replaceState(null, '', newUrl);
-          // If we're on pricing or home, just refresh to show signed in state
-          if (window.location.hash.includes('pricing') || window.location.pathname === '/') {
+          
+          // Redirect to pricing if that's where they were going
+          if (hash.includes('pricing') || window.location.pathname === '/') {
+            console.log('Redirecting to pricing...');
+            window.location.href = '/#pricing';
+          } else {
+            // Just reload to show signed in state
             window.location.reload();
           }
+        } else if (error) {
+          console.error('Session error:', error);
+        } else {
+          console.log('No session found, retrying...');
+          // Retry after a delay
+          setTimeout(() => {
+            supabase.auth.getSession().then(({ data: { retrySession } }) => {
+              if (retrySession) {
+                console.log('Session found on retry');
+                window.location.href = '/#pricing';
+              } else {
+                console.error('Still no session after retry');
+              }
+            });
+          }, 1000);
         }
       });
+    } else {
+      console.log('No OAuth callback detected');
     }
   }, []);
 
