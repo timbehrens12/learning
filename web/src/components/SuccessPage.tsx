@@ -29,6 +29,12 @@ export const SuccessPage = () => {
           await new Promise(resolve => setTimeout(resolve, 500));
           
           // Get session (this will parse the hash if present)
+          if (!supabase) {
+            setError('Supabase not configured');
+            setIsLoading(false);
+            return;
+          }
+          
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           
           if (sessionError) {
@@ -59,6 +65,12 @@ export const SuccessPage = () => {
             } else {
               // Try one more time after a delay
               setTimeout(async () => {
+                if (!supabase) {
+                  setError('Supabase not configured');
+                  setIsLoading(false);
+                  return;
+                }
+                
                 const { data: { session: retrySession } } = await supabase.auth.getSession();
                 if (retrySession) {
                   console.log('User signed in (retry):', retrySession.user.email);
