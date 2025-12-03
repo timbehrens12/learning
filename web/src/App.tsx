@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { motion } from 'framer-motion';
 import { LiquidBackground } from './components/LiquidBackground';
 import { HeroMockup } from './components/HeroMockup';
@@ -17,21 +18,30 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Check if we're on the success page (payment or auth)
+  // Handle OAuth callback directly in App.tsx if hash contains access_token
+  useEffect(() => {
+    if (window.location.hash.includes('access_token') && supabase) {
+      console.log('OAuth callback detected in App.tsx');
+      // Process the OAuth callback
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          console.log('User signed in via OAuth:', session.user.email);
+          // Clean up the hash
+          const newUrl = window.location.pathname + window.location.search;
+          window.history.replaceState(null, '', newUrl);
+          // If we're on pricing or home, just refresh to show signed in state
+          if (window.location.hash.includes('pricing') || window.location.pathname === '/') {
+            window.location.reload();
+          }
+        }
+      });
+    }
+  }, []);
+
+  // Check if we're on the success page (payment only now, not auth)
   const isSuccessPage = window.location.pathname === '/success' || 
     window.location.pathname.includes('/success') ||
-    window.location.search.includes('success=true') || 
-    window.location.search.includes('auth=success') ||
-    window.location.hash.includes('access_token');
-  
-  // Debug logging
-  if (window.location.pathname.includes('success') || window.location.hash.includes('access_token')) {
-    console.log('App.tsx - Success page detected:', {
-      pathname: window.location.pathname,
-      search: window.location.search,
-      hash: window.location.hash.substring(0, 50) + '...'
-    });
-  }
+    window.location.search.includes('success=true');
 
   // Show success page if on success route
   if (isSuccessPage) {
