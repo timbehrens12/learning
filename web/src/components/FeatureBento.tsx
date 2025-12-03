@@ -1,5 +1,5 @@
 import { GlassCard } from './GlassCard';
-import { Ghost, Cpu, MousePointer2, EyeOff, Shield, Zap } from 'lucide-react';
+import { Ghost, Cpu, MousePointer2, EyeOff } from 'lucide-react';
 
 const features = [
   {
