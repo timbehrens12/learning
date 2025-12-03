@@ -8,7 +8,7 @@ import { TrustedBy } from './components/TrustedBy';
 import { Pricing } from './components/Pricing';
 import { FAQ } from './components/FAQ';
 import { Logo } from './components/Logo';
-import { SubscriptionModal } from './components/SubscriptionModal';
+import { DownloadModal } from './components/DownloadModal';
 import { SuccessPage } from './components/SuccessPage';
 import { Menu, X as XIcon, ArrowRight } from 'lucide-react';
 
@@ -341,8 +341,8 @@ function App() {
         </div>
       </footer>
 
-      {/* Subscription Modal */}
-      <SubscriptionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      {/* Download Modal */}
+      <DownloadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
