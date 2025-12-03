@@ -16,24 +16,26 @@ const supabase = createClient(
 // Helper function to handle checkout completion
 async function handleCheckoutCompleted(session) {
   const customerId = session.customer;
+  const customerEmail = session.customer_email || session.customer_details?.email;
   const amountTotal = session.amount_total / 100; // Convert from cents to dollars
   const metadata = session.metadata || {};
 
-  // Find user by Stripe customer ID
-  const { data: users, error: userError } = await supabase
-    .from('user_credits')
-    .select('user_id')
-    .eq('stripe_customer_id', customerId)
-    .single();
+  let userId = null;
 
-  if (userError || !users) {
-    console.error('User not found for Stripe customer:', customerId, userError);
-    return;
+  // Try to find user by Stripe customer ID first
+  if (customerId) {
+    const { data: users, error: userError } = await supabase
+      .from('user_credits')
+      .select('user_id')
+      .eq('stripe_customer_id', customerId)
+      .single();
+
+    if (!userError && users) {
+      userId = users.user_id;
+    }
   }
 
-  const userId = users.user_id;
-
-  // Determine credits based on price ID
+  // Determine credits based on price ID first (we need this for pending credits)
   let creditsToAdd = 0;
   const priceId = session.line_items?.data[0]?.price?.id || metadata.price_id;
 
@@ -47,6 +49,40 @@ async function handleCheckoutCompleted(session) {
     creditsToAdd = 100;
   } else if (priceId === process.env.STRIPE_PRICE_250_CREDITS) {
     creditsToAdd = 250;
+  }
+
+  // If not found by customer ID, try to find by email or store as pending
+  if (!userId && customerEmail) {
+    console.log('No user found, storing as pending credits for email:', customerEmail);
+    
+    // Store pending credits to be claimed when user signs up
+    const { error: pendingError } = await supabase
+      .from('pending_credits')
+      .insert({
+        email: customerEmail,
+        stripe_customer_id: customerId,
+        stripe_session_id: session.id,
+        credits_amount: creditsToAdd,
+        amount_paid: amountTotal,
+        claimed: false
+      });
+
+    if (pendingError) {
+      console.error('Error storing pending credits:', pendingError);
+    } else {
+      console.log(`Stored ${creditsToAdd} pending credits for ${customerEmail}`);
+    }
+    
+    return; // Exit early - credits will be claimed on signup
+  }
+
+  if (!userId) {
+    console.error('User not found for checkout session:', {
+      customerId,
+      customerEmail,
+      sessionId: session.id
+    });
+    return;
   }
 
   if (creditsToAdd > 0) {

@@ -123,6 +123,78 @@ const MainFlow = () => {
               });
              if (insertError) console.error('Error creating profile:', insertError);
           }
+
+          // Initialize user_credits if it doesn't exist
+          const { data: existingCredits } = await supabase
+            .from('user_credits')
+            .select('credits_remaining')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (!existingCredits) {
+            await supabase
+              .from('user_credits')
+              .insert({
+                user_id: session.user.id,
+                credits_remaining: 25, // Free starter credits
+                subscription_plan: 'free'
+              });
+          }
+
+          // Claim pending credits for this user's email
+          if (session.user.email) {
+            try {
+              const { data: pendingCredits, error: pendingError } = await supabase
+                .from('pending_credits')
+                .select('*')
+                .eq('email', session.user.email)
+                .eq('claimed', false);
+
+              if (!pendingError && pendingCredits && pendingCredits.length > 0) {
+                let totalCredits = 0;
+                for (const pending of pendingCredits) {
+                  totalCredits += pending.credits_amount;
+                }
+
+                // Get current credits
+                const { data: userCredits } = await supabase
+                  .from('user_credits')
+                  .select('credits_remaining, stripe_customer_id')
+                  .eq('user_id', session.user.id)
+                  .single();
+
+                const currentCredits = userCredits?.credits_remaining || 25;
+                const stripeCustomerId = userCredits?.stripe_customer_id || pendingCredits[0]?.stripe_customer_id;
+
+                // Update credits
+                const { error: updateError } = await supabase
+                  .from('user_credits')
+                  .upsert({
+                    user_id: session.user.id,
+                    credits_remaining: currentCredits + totalCredits,
+                    subscription_plan: 'free',
+                    stripe_customer_id: stripeCustomerId || null
+                  }, { onConflict: 'user_id' });
+
+                if (!updateError) {
+                  // Mark pending credits as claimed
+                  for (const pending of pendingCredits) {
+                    await supabase
+                      .from('pending_credits')
+                      .update({
+                        claimed: true,
+                        claimed_by_user_id: session.user.id,
+                        claimed_at: new Date().toISOString()
+                      })
+                      .eq('id', pending.id);
+                  }
+                  console.log(`Claimed ${totalCredits} pending credits for ${session.user.email}`);
+                }
+              }
+            } catch (e) {
+              console.error('Error claiming pending credits:', e);
+            }
+          }
         } catch (e) { console.error(e); }
       }
       
