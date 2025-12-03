@@ -28,10 +28,17 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
 
     setIsLoading(true);
     try {
+      // Use production domain or fallback to current origin
+      const redirectUrl = import.meta.env.VITE_SITE_URL 
+        ? `${import.meta.env.VITE_SITE_URL}/success`
+        : `${window.location.origin}/success`;
+      
+      console.log('OAuth redirect URL:', redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/success`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
