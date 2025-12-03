@@ -89,41 +89,11 @@ async function handleCheckoutCompleted(session) {
   }
 }
 
-// Helper function to handle subscription updates
+// Subscription events are not used (credits-only model)
+// Keeping handler for future use if needed
 async function handleSubscriptionUpdate(subscription) {
-  const customerId = subscription.customer;
-  const status = subscription.status;
-  const priceId = subscription.items.data[0]?.price?.id;
-
-  // Find user by Stripe customer ID
-  const { data: users, error: userError } = await supabase
-    .from('user_credits')
-    .select('user_id')
-    .eq('stripe_customer_id', customerId)
-    .single();
-
-  if (userError || !users) {
-    console.error('User not found for Stripe customer:', customerId, userError);
-    return;
-  }
-
-  const userId = users.user_id;
-
-  // Update subscription status
-  if (priceId === process.env.STRIPE_PRICE_PRO_SUBSCRIPTION) {
-    const { error: updateError } = await supabase
-      .from('user_credits')
-      .update({
-        subscription_plan: status === 'active' ? 'unlimited' : 'free',
-        stripe_subscription_id: subscription.id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
-
-    if (updateError) {
-      console.error('Error updating subscription:', updateError);
-    }
-  }
+  console.log('Subscription event received (not processed - credits-only model):', subscription.id);
+  // Future: Add subscription handling here if needed
 }
 
 // Main webhook handler

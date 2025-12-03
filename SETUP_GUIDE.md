@@ -143,15 +143,6 @@
 - Click **"Save product"**
 - **COPY the Price ID**
 
-**Product 6: Pro Subscription** (Optional - add after launch)
-- Name: `Pro Subscription`
-- Description: `Unlimited AI study credits - Never run out again`
-- Pricing: **Recurring**
-- Billing period: **Monthly**
-- Price: `$14.99`
-- Click **"Save product"**
-- **COPY the Price ID**
-
 > 💡 **Pricing Note**: These prices are competitive with Chegg ($19.95/month) and Course Hero ($9.95/month). Credits give students flexibility without commitment. See `PRICING_STRATEGY.md` for detailed analysis.
 
 ### Get Stripe Keys:
@@ -201,7 +192,6 @@ STRIPE_PRICE_20_CREDITS=price_xxxxx
 STRIPE_PRICE_50_CREDITS=price_xxxxx
 STRIPE_PRICE_100_CREDITS=price_xxxxx
 STRIPE_PRICE_250_CREDITS=price_xxxxx
-STRIPE_PRICE_PRO_SUBSCRIPTION=price_xxxxx
 ```
 
 **Replace all the placeholder values with your actual keys from Steps 1-5!**
