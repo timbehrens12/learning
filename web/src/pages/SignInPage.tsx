@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo';
+import { Navbar } from '../components/Navbar';
+import { LiquidBackground } from '../components/LiquidBackground';
 import { Loader2 } from 'lucide-react';
 
 export const SignInPage = () => {
@@ -58,12 +60,16 @@ export const SignInPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#050505' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
+    <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
+      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+      <LiquidBackground />
+      <Navbar />
+      <div className="min-h-screen flex items-center justify-center px-4 pt-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md relative z-10"
+        >
         <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 text-center">
           <div className="flex justify-center mb-6">
             <Logo size={48} />
@@ -103,7 +109,8 @@ export const SignInPage = () => {
             By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 };

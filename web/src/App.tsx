@@ -64,13 +64,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/account" element={<AccountPage />} />
-      <Route path="/pricing" element={
-        <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
-          <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
-          <LiquidBackground />
-          <Pricing />
-        </div>
-      } />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/success" element={
         <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
           <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { Navbar } from './Navbar';
+import { LiquidBackground } from './LiquidBackground';
 
 export const Pricing = () => {
   const navigate = useNavigate();
@@ -131,7 +133,11 @@ export const Pricing = () => {
   ];
 
   return (
-    <section id="pricing" className="py-24 md:py-32 px-4 relative z-10">
+    <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
+      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+      <LiquidBackground />
+      <Navbar showPricingLink={false} />
+      <section id="pricing" className="pt-36 md:pt-48 pb-24 md:pb-32 px-4 relative z-10">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -244,6 +250,7 @@ export const Pricing = () => {
           ))}
         </div>
       </div>
-    </section>
+      </section>
+    </div>
   );
 };

@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, CreditCard, Download, Loader2 } from 'lucide-react';
-import { Logo } from '../components/Logo';
+import { LogOut, CreditCard, Download, Loader2, ArrowLeft } from 'lucide-react';
+import { Navbar } from '../components/Navbar';
+import { LiquidBackground } from '../components/LiquidBackground';
 
 export const AccountPage = () => {
   const [user, setUser] = useState<any>(null);
@@ -74,29 +75,44 @@ export const AccountPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
-        <Loader2 className="w-8 h-8 animate-spin text-white" />
+      <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
+        <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+        <LiquidBackground />
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center pt-24">
+          <Loader2 className="w-8 h-8 animate-spin text-white" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen px-4 py-12" style={{ backgroundColor: '#050505' }}>
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Logo size={32} />
-            <h1 className="text-2xl font-bold text-white">Account</h1>
+    <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
+      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+      <LiquidBackground />
+      <Navbar />
+      <div className="min-h-screen px-4 py-12 pt-24">
+        <div className="max-w-4xl mx-auto">
+          {/* Header with Back Button */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </button>
+              <h1 className="text-2xl font-bold text-white">Account</h1>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
 
         {/* Account Info Card */}
         <motion.div
@@ -178,6 +194,7 @@ export const AccountPage = () => {
             </button>
           </div>
         </motion.div>
+        </div>
       </div>
     </div>
   );
