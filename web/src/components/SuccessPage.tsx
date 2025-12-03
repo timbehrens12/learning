@@ -13,7 +13,8 @@ export const SuccessPage = () => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
 
-    console.log('SuccessPage mounted');
+    console.log('=== SuccessPage Component Mounted ===');
+    console.log('Full URL:', window.location.href);
     console.log('Current URL:', window.location.href);
     console.log('Hash:', window.location.hash);
     console.log('Search:', window.location.search);

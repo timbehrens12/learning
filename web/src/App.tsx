@@ -19,9 +19,19 @@ function App() {
 
   // Check if we're on the success page (payment or auth)
   const isSuccessPage = window.location.pathname === '/success' || 
+    window.location.pathname.includes('/success') ||
     window.location.search.includes('success=true') || 
     window.location.search.includes('auth=success') ||
     window.location.hash.includes('access_token');
+  
+  // Debug logging
+  if (window.location.pathname.includes('success') || window.location.hash.includes('access_token')) {
+    console.log('App.tsx - Success page detected:', {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash.substring(0, 50) + '...'
+    });
+  }
 
   // Show success page if on success route
   if (isSuccessPage) {
