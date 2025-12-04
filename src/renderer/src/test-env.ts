@@ -26,17 +26,17 @@ export async function testEnvironmentVariables(): Promise<void> {
     console.log('   ❌ Missing: VITE_SUPABASE_KEY');
   }
 
-  // Test 3: Check if OpenAI API Key is loaded
-  const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  console.log('\n3️⃣ OpenAI API Key:');
-  if (openaiKey) {
-    if (openaiKey.startsWith('sk-')) {
-      console.log('   ✅ Loaded:', openaiKey.substring(0, 15) + '...');
+  // Test 3: Check if DeepSeek API Key is loaded
+  const deepseekKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+  console.log('\n3️⃣ DeepSeek API Key:');
+  if (deepseekKey) {
+    if (deepseekKey.startsWith('sk-')) {
+      console.log('   ✅ Loaded:', deepseekKey.substring(0, 15) + '...');
     } else {
       console.log('   ⚠️  Present but invalid format (should start with "sk-")');
     }
   } else {
-    console.log('   ❌ Missing: VITE_OPENAI_API_KEY');
+    console.log('   ❌ Missing: VITE_DEEPSEEK_API_KEY');
   }
 
   // Test 4: Test Supabase connection
@@ -55,7 +55,7 @@ export async function testEnvironmentVariables(): Promise<void> {
 
   // Summary
   console.log('\n📊 Summary:');
-  const allPresent = supabaseUrl && supabaseKey && openaiKey;
+  const allPresent = supabaseUrl && supabaseKey && deepseekKey;
   if (allPresent) {
     console.log('   ✅ All environment variables are loaded!');
   } else {

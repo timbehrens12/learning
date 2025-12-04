@@ -30,11 +30,11 @@ const faqData: FAQItem[] = [
   },
   {
     question: "How accurate is the OCR and AI?",
-    answer: "Visnly uses advanced OCR technology to read text from your screen with high accuracy. Combined with GPT-4o-mini (or GPT-4 if you prefer), it provides reliable answers. Accuracy depends on screen quality and text clarity."
+    answer: "Visnly uses advanced OCR technology to read text from your screen with high accuracy. Combined with DeepSeek's AI models, it provides reliable answers. Accuracy depends on screen quality and text clarity."
   },
   {
     question: "Will my data be stored or shared?",
-    answer: "No. Visnly processes everything locally on your device. Your screen content and questions are sent directly to OpenAI's API (which you control with your own API key). We don't store, log, or share any of your data."
+    answer: "No. Visnly processes everything locally on your device. Your screen content and questions are sent directly to DeepSeek's API (which you control with your own API key). We don't store, log, or share any of your data."
   },
   {
     question: "Can I use Visnly during online exams?",
