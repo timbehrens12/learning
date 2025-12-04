@@ -45,6 +45,7 @@ export const Navbar = () => {
         </Link>
         
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300 flex-shrink-0">
+          <Link to="/" className="hover:text-white transition-colors whitespace-nowrap">Home</Link>
           <Link to="/features" className="hover:text-white transition-colors whitespace-nowrap">Features</Link>
           <Link to="/how-it-works" className="hover:text-white transition-colors whitespace-nowrap">How it works</Link>
           <Link to="/pricing" className="hover:text-white transition-colors whitespace-nowrap">Pricing</Link>
@@ -109,6 +110,7 @@ export const Navbar = () => {
             className="md:hidden fixed top-20 left-4 right-4 z-50 rounded-2xl backdrop-blur-xl bg-[#0A0A0A] border border-white/10 shadow-2xl p-6"
           >
             <div className="flex flex-col gap-4">
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Home</Link>
               <Link to="/features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Features</Link>
               <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">How It Works</Link>
               <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Pricing</Link>
