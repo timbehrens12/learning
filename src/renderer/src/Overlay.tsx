@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import Tesseract from 'tesseract.js';
 import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide, explainSegment, explainTeacherMeaning, getContextBefore, extractFormulas, rewriteInStyle, askContextQuestion, LearningStyle, analyzeTranscriptSections, detectTestWorthySections, detectConfusingSections, generateTopicTimeline, TranscriptSegmentAnalysis } from './ai';
 import { supabase } from './lib/supabase';
 import GlassCard from './components/GlassCard';
-import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon, CameraIcon, MicIcon, MicOffIcon, SettingsIcon, MaximizeIcon, MinimizeIcon } from './components/Icons';
+import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon } from './components/Icons';
 
 declare global { interface Window { webkitSpeechRecognition: any; } }
 
@@ -30,8 +29,7 @@ interface NotesState {
 
 const Overlay: React.FC = () => {
   // --- STATE ---
-  const [viewMode, setViewMode] = useState<'compact' | 'expanded'>('compact');
-  const [inputMode, setInputMode] = useState<'chat' | 'screen' | 'voice'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'transcript' | 'notes'>('chat');
   const [userId, setUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<{sender: 'user' | 'ai' | 'system', text: string, answer?: string, steps?: string, timestamp?: string}[]>([]);
   const [showStepsForMessage, setShowStepsForMessage] = useState<{[key: number]: boolean}>({});
@@ -50,6 +48,10 @@ const Overlay: React.FC = () => {
   const [isAudioDetected, setIsAudioDetected] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [lastScanPreview, setLastScanPreview] = useState<string>("");
+  const [continuousScanning, setContinuousScanning] = useState(() => {
+    const saved = localStorage.getItem('visnly_continuous_scanning');
+    return saved === 'true';
+  });
   
   // Notes tab state
   const [notesState, setNotesState] = useState<NotesState>({
@@ -321,9 +323,9 @@ const Overlay: React.FC = () => {
   };
 
   // Logic Helpers - Screen Capture and OCR
-  const scanScreen = useCallback(async (): Promise<string | null> => {
+  const scanScreen = useCallback(async (silent = false): Promise<string | null> => {
     try {
-      setIsScanning(true); 
+      if (!silent) setIsScanning(true); 
       setScanError(null);
       
       // @ts-ignore - Electron API
@@ -349,7 +351,7 @@ const Overlay: React.FC = () => {
       video.onloadedmetadata = async () => {
         try {
             await video.play();
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 200)); // Reduced delay for continuous scanning
             
           const canvas = canvasRef.current;
             if (!canvas) throw new Error('Canvas not available');
@@ -369,31 +371,58 @@ const Overlay: React.FC = () => {
               setLastScanned(new Date().toLocaleTimeString());
               setLastScanPreview(cleanedText.substring(0, 100) + (cleanedText.length > 100 ? '...' : ''));
               try { localStorage.setItem('last_session_context', cleanedText); } catch {}
-              setIsScanning(false);
+              if (!silent) setIsScanning(false);
               resolve(cleanedText);
             } else {
-              setScanError('No text detected.');
-              setIsScanning(false);
+              if (!silent) {
+                setScanError('No text detected.');
+                setIsScanning(false);
+              }
               resolve(null);
           }
         } catch (err) {
-            setScanError('Failed to read screen text.');
-          setIsScanning(false);
+            if (!silent) {
+              setScanError('Failed to read screen text.');
+              setIsScanning(false);
+            }
             resolve(null);
         }
       };
       video.onerror = () => {
-          setScanError('Failed to capture screen.');
-        setIsScanning(false);
+          if (!silent) {
+            setScanError('Failed to capture screen.');
+            setIsScanning(false);
+          }
           resolve(null);
       };
       });
     } catch (err: any) {
-      setScanError(err?.message || 'Failed to capture screen.');
-      setIsScanning(false); 
+      if (!silent) {
+        setScanError(err?.message || 'Failed to capture screen.');
+        setIsScanning(false);
+      }
       return null;
     }
   }, []);
+  
+  // Continuous scanning effect
+  useEffect(() => {
+    if (!continuousScanning) return;
+    
+    const scanInterval = setInterval(async () => {
+      // Only scan if not already scanning and not thinking
+      if (!isScanning && !isThinking) {
+        await scanScreen(true); // Silent scan
+      }
+    }, 3000); // Scan every 3 seconds
+    
+    return () => clearInterval(scanInterval);
+  }, [continuousScanning, isScanning, isThinking, scanScreen]);
+  
+  // Save continuous scanning preference
+  useEffect(() => {
+    localStorage.setItem('visnly_continuous_scanning', continuousScanning.toString());
+  }, [continuousScanning]);
 
   const runAI = async (selectedMode: string, promptOverride?: string) => {
     const contextPrompt = promptOverride || inputText || (selectedMode === 'Cheat' ? 'Give me the answer' : '');
@@ -1039,84 +1068,40 @@ const Overlay: React.FC = () => {
 
   // --- RENDER ---
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
-      onClick={(e) => e.target === e.currentTarget && handleClose()}
-    >
-      <canvas ref={canvasRef} className="hidden" />
+    <div style={styles.container}>
+      <div style={styles.tintOverlay}></div>
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* --- MAIN OVERLAY --- */}
-      <AnimatePresence>
-        {isCardVisible && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`fixed bg-[#0A0A0A]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden ${
-              viewMode === 'expanded' ? 'w-[800px] h-[600px]' : 'w-[500px] h-auto'
-            }`}
-            style={{
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}
+      {/* --- MAIN CARD --- */}
+      {isCardVisible && (
+        <GlassCard style={styles.mainCard}>
+          {/* Tabs */}
+          <div style={styles.tabRow}>
+          <button 
+            onClick={() => setActiveTab('chat')}
+              style={activeTab === 'chat' ? styles.tabActive : styles.tab}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                  <ZapIcon className="w-4 h-4 text-indigo-400" />
-                </div>
-                <h2 className="text-lg font-semibold text-white">Visnly</h2>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Mode Selector */}
-                <div className="flex rounded-lg bg-black/20 p-1">
-                  {[
-                    { key: 'Study', icon: BookOpenIcon, color: 'text-blue-400' },
-                    { key: 'Solve', icon: TargetIcon, color: 'text-purple-400' },
-                    { key: 'Cheat', icon: ZapIcon, color: 'text-red-400' }
-                  ].map(({ key, icon: Icon, color }) => (
-                    <button
-                      key={key}
-                      onClick={() => setMode(key as "Study" | "Solve" | "Cheat")}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                        mode === key
-                          ? 'bg-white/10 text-white'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <Icon className={`w-3 h-3 inline mr-1 ${color}`} />
-                      {key}
-                    </button>
-                  ))}
-                </div>
-
-                {/* View Toggle */}
-                <button
-                  onClick={() => setViewMode(viewMode === 'compact' ? 'expanded' : 'compact')}
-                  className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center hover:bg-white/5 transition-colors"
-                >
-                  {viewMode === 'compact' ?
-                    <MaximizeIcon className="w-4 h-4 text-gray-400" /> :
-                    <MinimizeIcon className="w-4 h-4 text-gray-400" />
-                  }
-                </button>
-
-                {/* Close Button */}
-                <button
-                  onClick={handleClose}
-                  className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/30 border border-transparent transition-all"
-                >
-                  <XIcon className="w-4 h-4 text-gray-400" />
-                </button>
-              </div>
-            </div>
+            Chat
+            </button>
+            <button 
+            onClick={() => setActiveTab('transcript')}
+              style={activeTab === 'transcript' ? styles.tabActive : styles.tab}
+          >
+            Transcript
+            </button>
+            <button 
+            onClick={() => setActiveTab('notes')}
+              style={activeTab === 'notes' ? styles.tabActive : styles.tab}
+          >
+            Notes
+            </button>
+            {activeTab === 'transcript' && (
+               <div style={styles.recIndicator}>
+                 <span style={{...styles.recDot, background: isListening ? '#ef4444' : '#555'}}></span>
+                 {isListening ? (isAudioDetected ? "Listening..." : "On") : "Off"}
+               </div>
+          )}
+        </div>
 
           {/* Content */}
           <div style={styles.contentArea}>
@@ -1226,14 +1211,32 @@ const Overlay: React.FC = () => {
           {activeTab === 'chat' && (
             <>
               <div style={styles.footer}>
-                {/* Context Pills */}
-                {(scannedText || transcriptLog) && (
-                  <div style={styles.contextRow}>
-                    {scannedText && <span style={styles.contextPill} title={lastScanPreview}>📷 Screen</span>}
-                    {transcriptLog && <span style={styles.contextPill}>🎙️ Transcript</span>}
-                    <button onClick={() => { setScannedText(""); setLastScanPreview(""); }} style={styles.clearContextBtn}>Clear Context</button>
+                {/* Context Pills & Continuous Scanning Toggle */}
+                <div style={styles.contextRow}>
+                  {(scannedText || transcriptLog) && (
+                    <>
+                      {scannedText && <span style={styles.contextPill} title={lastScanPreview}>📷 Screen</span>}
+                      {transcriptLog && <span style={styles.contextPill}>🎙️ Transcript</span>}
+                      <button onClick={() => { setScannedText(""); setLastScanPreview(""); }} style={styles.clearContextBtn}>Clear</button>
+                    </>
+                  )}
+                  <div style={styles.continuousScanToggle}>
+                    <button
+                      onClick={() => setContinuousScanning(!continuousScanning)}
+                      style={{
+                        ...styles.toggleBtn,
+                        background: continuousScanning ? 'rgba(100, 108, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                        borderColor: continuousScanning ? '#646cff' : 'rgba(255, 255, 255, 0.1)'
+                      }}
+                      title={continuousScanning ? "Continuous scanning enabled" : "Enable continuous scanning"}
+                    >
+                      <EyeIcon size={12} color={continuousScanning ? '#646cff' : '#888'} />
+                      <span style={{ fontSize: '10px', marginLeft: '4px', color: continuousScanning ? '#646cff' : '#888' }}>
+                        {continuousScanning ? 'Auto' : 'Manual'}
+                      </span>
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
               
               <div style={styles.footer}>
@@ -1494,7 +1497,7 @@ const Overlay: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* Analysis Filters (shown when analysis exists) */}
             {segmentAnalysis.length > 0 && (
               <div style={styles.analysisFiltersBar}>
@@ -1580,14 +1583,14 @@ const Overlay: React.FC = () => {
                         onMouseLeave={() => setHoveredSegmentIndex(null)}
                         title="Click to explain • Right-click for more options"
                       >
-                        <span style={styles.timestamp}>{seg.time}</span>
+                      <span style={styles.timestamp}>{seg.time}</span>
                         <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '4px'}}>
                           {/* Topic Label if new topic */}
                           {showTranscriptTags && analysis?.topicLabel && (
                             <span style={styles.topicLabel}>📌 {analysis.topicLabel}</span>
                           )}
                           
-                          <span style={styles.transcriptLineText}>{seg.text}</span>
+                      <span style={styles.transcriptLineText}>{seg.text}</span>
                           
                           {/* Tags */}
                           {showTranscriptTags && analysis && analysis.tags.length > 0 && (
@@ -2776,9 +2779,46 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.15s ease-out',
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   },
-  contextRow: { display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' },
-  contextPill: { fontSize: '10px', background: 'rgba(34,197,94,0.1)', color: '#4ade80', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.2)' },
-  clearContextBtn: { background: 'none', border: 'none', fontSize: '10px', color: '#666', cursor: 'pointer', marginLeft: 'auto' },
+  contextRow: { 
+    display: 'flex', 
+    gap: '6px', 
+    marginBottom: '8px', 
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between'
+  },
+  contextPill: { 
+    fontSize: '10px', 
+    background: 'rgba(34,197,94,0.1)', 
+    color: '#4ade80', 
+    padding: '2px 8px', 
+    borderRadius: '4px', 
+    border: '1px solid rgba(34,197,94,0.2)' 
+  },
+  clearContextBtn: { 
+    background: 'none', 
+    border: 'none', 
+    fontSize: '10px', 
+    color: '#666', 
+    cursor: 'pointer',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    transition: 'all 0.15s ease'
+  },
+  continuousScanToggle: {
+    marginLeft: 'auto'
+  },
+  toggleBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '4px 8px',
+    borderRadius: '6px',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    background: 'rgba(255, 255, 255, 0.05)',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    fontSize: '10px'
+  },
   
   inputBar: { display: 'flex', gap: '8px', alignItems: 'stretch' },
   modeSwitch: { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' },

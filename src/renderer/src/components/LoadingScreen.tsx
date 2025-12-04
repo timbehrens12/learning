@@ -1,135 +1,142 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import LiquidBackground from './LiquidBackground';
 
-export const LoadingScreen: React.FC = () => {
+const LoadingScreen: React.FC = () => {
   return (
-    <div className="fixed inset-0 bg-[#050505] flex items-center justify-center overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        {/* Floating orbs */}
-        <motion.div
-          className="absolute w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]"
-          animate={{
-            x: [0, 100, 0],
-            y: [0, -50, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          style={{ top: '20%', left: '20%' }}
-        />
-        <motion.div
-          className="absolute w-80 h-80 bg-purple-500/10 rounded-full blur-[100px]"
-          animate={{
-            x: [0, -80, 0],
-            y: [0, 80, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2
-          }}
-          style={{ top: '60%', right: '20%' }}
-        />
-        <motion.div
-          className="absolute w-64 h-64 bg-blue-500/10 rounded-full blur-[100px]"
-          animate={{
-            x: [0, 60, 0],
-            y: [0, -40, 0],
-            scale: [1, 1.3, 1],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 4
-          }}
-          style={{ top: '40%', left: '60%' }}
-        />
-      </div>
-
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center">
-        {/* Logo/Brand */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mb-12"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-              <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L13.09 8.26L19 9L13.09 9.74L12 16L10.91 9.74L5 9L10.91 8.26L12 2Z"/>
-              </svg>
-            </div>
-            <span className="text-3xl font-bold text-white">Visnly</span>
-          </div>
-        </motion.div>
-
-        {/* Loading animation */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-1">
-            {/* Animated dots */}
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 rounded-full bg-indigo-400"
-                animate={{
-                  scale: [1, 1.5, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Loading text */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="space-y-2"
-        >
-          <p className="text-gray-400 text-sm">Initializing your study assistant...</p>
-          <motion.div
-            className="h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent rounded-full"
-            animate={{ width: ['0%', '100%', '0%'] }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            style={{ width: '0%' }}
-          />
-        </motion.div>
-
-        {/* Subtle hint */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 1.0 }}
-          className="text-xs text-gray-500 mt-8"
-        >
-          This will only take a moment
-        </motion.p>
+    <div style={styles.container}>
+      <LiquidBackground />
+      <div style={styles.content}>
+        <div style={styles.logoContainer}>
+          <div style={styles.logo}>V</div>
+          <div style={styles.logoGlow}></div>
+        </div>
+        <div style={styles.textContainer}>
+          <h1 style={styles.title}>Visnly</h1>
+        <div style={styles.loader}>
+          <div style={styles.loaderBar} className="loading-bar-1"></div>
+          <div style={styles.loaderBar} className="loading-bar-2"></div>
+          <div style={styles.loaderBar} className="loading-bar-3"></div>
+        </div>
+        </div>
       </div>
     </div>
   );
 };
+
+const styles: Record<string, React.CSSProperties> = {
+  container: {
+    width: '100vw',
+    height: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#050505',
+    color: '#fff',
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  content: {
+    position: 'relative',
+    zIndex: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '32px'
+  },
+  logoContainer: {
+    position: 'relative',
+    width: '80px',
+    height: '80px'
+  },
+  logo: {
+    width: '80px',
+    height: '80px',
+    background: '#fff',
+    color: '#000',
+    borderRadius: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 900,
+    fontSize: '36px',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    position: 'relative',
+    zIndex: 2,
+    boxShadow: '0 0 40px rgba(255, 255, 255, 0.3)',
+    animation: 'logoFloat 2s ease-in-out infinite'
+  },
+  logoGlow: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '120px',
+    height: '120px',
+    background: 'radial-gradient(circle, rgba(100, 108, 255, 0.4) 0%, transparent 70%)',
+    borderRadius: '50%',
+    filter: 'blur(20px)',
+    animation: 'glowPulse 2s ease-in-out infinite',
+    zIndex: 1
+  },
+  textContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '24px'
+  },
+  title: {
+    fontSize: '32px',
+    fontWeight: 700,
+    letterSpacing: '-0.5px',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    background: 'linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    animation: 'fadeIn 0.6s ease-out'
+  },
+  loader: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center'
+  },
+  loaderBar: {
+    width: '6px',
+    height: '32px',
+    background: 'linear-gradient(180deg, #646cff 0%, rgba(100, 108, 255, 0.5) 100%)',
+    borderRadius: '3px',
+    animation: 'loaderWave 1.4s ease-in-out infinite',
+    boxShadow: '0 0 10px rgba(100, 108, 255, 0.5)'
+  }
+};
+
+// Add CSS animations
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-10px) scale(1.05); }
+  }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes loaderWave {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+    50% { transform: scaleY(1); opacity: 1; }
+  }
+  .loading-bar-1 { animation-delay: 0s !important; }
+  .loading-bar-2 { animation-delay: 0.2s !important; }
+  .loading-bar-3 { animation-delay: 0.4s !important; }
+`;
+if (!document.head.querySelector('style[data-loading-screen]')) {
+  styleSheet.setAttribute('data-loading-screen', 'true');
+  document.head.appendChild(styleSheet);
+}
+
+export default LoadingScreen;
+

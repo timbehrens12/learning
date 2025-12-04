@@ -4,7 +4,7 @@ import { supabase } from './lib/supabase';
 import OnboardingFlow from './OnboardingFlow';
 import Dashboard from './Dashboard';
 import Overlay from './Overlay';
-import { LoadingScreen } from './components/LoadingScreen';
+import LoadingScreen from './components/LoadingScreen';
 import './i18n/config'; // Initialize i18n
 import { testEnvironmentVariables } from './test-env';
 

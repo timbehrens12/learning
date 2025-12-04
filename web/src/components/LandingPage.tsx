@@ -175,8 +175,8 @@ export const LandingPage = () => {
                     <span className="font-medium text-sm text-gray-200">Test Radar</span>
                   </div>
                   <p className="text-xs text-gray-500 ml-7">Flag exam-likely topics</p>
-                </div>
-
+          </div>
+          
                 <div className="mt-auto p-4 rounded-xl bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-bold text-indigo-300 uppercase">Live Confidence</span>
@@ -322,8 +322,8 @@ export const LandingPage = () => {
                   <div className="h-4 bg-white/20 rounded w-full" />
                   <div className="h-4 bg-white/20 rounded w-5/6" />
                   <div className="h-4 bg-white/20 rounded w-4/5" />
-                </div>
-                
+            </div>
+
                 <div className="absolute bottom-8 left-8 right-8 p-5 bg-[#1A1A1A]/90 backdrop-blur-xl border border-purple-500/30 rounded-xl shadow-2xl z-30 transform transition-all hover:-translate-y-1">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2 text-purple-400 text-[10px] font-bold uppercase tracking-wider">
@@ -338,7 +338,7 @@ export const LandingPage = () => {
               </div>
             </motion.div>
           </div>
-        </div>
+            </div>
       </section>
 
       {/* Feature Section 3: Detection */}
@@ -377,7 +377,7 @@ export const LandingPage = () => {
                   <Layers className="text-blue-400 mb-3 group-hover:scale-110 transition-transform" size={24} strokeWidth={1.5} />
                   <h4 className="font-bold mb-1 text-white">Auto-Timestamps</h4>
                   <p className="text-xs text-gray-500">Marks new topics, examples, and definitions.</p>
-                </div>
+            </div>
               </div>
             </motion.div>
             <motion.div
@@ -425,7 +425,7 @@ export const LandingPage = () => {
                     </motion.div>
                   ))}
                 </div>
-              </div>
+            </div>
             </motion.div>
           </div>
         </div>
@@ -448,35 +448,35 @@ export const LandingPage = () => {
             Pass the Class. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Keep the Knowledge.</span>
           </motion.h2>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex justify-center"
-          >
-            <button 
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="flex justify-center"
+              >
+                  <button 
               className="group relative px-10 py-5 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-100 transition-all active:scale-95 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
-              tabIndex={0} 
-              onMouseDown={() => setIsDownloading(true)}
-              onMouseUp={() => setIsDownloading(false)}
-              onMouseLeave={() => setIsDownloading(false)}
-              onClick={() => {
-                const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = 'Visnly-Setup.exe';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}
-            >
+                    tabIndex={0} 
+                    onMouseDown={() => setIsDownloading(true)}
+                    onMouseUp={() => setIsDownloading(false)}
+                    onMouseLeave={() => setIsDownloading(false)}
+                    onClick={() => {
+                      const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
+                      const link = document.createElement('a');
+                      link.href = downloadUrl;
+                      link.download = 'Visnly-Setup.exe';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
               <span className="flex items-center gap-3">
                 {isDownloading ? 'Starting Download...' : 'Get Visnly for Windows'}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
               </span>
-            </button>
-          </motion.div>
+                  </button>
+              </motion.div>
         </div>
       </section>
 
@@ -484,8 +484,8 @@ export const LandingPage = () => {
       <footer className="py-12 border-t border-white/5 relative z-10 bg-black/40 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2">
-            <Logo size={24} />
-            <div className="font-bold text-xl tracking-tight">Visnly</div>
+                <Logo size={24} />
+                <div className="font-bold text-xl tracking-tight">Visnly</div>
           </div>
           <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500 font-medium">
             <a href="#" className="hover:text-white transition-colors">Privacy</a>

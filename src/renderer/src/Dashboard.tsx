@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import GlassCard from './components/GlassCard';
 import LiquidBackground from './components/LiquidBackground';
 import SettingsModal from './components/SettingsModal';
 import { supabase, userCredits as userCreditsService } from './lib/supabase';
-import { UserIcon, UserPlusIcon, CreditCardIcon, HelpCircleIcon, SettingsIcon, InstagramIcon, XLogoIcon, DiscordIcon, PlayIcon, BarChart3Icon, ZapIcon, BookOpenIcon, ClockIcon, TargetIcon } from './components/Icons';
+import { UserIcon, UserPlusIcon, CreditCardIcon, HelpCircleIcon, SettingsIcon, InstagramIcon, XLogoIcon, DiscordIcon } from './components/Icons';
 
 // --- Types ---
 
@@ -34,8 +33,8 @@ const Dashboard: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userCredits, setUserCredits] = useState<{ credits: number; plan: string } | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-
-
+  
+  
   // Session State
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
@@ -52,7 +51,7 @@ const Dashboard: React.FC = () => {
   });
   // Check if user is pro
   const isProUser = userCredits?.plan === 'pro' || userCredits?.plan === 'unlimited';
-
+  
   // Check if user has credits available
   const hasCredits = userCredits && (userCredits.plan === 'unlimited' || userCredits.credits > 0);
 
@@ -72,31 +71,6 @@ const Dashboard: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isProfileOpen]);
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }
-    }
-  };
 
   // Load Cheat mode visibility setting
   const [showCheatMode, setShowCheatMode] = useState(() => {
@@ -352,316 +326,159 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden">
+    <div style={styles.container}>
+      {/* Liquid Background like Overlay */}
       <LiquidBackground />
+      
+      {/* Background Gradient Blob for visual flair */}
+      <div style={styles.backgroundBlob}></div>
 
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 pointer-events-none">
-        <motion.div
-          className="absolute top-20 left-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, delay: 2 }}
-        />
-      </div>
-
-      {/* Header */}
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 flex items-center justify-between p-6 border-b border-white/5"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-            <ZapIcon className="w-5 h-5 text-white" />
-          </div>
-          <h1 className="text-xl font-bold text-white">Visnly Dashboard</h1>
+      {/* --- Top Bar --- */}
+      <header style={styles.topBar}>
+        <div style={styles.logo}>
+          <span style={{color: '#fff'}}>Visnly</span>
         </div>
+        
+        <div style={styles.controls}>
 
-        <div className="flex items-center gap-4">
-          {/* Credits Badge */}
+          {/* Credit Display */}
           {userCredits && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                userCredits.plan === 'unlimited'
-                  ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white'
-                  : 'bg-white/10 text-white border border-white/20'
-              }`}
-            >
+            <div style={{
+              ...styles.creditBadge,
+              background: userCredits.plan === 'unlimited' 
+                ? 'linear-gradient(135deg, #10b981, #059669)' 
+                : 'rgba(255,255,255,0.1)',
+              color: '#fff'
+            }}>
               {userCredits.plan === 'unlimited' ? 'PRO' : `${userCredits.credits} credits`}
-            </motion.div>
+            </div>
           )}
 
-          {/* Stealth Toggle */}
-          <motion.button
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 }}
+          <button
             onClick={toggleDetectability}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl bg-black/40 border border-white/10 hover:border-white/20 transition-all group"
+            style={styles.dropdownButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.8)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.65)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            }}
           >
-            <div className="relative w-8 h-4 rounded-full bg-gray-600 transition-colors">
-              <motion.div
-                className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${
-                  isDetectable ? 'bg-red-500 left-0.5' : 'bg-green-500 left-4.5'
-                }`}
-                animate={{ x: isDetectable ? 0 : 16 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            <div style={styles.toggleContainer}>
+              <div 
+                style={{
+                  ...styles.toggleSwitch,
+                  backgroundColor: isDetectable ? '#d32f2f' : '#4caf50',
+                  transform: isDetectable ? 'translateX(0)' : 'translateX(18px)',
+                  boxShadow: isDetectable 
+                    ? '0 0 8px rgba(211, 47, 47, 0.5)' 
+                    : '0 0 8px rgba(76, 175, 80, 0.5)'
+                }}
               />
             </div>
-            <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-              {isDetectable ? "Detectable" : "Undetectable"}
-            </span>
-          </motion.button>
+            <span>{isDetectable ? "Detectable" : "Undetectable"}</span>
+          </button>
 
-          {/* Profile Menu */}
-          <div className="relative" ref={profileRef}>
-            <motion.button
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.4 }}
+          <div style={styles.profileContainer} ref={profileRef}>
+            <button 
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="w-10 h-10 rounded-xl bg-black/40 border border-white/10 hover:border-white/20 flex items-center justify-center transition-all group"
+              style={{
+                ...styles.profile,
+                backgroundColor: isProfileOpen ? 'rgba(255, 255, 255, 0.1)' : 'rgba(42, 42, 47, 0.6)'
+              }}
+              title="Profile"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'scale(1.1)';
+                const icon = e.currentTarget.querySelector('svg');
+                if (icon) {
+                  icon.style.color = '#fff';
+                  icon.style.filter = 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isProfileOpen) {
+                  e.currentTarget.style.backgroundColor = 'rgba(42, 42, 47, 0.6)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                  const icon = e.currentTarget.querySelector('svg');
+                  if (icon) {
+                    icon.style.color = '#aaa';
+                    icon.style.filter = 'none';
+                  }
+                }
+              }}
             >
-              <UserIcon
-                size={18}
-                className={`transition-colors ${isProfileOpen ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}
-              />
-            </motion.button>
+              <UserIcon size={18} color={isProfileOpen ? "#fff" : "#aaa"} />
+            </button>
 
             {isProfileOpen && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="absolute right-0 top-12 w-64 bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl p-4 z-50"
-              >
-                {/* User Info */}
-                <div className="mb-4 pb-4 border-b border-white/5">
-                  <div className="text-sm font-semibold text-white">{userName || "User"}</div>
-                  <div className="text-xs text-gray-400">{userEmail || ""}</div>
+              <GlassCard style={styles.profileMenu}>
+                {/* User Info Section */}
+                <div style={styles.profileHeader}>
+                  <div style={styles.profileName}>{userName || "User"}</div>
+                  <div style={styles.profileEmail}>{userEmail || ""}</div>
+                </div>
+                <div style={styles.profileDivider}></div>
+
+                {/* Menu Items - Direct to Settings */}
+                <div style={styles.profileMenuItem}
+                  onClick={() => {
+                    setShowSettingsModal(true);
+                    setIsProfileOpen(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <SettingsIcon size={16} color="#aaa" />
+                  <span>Settings</span>
                 </div>
 
-                {/* Menu Items */}
-                <div className="space-y-1">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-sm">
-                    <UserPlusIcon size={16} className="text-gray-400" />
-                    <span className="text-gray-300">Invite Friends</span>
-                  </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-sm">
-                    <CreditCardIcon size={16} className="text-gray-400" />
-                    <span className="text-gray-300">Billing</span>
-                  </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-sm">
-                    <HelpCircleIcon size={16} className="text-gray-400" />
-                    <span className="text-gray-300">Get Help</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowSettingsModal(true);
-                      setIsProfileOpen(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-sm"
-                  >
-                    <SettingsIcon size={16} className="text-gray-400" />
-                    <span className="text-gray-300">Settings</span>
-                  </button>
+                <div style={styles.profileMenuItem}
+                  onClick={() => {
+                    // Handle billing
+                    setIsProfileOpen(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <CreditCardIcon size={16} color="#aaa" />
+                  <span>Billing</span>
                 </div>
-              </motion.div>
+
+                <div style={styles.profileMenuItem}
+                  onClick={() => {
+                    // Handle get help
+                    setIsProfileOpen(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <HelpCircleIcon size={16} color="#aaa" />
+                  <span>Get help</span>
+                </div>
+              </GlassCard>
             )}
           </div>
         </div>
-      </motion.header>
+      </header>
 
-      {/* Main Content */}
-      <motion.main
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="flex-1 p-6"
-      >
-        <div className="max-w-7xl mx-auto">
-          {/* Quick Actions Row */}
-          <motion.div variants={cardVariants} className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-6">Ready to Study</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Start Session Card */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="relative group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative bg-black/40 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                      <PlayIcon className="w-6 h-6 text-indigo-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white text-lg">Start Session</h3>
-                      <p className="text-sm text-gray-400">Launch Visnly overlay</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleStartSession}
-                    disabled={!hasCredits}
-                    className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {hasCredits ? 'Start Studying' : 'No Credits Available'}
-                  </button>
-                </div>
-              </motion.div>
-
-              {/* Credits Status Card */}
-              {userCredits && (
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-black/40 border border-white/10 rounded-2xl p-6"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      userCredits.plan === 'unlimited'
-                        ? 'bg-gradient-to-br from-emerald-500/20 to-green-500/20'
-                        : 'bg-yellow-500/20'
-                    }`}>
-                      <ZapIcon className={`w-6 h-6 ${
-                        userCredits.plan === 'unlimited' ? 'text-emerald-400' : 'text-yellow-400'
-                      }`} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white text-lg">Credits</h3>
-                      <p className="text-sm text-gray-400">
-                        {userCredits.plan === 'unlimited' ? 'Unlimited' : `${userCredits.credits} remaining`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    {userCredits.plan === 'unlimited' ? '∞' : userCredits.credits}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Recent Sessions Card */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="bg-black/40 border border-white/10 rounded-2xl p-6"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                    <ClockIcon className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg">Recent</h3>
-                    <p className="text-sm text-gray-400">Last session</p>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-300">
-                  {sessions.length > 0
-                    ? `${sessions[0].title} • ${sessions[0].duration}`
-                    : 'No sessions yet'
-                  }
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Session History */}
-          {sessions.length > 0 && (
-            <motion.div variants={cardVariants} className="mb-8">
-              <h3 className="text-xl font-bold text-white mb-4">Session History</h3>
-              <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {sessions.slice(0, 5).map((session, index) => (
-                      <motion.div
-                        key={session.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-center justify-between py-3 border-b border-white/5 last:border-b-0"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            session.mode === 'Study' ? 'bg-indigo-500/20 text-indigo-400' :
-                            session.mode === 'Solve' ? 'bg-purple-500/20 text-purple-400' :
-                            'bg-red-500/20 text-red-400'
-                          }`}>
-                            {session.mode === 'Study' ? <BookOpenIcon size={18} /> :
-                             session.mode === 'Solve' ? <TargetIcon size={18} /> :
-                             <ZapIcon size={18} />}
-                          </div>
-                          <div>
-                            <div className="font-medium text-white">{session.title}</div>
-                            <div className="text-sm text-gray-400">{session.mode} • {session.time}</div>
-                          </div>
-                        </div>
-                        <div className="text-sm text-gray-400">{session.duration}</div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Active Session Status */}
-          {isSessionActive && (
-            <motion.div
-              variants={cardVariants}
-              className="mb-8 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl p-6"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center animate-pulse">
-                    <TargetIcon className="w-6 h-6 text-indigo-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg">Session Active</h3>
-                    <p className="text-sm text-gray-400">Visnly overlay is running</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-mono font-bold text-white">{formatTimerDisplay(elapsedSeconds)}</div>
-                  <div className="text-sm text-gray-400">elapsed</div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Stats Overview */}
-          <motion.div variants={cardVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-black/40 border border-white/10 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-white mb-1">{sessions.length}</div>
-              <div className="text-sm text-gray-400">Total Sessions</div>
-            </div>
-            <div className="bg-black/40 border border-white/10 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-indigo-400 mb-1">
-                {sessions.reduce((acc, s) => acc + parseInt(s.duration), 0)}m
-              </div>
-              <div className="text-sm text-gray-400">Study Time</div>
-            </div>
-            <div className="bg-black/40 border border-white/10 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-purple-400 mb-1">
-                {userCredits?.credits || 0}
-              </div>
-              <div className="text-sm text-gray-400">Credits Left</div>
-            </div>
-            <div className="bg-black/40 border border-white/10 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-emerald-400 mb-1">
-                {isProUser ? 'PRO' : 'FREE'}
-              </div>
-              <div className="text-sm text-gray-400">Plan</div>
-            </div>
-          </motion.div>
-        </div>
-      </motion.main>
+      {/* --- Main Area --- */}
+      <main style={styles.main}>
+        {(
           <>
             {/* Active / Start Section */}
             <div style={styles.heroSection}>
@@ -804,18 +621,35 @@ const Dashboard: React.FC = () => {
             }}
           />
         )}
-
-        {/* Settings Modal */}
-        {showSettingsModal && (
-          <SettingsModal
-            onClose={() => setShowSettingsModal(false)}
-            onLogout={() => {
-              setShowSettingsModal(false);
-              window.location.reload();
-            }}
-          />
-        )}
-      </motion.main>
+      </main>
+      
+      {/* Social links – bottom right */}
+      <div style={styles.socialBar}>
+        <button
+          type="button"
+          style={styles.socialIconButton}
+          onClick={() => window.open('https://instagram.com/yourhandle', '_blank')}
+          title="Instagram"
+        >
+          <InstagramIcon size={16} color="#c9c9ff" />
+        </button>
+        <button
+          type="button"
+          style={styles.socialIconButton}
+          onClick={() => window.open('https://x.com/yourhandle', '_blank')}
+          title="X"
+        >
+          <XLogoIcon size={16} color="#c9c9ff" />
+        </button>
+        <button
+          type="button"
+          style={styles.socialIconButton}
+          onClick={() => window.open('https://discord.gg/yourserver', '_blank')}
+          title="Discord"
+        >
+          <DiscordIcon size={16} color="#c9c9ff" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -978,16 +812,41 @@ const styles: Record<string, React.CSSProperties> = {
   
   main: { flex: 1, padding: '40px', overflowY: 'auto', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' },
   
-  heroSection: { width: '100%', maxWidth: '500px', marginBottom: '50px', marginTop: '20px' },
-  heroTitle: { fontSize: '32px', fontWeight: 700, margin: '0 0 10px 0', textAlign: 'center' as const },
-  heroSub: { fontSize: '16px', color: '#888', margin: '0 0 30px 0', textAlign: 'center' as const },
+  heroSection: { 
+    width: '100%', 
+    maxWidth: '500px', 
+    marginBottom: '50px', 
+    marginTop: '20px',
+    animation: 'fadeInUp 0.6s ease-out'
+  },
+  heroTitle: { 
+    fontSize: '36px', 
+    fontWeight: 700, 
+    margin: '0 0 12px 0', 
+    textAlign: 'center' as const,
+    background: 'linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.8) 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    letterSpacing: '-0.5px'
+  },
+  heroSub: { 
+    fontSize: '16px', 
+    color: '#999', 
+    margin: '0 0 32px 0', 
+    textAlign: 'center' as const,
+    lineHeight: '1.6'
+  },
   
   startCard: {
     display: 'flex', 
     flexDirection: 'column', 
     alignItems: 'center',
-    padding: '50px 40px',
-    textAlign: 'center' as const
+    padding: '56px 48px',
+    textAlign: 'center' as const,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    position: 'relative',
+    overflow: 'hidden'
   },
   startBtn: { 
     padding: '18px 60px', 
@@ -1094,11 +953,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   activeCard: {
-    padding: '24px',
+    padding: '28px',
     display: 'flex', 
     flexDirection: 'column', 
     width: '100%',
-    gap: '16px'
+    gap: '20px',
+    background: 'linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(100, 108, 255, 0.05) 100%)',
+    border: '1px solid rgba(100, 108, 255, 0.2)',
+    boxShadow: '0 8px 32px rgba(100, 108, 255, 0.15)',
+    animation: 'fadeInScale 0.4s ease-out'
   },
   activeSessionContent: {
     display: 'flex',
@@ -1244,5 +1107,26 @@ const styles: Record<string, React.CSSProperties> = {
   }
 };
 
+
+// Add CSS animations
+const dashboardStyleSheet = document.createElement('style');
+dashboardStyleSheet.textContent = `
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pulse-status {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+  }
+`;
+if (!document.head.querySelector('style[data-dashboard-animations]')) {
+  dashboardStyleSheet.setAttribute('data-dashboard-animations', 'true');
+  document.head.appendChild(dashboardStyleSheet);
+}
 
 export default Dashboard;

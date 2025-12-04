@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import LiquidBackground from './components/LiquidBackground';
 import * as Icons from './components/Icons';
@@ -393,7 +392,6 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   const renderSlide6 = () => (
     <>
       <h1 style={styles.pricingTitle}>Unlock all features with Visnly Pro</h1>
-      
 
       {/* Annual Toggle - Positioned on the right */}
       <div style={styles.pricingHeaderRow}>
@@ -574,26 +572,12 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         <LiquidBackground />
         <div style={styles.gridOverlay}></div>
         {step > 0 && (
-          <motion.button
-            onClick={handleBack}
-            style={styles.backBtnFullScreen}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-          >
+          <button onClick={handleBack} style={styles.backBtnFullScreen}>
             ← Back
-          </motion.button>
+          </button>
         )}
         <div style={styles.fullScreenContent}>
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.4, 0.55, 1.4] }}
-          >
-            {renderLeftContent()}
-          </motion.div>
+          {renderLeftContent()}
         </div>
       </div>
     );
@@ -604,28 +588,12 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       {/* LEFT PANEL */}
       <div style={styles.leftPanel}>
         {step > 0 && (
-          <motion.button
-            onClick={handleBack}
-            style={styles.backBtn}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-          >
+          <button onClick={handleBack} style={styles.backBtn}>
             ← Back
-          </motion.button>
+          </button>
         )}
         <div style={styles.contentWrapper}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.5, ease: [0.25, 0.4, 0.55, 1.4] }}
-            >
-              {renderLeftContent()}
-            </motion.div>
-          </AnimatePresence>
+          {renderLeftContent()}
         </div>
       </div>
 
@@ -634,17 +602,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         <LiquidBackground />
         <div style={styles.gridOverlay}></div>
         <div style={styles.visualContent}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.4, 0.55, 1.4] }}
-            >
-              {renderRightVisual()}
-            </motion.div>
-          </AnimatePresence>
+          {renderRightVisual()}
         </div>
       </div>
     </div>
@@ -836,7 +794,8 @@ const styles: Record<string, React.CSSProperties> = {
   // Slide 1 Visual - Floating App
   floatingApp: {
     position: 'relative',
-    animation: 'float 3s ease-in-out infinite'
+    animation: 'float 4s ease-in-out infinite',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
   },
   
   appWindow: {
@@ -1545,8 +1504,8 @@ const styles: Record<string, React.CSSProperties> = {
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(2deg); }
   }
   @keyframes spin {
     from { transform: rotate(0deg); }
@@ -1556,7 +1515,30 @@ styleSheet.textContent = `
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
 `;
-document.head.appendChild(styleSheet);
+if (!document.head.querySelector('style[data-onboarding-animations]')) {
+  styleSheet.setAttribute('data-onboarding-animations', 'true');
+  document.head.appendChild(styleSheet);
+}
 
 export default OnboardingFlow;

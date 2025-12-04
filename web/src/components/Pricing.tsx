@@ -107,24 +107,24 @@ export const Pricing = () => {
       <Navbar />
       
       <section className="pt-32 pb-24 px-4 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
           <div className="text-center mb-16 space-y-4">
-            <motion.div 
+        <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md"
             >
               <Sparkles className="w-4 h-4 text-indigo-400" strokeWidth={1.5} />
               <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">No Subscriptions</span>
-            </motion.div>
-            
+        </motion.div>
+
             <motion.h1 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+          transition={{ delay: 0.1 }}
               className="text-4xl md:text-6xl font-bold tracking-tight"
-            >
+        >
               Pay as you <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">learn.</span>
             </motion.h1>
             
@@ -142,14 +142,14 @@ export const Pricing = () => {
           {/* Main Packages Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16 items-start">
             {mainPackages.map((pkg, i) => (
-              <motion.div
-                key={pkg.credits}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+          <motion.div
+              key={pkg.credits}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 className={`relative group ${pkg.popular ? 'md:-mt-4' : ''}`}
-              >
+          >
                 {/* Popular Glow */}
                 {pkg.popular && (
                   <div className="absolute -inset-0.5 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-3xl opacity-20 group-hover:opacity-40 transition-opacity blur-xl" />
@@ -164,13 +164,13 @@ export const Pricing = () => {
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                       {pkg.badge}
                     </div>
-                  )}
-
+                )}
+              
                   <div className="mb-6 flex justify-between items-start">
                     <div>
                       <h3 className="text-lg font-medium text-gray-300 mb-1">{pkg.name}</h3>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-white">${pkg.price}</span>
+                    <span className="text-3xl font-bold text-white">${pkg.price}</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">${pkg.pricePerCredit.toFixed(2)} / credit</p>
                     </div>
@@ -207,7 +207,7 @@ export const Pricing = () => {
                 </div>
               </motion.div>
             ))}
-          </div>
+              </div>
 
           {/* Micro Packages */}
           <motion.div 
@@ -219,7 +219,7 @@ export const Pricing = () => {
             <h3 className="text-center text-sm font-medium text-gray-500 mb-6 uppercase tracking-wider">Micro Packs</h3>
             <div className="grid grid-cols-2 gap-4">
               {microPackages.map((pkg) => (
-                <button
+                <button 
                   key={pkg.credits}
                   onClick={() => handleBuy(pkg.credits)}
                   disabled={loading !== null}
@@ -233,12 +233,12 @@ export const Pricing = () => {
                     <div className="font-bold text-white">${pkg.price}</div>
                     <div className="text-xs text-indigo-400 group-hover:translate-x-1 transition-transform">Buy &rarr;</div>
                   </div>
-                </button>
+              </button>
               ))}
             </div>
           </motion.div>
-        </div>
-      </section>
+      </div>
+    </section>
     </div>
   );
 };
