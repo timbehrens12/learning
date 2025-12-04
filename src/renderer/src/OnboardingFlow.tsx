@@ -150,19 +150,92 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   );
 
   const renderSlide1Visual = () => (
-    <div style={styles.animatedVisualContainer}>
-      {/* Subtle gradient orbs - minimal and refined */}
-      <div style={styles.gradientOrb1}></div>
-      <div style={styles.gradientOrb2}></div>
+    <div style={styles.sceneContainer}>
+      {/* Inject Keyframes specific to this animation */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scan {
+          0% { top: -20%; opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { top: 120%; opacity: 0; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateZ(60px) translateY(-20px); }
+          50% { transform: translateZ(60px) translateY(-30px); }
+        }
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+          40% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes typing {
+          0% { width: 0; }
+          50% { width: 100%; }
+          100% { width: 100%; }
+        }
+        @keyframes floatParticle {
+          0% { transform: translateZ(40px) translate(0, 0) rotate(0deg); }
+          50% { transform: translateZ(40px) translate(15px, -15px) rotate(5deg); }
+          100% { transform: translateZ(40px) translate(0, 0) rotate(0deg); }
+        }
+      `}} />
+
+      {/* 3D Container for perspective */}
+      <div style={styles.perspectiveWrapper}>
+        
+        {/* Layer 1: The "Assignment/Task" Background */}
+        <div style={styles.docLayer}>
+          <div style={styles.docHeader}>
+            {/* Windows Style: Simple generic title bar line */}
+            <div style={{ width: '120px', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px' }}></div>
+          </div>
+          <div style={styles.docContent}>
+            <div style={{...styles.docLine, width: '80%'}}></div>
+            <div style={{...styles.docLine, width: '90%'}}></div>
+            <div style={{...styles.docLine, width: '60%'}}></div>
+            <div style={{...styles.docLine, width: '85%', marginTop: '16px'}}></div>
+            <div style={{...styles.docLine, width: '70%'}}></div>
+          </div>
+          {/* Scanning Beam Effect */}
+          <div style={styles.scanBeam}></div>
+        </div>
+
+        {/* Layer 2: The Visnly "Popup" Helper */}
+        <div style={styles.popupLayer}>
+          <div style={styles.popupHeader}>
+            <div style={styles.popupLogo}>
+              <img src="./logo.png" alt="Visnly" style={{ width: '24px', height: '24px', borderRadius: '6px' }} />
+            </div>
+            <span style={styles.popupTitle}>Visnly AI</span>
+          </div>
+          <div style={styles.popupBody}>
+            <div style={styles.popupThinking}>
+              <div style={styles.thinkingDot}></div>
+              <div style={{...styles.thinkingDot, animationDelay: '0.2s'}}></div>
+              <div style={{...styles.thinkingDot, animationDelay: '0.4s'}}></div>
+            </div>
+            <div style={styles.popupAnswerBlock}>
+              <div style={styles.typingLine1}></div>
+              <div style={styles.typingLine2}></div>
+              <div style={styles.typingLine3}></div>
+            </div>
+          </div>
+          <div style={styles.popupGlow}></div>
+        </div>
+
+        {/* Floating Particles (Math/Code symbols) */}
+        <div style={styles.floatingSymbol1}>∫</div>
+        <div style={styles.floatingSymbol2}>{`{}`}</div>
+        <div style={styles.floatingSymbol3}>∑</div>
+        <div style={styles.floatingSymbol4}>?</div>
+        
+        {/* Extra School/Study Particles */}
+        <div style={styles.floatingSymbol5}>π</div>
+        <div style={styles.floatingSymbol6}>x²</div>
+        <div style={styles.floatingSymbol7}>dy/dx</div>
+        <div style={styles.floatingSymbol8}>A+</div>
+        <div style={styles.floatingSymbol9}>α</div>
       
-      {/* Elegant geometric shapes */}
-      <div style={styles.geometricShape1}></div>
-      <div style={styles.geometricShape2}></div>
-      <div style={styles.geometricShape3}></div>
-      
-      {/* Minimal light rays */}
-      <div style={styles.lightRay1}></div>
-      <div style={styles.lightRay2}></div>
+      </div>
     </div>
   );
 
@@ -811,100 +884,278 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 1
   },
 
-  // Slide 1 Visual - Minimal, sophisticated abstract animation
-  animatedVisualContainer: {
+  // Slide 1 Visual - Visnly Hero Animation
+  sceneContainer: {
     position: 'relative',
     width: '100%',
     height: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    background: 'transparent'
+    perspective: '1200px'
   },
 
-  gradientOrb1: {
-    position: 'absolute',
-    width: '600px',
-    height: '600px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(135, 206, 250, 0.1) 0%, transparent 70%)',
-    top: '20%',
-    left: '10%',
-    filter: 'blur(100px)',
-    animation: 'subtleFloat1 20s ease-in-out infinite',
-    opacity: 0.6
-  },
-
-  gradientOrb2: {
-    position: 'absolute',
+  perspectiveWrapper: {
     width: '500px',
     height: '500px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(135, 206, 250, 0.08) 0%, transparent 70%)',
-    bottom: '15%',
-    right: '15%',
-    filter: 'blur(100px)',
-    animation: 'subtleFloat2 25s ease-in-out infinite',
-    opacity: 0.5
+    position: 'relative',
+    transformStyle: 'preserve-3d',
+    transform: 'rotateX(15deg) rotateY(-15deg)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
 
-  geometricShape1: {
+  // Layer 1: Background Document
+  docLayer: {
     position: 'absolute',
-    width: '200px',
-    height: '200px',
-    top: '25%',
+    width: '400px',
+    height: '500px',
+    background: 'rgba(20, 20, 25, 0.6)',
+    backdropFilter: 'blur(5px)',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    transform: 'translateZ(0px)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden'
+  },
+
+  docHeader: {
+    height: '40px',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 16px',
+    gap: '8px'
+  },
+
+  docContent: {
+    padding: '30px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+
+  docLine: {
+    height: '8px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '4px'
+  },
+
+  scanBeam: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '60px',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.3), transparent)',
+    animation: 'scan 4s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+    pointerEvents: 'none'
+  },
+
+  // Layer 2: Popup Overlay
+  popupLayer: {
+    position: 'absolute',
+    width: '320px',
+    height: '180px',
+    background: 'rgba(15, 15, 20, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    border: '1px solid rgba(135, 206, 250, 0.5)',
+    transform: 'translateZ(60px) translateY(-20px)',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(135, 206, 250, 0.3)',
+    display: 'flex',
+    flexDirection: 'column',
+    animation: 'float 6s ease-in-out infinite'
+  },
+
+  popupHeader: {
+    padding: '16px 20px',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+
+  popupLogo: {
+    width: '24px',
+    height: '24px',
+    borderRadius: '6px',
+    background: 'rgba(135, 206, 250, 0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
+  },
+
+  popupTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#fff',
+    fontFamily: "'Inter', sans-serif"
+  },
+
+  popupBody: {
+    padding: '20px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center'
+  },
+
+  popupThinking: {
+    display: 'flex',
+    gap: '4px',
+    marginBottom: '12px'
+  },
+
+  thinkingDot: {
+    width: '4px',
+    height: '4px',
+    borderRadius: '50%',
+    background: 'rgba(135, 206, 250, 0.9)',
+    animation: 'bounce 1.4s infinite ease-in-out both'
+  },
+
+  popupAnswerBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+
+  typingLine1: {
+    height: '6px',
+    background: 'linear-gradient(90deg, rgba(135, 206, 250, 0.9), rgba(135, 206, 250, 0.6))',
+    borderRadius: '3px',
+    width: '0%',
+    animation: 'typing 3s steps(20, end) infinite'
+  },
+
+  typingLine2: {
+    height: '6px',
+    background: 'rgba(255,255,255,0.2)',
+    borderRadius: '3px',
+    width: '0%',
+    animation: 'typing 3s steps(20, end) 0.5s infinite'
+  },
+
+  typingLine3: {
+    height: '6px',
+    background: 'rgba(255,255,255,0.2)',
+    borderRadius: '3px',
+    width: '0%',
+    animation: 'typing 3s steps(20, end) 1s infinite'
+  },
+
+  popupGlow: {
+    position: 'absolute',
+    inset: -1,
+    borderRadius: '16px',
+    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.4), transparent 60%)',
+    zIndex: -1,
+    opacity: 0.5,
+    filter: 'blur(10px)'
+  },
+
+  // Floating Particles
+  floatingSymbol1: {
+    position: 'absolute',
+    color: 'rgba(135, 206, 250, 0.5)',
+    fontSize: '32px',
+    fontWeight: 'bold',
+    top: '-20px',
+    right: '-40px',
+    transform: 'translateZ(40px)',
+    animation: 'floatParticle 8s ease-in-out infinite',
+    fontFamily: 'serif'
+  },
+  
+  floatingSymbol2: {
+    position: 'absolute',
+    color: 'rgba(135, 206, 250, 0.4)',
+    fontSize: '24px',
+    fontFamily: 'monospace',
+    bottom: '-30px',
+    left: '-20px',
+    transform: 'translateZ(80px)',
+    animation: 'floatParticle 10s ease-in-out infinite reverse'
+  },
+  
+  floatingSymbol3: {
+    position: 'absolute',
+    color: 'rgba(255,255,255,0.1)',
+    fontSize: '40px',
+    top: '40%',
+    left: '-60px',
+    transform: 'translateZ(20px)',
+    animation: 'floatParticle 12s ease-in-out infinite 2s'
+  },
+
+  floatingSymbol4: {
+    position: 'absolute',
+    color: 'rgba(255,255,255,0.2)',
+    fontSize: '28px',
+    top: '10%',
+    right: '20%',
+    transform: 'translateZ(30px)',
+    animation: 'floatParticle 7s ease-in-out infinite 1s'
+  },
+
+  floatingSymbol5: {
+    position: 'absolute',
+    color: 'rgba(135, 206, 250, 0.4)',
+    fontSize: '36px',
+    top: '-40px',
     left: '20%',
-    border: '1px solid rgba(135, 206, 250, 0.25)',
-    borderRadius: '2px',
-    transform: 'rotate(45deg)',
-    animation: 'geometricRotate1 30s linear infinite',
-    opacity: 0.4
+    transform: 'translateZ(50px)',
+    animation: 'floatParticle 9s ease-in-out infinite 0.5s',
+    fontFamily: 'serif'
+  },
+  
+  floatingSymbol6: {
+    position: 'absolute',
+    color: 'rgba(135, 206, 250, 0.3)',
+    fontSize: '24px',
+    bottom: '10%',
+    right: '-50px',
+    transform: 'translateZ(20px)',
+    animation: 'floatParticle 11s ease-in-out infinite 1.5s',
+    fontWeight: 'bold'
   },
 
-  geometricShape2: {
+  floatingSymbol7: {
     position: 'absolute',
-    width: '150px',
-    height: '150px',
-    bottom: '30%',
-    right: '25%',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '50%',
-    animation: 'geometricRotate2 40s linear infinite reverse',
-    opacity: 0.3
+    color: 'rgba(135, 206, 250, 0.35)',
+    fontSize: '20px',
+    top: '60%',
+    right: '-70px',
+    transform: 'translateZ(60px)',
+    animation: 'floatParticle 13s ease-in-out infinite 2.5s',
+    fontFamily: 'monospace'
   },
 
-  geometricShape3: {
+  floatingSymbol8: {
     position: 'absolute',
-    width: '120px',
-    height: '120px',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%) rotate(45deg)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '8px',
-    animation: 'geometricRotate3 50s linear infinite',
-    opacity: 0.25
+    color: 'rgba(34, 197, 94, 0.4)', // Greenish for A+
+    fontSize: '48px',
+    fontWeight: '900',
+    top: '-80px',
+    right: '20%',
+    transform: 'translateZ(80px)',
+    animation: 'floatParticle 14s ease-in-out infinite 1s',
+    textShadow: '0 0 20px rgba(34, 197, 94, 0.2)'
   },
 
-  lightRay1: {
+  floatingSymbol9: {
     position: 'absolute',
-    width: '1px',
-    height: '100%',
-    left: '30%',
-    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.12), transparent)',
-    animation: 'rayPulse1 8s ease-in-out infinite',
-    opacity: 0.3
-  },
-
-  lightRay2: {
-    position: 'absolute',
-    width: '1px',
-    height: '100%',
-    right: '35%',
-    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.1), transparent)',
-    animation: 'rayPulse2 10s ease-in-out infinite',
-    opacity: 0.25
+    color: 'rgba(255,255,255,0.15)',
+    fontSize: '22px',
+    bottom: '-50px',
+    left: '40%',
+    transform: 'translateZ(30px)',
+    animation: 'floatParticle 10s ease-in-out infinite 3.5s'
   },
 
   // Slide 2 Visual - Profile Mock
