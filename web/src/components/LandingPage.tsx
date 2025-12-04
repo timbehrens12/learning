@@ -1,64 +1,446 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { LiquidBackground } from './LiquidBackground';
-import { HeroMockup } from './HeroMockup';
-import { HowItWorks } from './HowItWorks';
-import { FeatureBento } from './FeatureBento';
-import { TrustedBy } from './TrustedBy';
 import { Pricing } from './Pricing';
 import { FAQ } from './FAQ';
 import { DownloadModal } from './DownloadModal';
 import { Navbar } from './Navbar';
 import { Logo } from './Logo';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Brain, Zap, Shield, Sparkles, BookOpen, Layers, Target, MousePointer2, AlertCircle } from 'lucide-react';
 
 export const LandingPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { scrollY } = useScroll();
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const y = useTransform(scrollY, [0, 300], [0, 50]);
 
   return (
     <div 
-      className="relative min-h-screen text-white font-sans overflow-x-hidden" 
-      style={{ 
-        backgroundColor: '#050505',
-        minHeight: '100vh',
-        width: '100%'
-      }}
+      className="relative min-h-screen text-white font-sans overflow-x-hidden selection:bg-indigo-500/30" 
+      style={{ backgroundColor: '#050505' }}
     >
-      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%)' }} />
       <LiquidBackground />
 
       <Navbar />
 
       {/* Hero Section */}
-      <section className="pt-36 md:pt-48 pb-12 md:pb-20 px-4 text-center relative z-10 overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-5xl mx-auto flex flex-col items-center relative"
+      <section className="relative min-h-[90vh] flex flex-col justify-center items-center px-4 pt-32 pb-20 overflow-hidden">
+        <motion.div 
+          style={{ opacity, y }}
+          className="absolute inset-0 pointer-events-none"
         >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-blue-500/20 blur-[100px] -z-10" />
+          <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px]" />
+        </motion.div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 md:mb-8 leading-[1.1] px-2 text-white">
-            The #1 AI assistant <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-cyan-300">invisible</span> for students.
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 text-center max-w-5xl mx-auto"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </span>
+            <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">Visnly v2.0 is Live</span>
+          </div>
+
+          <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold tracking-tight mb-8 leading-[1.1]">
+            <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/50 pb-2">
+              Your Invisible
+            </span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-purple-300">
+              Second Brain.
+            </span>
           </h1>
           
-          <p className="text-lg sm:text-xl text-gray-400 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed font-normal px-4">
-            Reads your screen in real time, provides instant answers, takes perfect notes, and stays completely undetectable—even during screen sharing.
-            Use it for real studying, staying on top of classes, or as a silent backup when you decide to cheat on exams.
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
+            Real-time lecture analysis, instant answers, and smart study tools.
+            <span className="text-white font-medium"> Completely undetectable.</span>
           </p>
           
-          <div className="btn-wrapper mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             <button 
-              className="btn" 
-              tabIndex={0} 
+              className="group relative px-8 py-4 bg-white text-black rounded-full font-semibold text-lg hover:bg-gray-100 transition-all active:scale-95 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
               onClick={() => {
-                // Production download URL - can be overridden with VITE_DOWNLOAD_URL env var
                 const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
-                // Create a temporary anchor element to trigger download
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = 'Visnly-Setup.exe';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-10 blur-xl transition-opacity" />
+              <span className="flex items-center gap-2">
+                Download for Windows
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </button>
+            <Link to="/how-it-works" className="px-8 py-4 rounded-full font-medium text-gray-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all">
+              See how it works
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Floating UI Elements Mockup */}
+        <motion.div
+          initial={{ opacity: 0, y: 100, rotateX: 20 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-20 relative w-full max-w-4xl perspective-1000"
+        >
+          <div className="relative bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            
+            {/* Mockup Header */}
+            <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-4">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
+                <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
+              </div>
+              <div className="ml-4 px-3 py-1 rounded-md bg-white/5 text-[10px] text-gray-400 font-mono flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Live Transcript Active
+              </div>
+            </div>
+
+            {/* Mockup Content Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[300px] md:h-[400px]">
+              {/* Left Column: Chat/Transcript */}
+              <div className="md:col-span-2 bg-black/40 rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 z-10 pointer-events-none" />
+                <div className="flex items-start gap-3 opacity-60">
+                  <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">AI</div>
+                  <div className="p-3 rounded-2xl rounded-tl-none bg-white/5 text-sm text-gray-300">
+                    Based on the screen, here's the solution for the differential equation...
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 text-xs font-bold">V</div>
+                  <div className="p-3 rounded-2xl rounded-tl-none bg-indigo-500/10 border border-indigo-500/20 text-sm text-gray-200">
+                    <p className="font-semibold text-indigo-400 text-xs mb-1 uppercase tracking-wider">Tap-to-Explain</p>
+                    The term <span className="text-white font-mono bg-white/10 px-1 rounded">dy/dx</span> represents the rate of change. Since this is a first-order linear equation...
+                  </div>
+                </div>
+                <div className="mt-auto z-20">
+                  <div className="flex gap-2 mb-2">
+                    <span className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-[10px] border border-yellow-500/20">⚠️ Confusing Part Detected</span>
+                    <span className="px-2 py-1 rounded bg-pink-500/10 text-pink-500 text-[10px] border border-pink-500/20">⭐ Test-Worthy</span>
+                  </div>
+                  <div className="h-10 bg-white/5 rounded-lg border border-white/10 flex items-center px-4 text-gray-500 text-sm">
+                    Ask a follow-up question...
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Tools */}
+              <div className="hidden md:flex flex-col gap-3">
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/card">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 group-hover/card:text-indigo-300"><Brain size={16} /></div>
+                    <span className="font-medium text-sm">Key Concepts</span>
+                  </div>
+                  <div className="h-1.5 w-12 bg-white/10 rounded-full mb-1" />
+                  <div className="h-1.5 w-8 bg-white/10 rounded-full" />
+                </div>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/card">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-green-500/20 text-green-400 group-hover/card:text-green-300"><Target size={16} /></div>
+                    <span className="font-medium text-sm">Main Points</span>
+                  </div>
+                  <div className="h-1.5 w-16 bg-white/10 rounded-full mb-1" />
+                  <div className="h-1.5 w-10 bg-white/10 rounded-full" />
+                </div>
+                <div className="mt-auto p-4 rounded-xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase">Live Analysis</span>
+                    <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-full w-2/3 bg-indigo-500 rounded-full" />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-500">
+                      <span>Confidence</span>
+                      <span>98%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Feature Section 1: Analysis */}
+      <section className="py-24 px-4 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-2 text-indigo-400 font-mono text-sm mb-4">
+                <Sparkles size={16} />
+                <span>PHASE 1: INTELLIGENCE</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Turn Lectures into <br />
+                <span className="text-white">Knowledge Instantly.</span>
+              </h2>
+              <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                Stop frantically typing. Visnly listens to your lecture and watches your screen to extract what actually matters.
+              </p>
+              <ul className="space-y-4">
+                {[
+                  "Key Concepts & Definition Extraction",
+                  "Automatic Bullet-Point Notes",
+                  "End-of-Lecture Recaps & Study Guides"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-gray-300">
+                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 blur-3xl -z-10" />
+              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+                <div className="flex gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <BookOpen size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">One-Click Study Guide</h3>
+                    <p className="text-sm text-gray-500">Generated 2m ago • Calculus I</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/5">
+                    <div className="text-xs text-indigo-400 font-bold mb-1">KEY CONCEPT</div>
+                    <div className="text-sm text-gray-200">The Chain Rule applies when differentiating composite functions.</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/5">
+                    <div className="text-xs text-green-400 font-bold mb-1">FORMULA</div>
+                    <div className="text-sm font-mono text-gray-200">d/dx [f(g(x))] = f'(g(x)) * g'(x)</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/5">
+                    <div className="text-xs text-pink-400 font-bold mb-1">TEST TIP</div>
+                    <div className="text-sm text-gray-200">Professor emphasized this will be 20% of the midterm.</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Section 2: Interaction */}
+      <section className="py-24 px-4 bg-white/[0.02] border-y border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center md:grid-flow-col-dense">
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="md:col-start-2"
+            >
+              <div className="flex items-center gap-2 text-purple-400 font-mono text-sm mb-4">
+                <MousePointer2 size={16} />
+                <span>PHASE 2: INTERACTION</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Don't Just Watch. <br />
+                <span className="text-white">Interact.</span>
+              </h2>
+              <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                Confused? Just click. Visnly makes every line of your lecture transcript interactive.
+              </p>
+              <ul className="space-y-4">
+                {[
+                  "Tap-to-Explain: Instant clarity on any sentence",
+                  "Context Tools: \"What did they mean by that?\"",
+                  "Adapt to Your Style: Explanations in simple terms or analogies"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-gray-300">
+                    <div className="h-1.5 w-1.5 rounded-full bg-purple-500" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="relative md:col-start-1"
+            >
+              <div className="absolute inset-0 bg-gradient-to-l from-purple-500/20 to-pink-500/20 blur-3xl -z-10" />
+              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-1/2 right-10 w-8 h-8 bg-white/20 rounded-full animate-ping" />
+                <div className="absolute top-1/2 right-10 w-8 h-8 bg-white rounded-full flex items-center justify-center text-black z-20 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.5)]">
+                  <MousePointer2 size={16} />
+                </div>
+                
+                <div className="space-y-4 opacity-50 blur-[1px]">
+                  <div className="h-4 bg-white/10 rounded w-3/4" />
+                  <div className="h-4 bg-white/10 rounded w-full" />
+                  <div className="h-4 bg-white/10 rounded w-5/6" />
+                </div>
+                
+                <div className="mt-6 p-4 bg-[#1A1A1A] border border-purple-500/30 rounded-xl shadow-2xl relative z-10">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+                      <Zap size={12} /> AI Explanation
+                    </div>
+                    <div className="text-[10px] text-gray-500">Just now</div>
+                  </div>
+                  <p className="text-sm text-gray-200 leading-relaxed">
+                    The professor is referring to <span className="text-white font-semibold">entropy</span> here. Imagine a messy room—it takes work to clean it (order), but it gets messy naturally (disorder). That's what they mean by "natural tendency towards disorder."
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Section 3: Detection */}
+      <section className="py-24 px-4 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-2 text-red-400 font-mono text-sm mb-4">
+                <AlertCircle size={16} />
+                <span>PHASE 3: DETECTION</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Know What Matters <br />
+                <span className="text-white">Before the Exam.</span>
+              </h2>
+              <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                Visnly's AI stays alert even when you zone out. It flags critical moments automatically.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-red-500/30 transition-colors">
+                  <Target className="text-red-400 mb-3" size={24} />
+                  <h4 className="font-bold mb-1">Test-Worthy Detection</h4>
+                  <p className="text-xs text-gray-400">Flags "this will be on the exam" moments instantly.</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-yellow-500/30 transition-colors">
+                  <div className="text-yellow-400 mb-3 font-bold text-xl">?</div>
+                  <h4 className="font-bold mb-1">Confusion Alerts</h4>
+                  <p className="text-xs text-gray-400">Identifies complex topics that need extra review.</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-colors">
+                  <Layers className="text-blue-400 mb-3" size={24} />
+                  <h4 className="font-bold mb-1">Auto-Timestamps</h4>
+                  <p className="text-xs text-gray-400">Marks new topics, examples, and definitions.</p>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="relative h-[400px]"
+            >
+              {/* Abstract Timeline Visualization */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-1 h-full bg-white/10 relative">
+                  {[0.2, 0.4, 0.6, 0.8].map((top, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0 }}
+                      whileInView={{ scale: 1 }}
+                      transition={{ delay: i * 0.2 }}
+                      className="absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-4 border-[#050505]"
+                      style={{ 
+                        top: `${top * 100}%`,
+                        backgroundColor: i === 1 ? '#ec4899' : i === 3 ? '#eab308' : '#6366f1' 
+                      }}
+                    >
+                      <div className={`absolute left-8 top-1/2 -translate-y-1/2 w-48 p-3 rounded-lg border backdrop-blur-md ${
+                        i === 1 ? 'bg-pink-500/10 border-pink-500/30' : 
+                        i === 3 ? 'bg-yellow-500/10 border-yellow-500/30' : 
+                        'bg-indigo-500/10 border-indigo-500/30'
+                      }`}>
+                        <div className={`text-[10px] font-bold mb-1 ${
+                          i === 1 ? 'text-pink-400' : i === 3 ? 'text-yellow-400' : 'text-indigo-400'
+                        }`}>
+                          {i === 1 ? 'TEST ALERT' : i === 3 ? 'CONFUSION DETECTED' : 'NEW TOPIC'}
+                        </div>
+                        <div className="text-xs text-gray-300">
+                          {i === 1 ? 'Prof: "You WILL see this on the final."' : 
+                           i === 3 ? 'Complex explanation detected.' : 'Intro to Derivatives'}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <Pricing />
+      <FAQ />
+
+      {/* CTA Section */}
+      <section className="py-32 px-4 relative z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/20 to-transparent -z-10" />
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-5xl sm:text-6xl md:text-7xl font-bold mb-8 tracking-tight"
+          >
+            Pass the Class. <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Keep the Knowledge.</span>
+          </motion.h2>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex justify-center"
+          >
+            <button 
+              className="btn scale-125" 
+              tabIndex={0} 
+              onMouseDown={() => setIsDownloading(true)}
+              onMouseUp={() => setIsDownloading(false)}
+              onMouseLeave={() => setIsDownloading(false)}
+              onClick={() => {
+                const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
                 const link = document.createElement('a');
                 link.href = downloadUrl;
                 link.download = 'Visnly-Setup.exe';
@@ -70,175 +452,26 @@ export const LandingPage = () => {
               <svg className="btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.606L24 0v11.551H10.949V1.843zm-10.949 11.4h9.75V21.9L0 20.551V13.243zm10.949 0H24V24L10.949 22.157V13.243z" fill="currentColor"/>
               </svg>
-              <span className="btn-text">Get for Windows</span>
+              <span className="btn-text">{isDownloading ? 'Starting Download...' : 'Get for Windows'}</span>
             </button>
-          </div>
-          
-          <div className="mt-8 relative w-full max-w-5xl px-2 sm:px-4">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[800px] bg-indigo-500/10 blur-[100px] -z-10 rounded-full" />
-            <HeroMockup />
-          </div>
-        </motion.div>
-      </section>
-
-      <TrustedBy />
-      <section className="py-24 bg-black/20 border-y border-white/5">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Four ways we make you <br/> <span className="text-indigo-400">unstoppable</span>.</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            <div className="flex flex-col gap-4 p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-              <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 mb-2">
-                <ArrowRight size={24} className="-rotate-45" />
-              </div>
-              <h3 className="text-2xl font-bold">AI that answers questions, real-time</h3>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                Visnly uses the screen, text, and visual context to answer questions for you, live. No typing required.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-              <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 mb-2">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h10"/><path d="M9 4v16"/><path d="M3 9l3 3-3 3"/><path d="M12 6L2 12l10 6"/></svg>
-              </div>
-              <h3 className="text-2xl font-bold">Undetectable Overlay</h3>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                Completely invisible to screen sharing and proctoring software. It draws directly to the GPU buffer.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-              <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 mb-2">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-              </div>
-              <h3 className="text-2xl font-bold">Instant Explanations</h3>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                Don't just get the answer—understand the 'why'. Detailed breakdowns for every solution.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-              <div className="h-12 w-12 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-400 mb-2">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-              </div>
-              <h3 className="text-2xl font-bold">Automated Note Taking</h3>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                Save every question and answer automatically. Build a study guide while you work.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <HowItWorks />
-      <FeatureBento />
-      <Pricing />
-      <FAQ />
-
-      <section className="py-20 md:py-32 px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8 tracking-tight px-4"
-          >
-            Study or <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Never Study Again.</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-lg sm:text-xl md:text-2xl text-gray-400 mb-10 md:mb-14 max-w-2xl mx-auto leading-relaxed px-4"
-          >
-            The choice is yours. Visnly adapts to how you learn—whether you're putting in real study hours or using it as an invisible edge during school exams.
-          </motion.p>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="flex justify-center"
-              >
-                <div className="btn-wrapper">
-                  <button 
-                    className="btn" 
-                    tabIndex={0} 
-                    onMouseDown={() => setIsDownloading(true)}
-                    onMouseUp={() => setIsDownloading(false)}
-                    onMouseLeave={() => setIsDownloading(false)}
-                    onClick={() => {
-                      const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
-                      // Create a temporary anchor element to trigger download
-                      const link = document.createElement('a');
-                      link.href = downloadUrl;
-                      link.download = 'Visnly-Setup.exe';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
-                  >
-                    <svg className="btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.606L24 0v11.551H10.949V1.843zm-10.949 11.4h9.75V21.9L0 20.551V13.243zm10.949 0H24V24L10.949 22.157V13.243z" fill="currentColor"/>
-                    </svg>
-                    <span className="btn-text">{isDownloading ? 'Downloading' : 'Get for Windows'}</span>
-                  </button>
-                </div>
-              </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 sm:py-16 border-t border-white/5 relative z-10 bg-black/40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 sm:gap-8 mb-8 sm:mb-12">
-            <div className="text-center md:text-left">
-              <div className="flex items-center gap-2 mb-2 justify-center md:justify-start">
-                <Logo size={24} />
-                <div className="font-bold text-xl tracking-tight">Visnly</div>
-              </div>
-              <p className="text-sm text-gray-400">The invisible second brain for students.</p>
-            </div>
-            
-            <div className="flex items-center gap-4 sm:gap-5 flex-wrap justify-center md:justify-start">
-              <a href="#" className="icon-btn group" aria-label="Twitter / X">
-                <svg className="w-5 h-5 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-              </a>
-              <a href="#" className="icon-btn group" aria-label="Instagram">
-                <svg className="w-5 h-5 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                </svg>
-              </a>
-              <a href="#" className="icon-btn group" aria-label="TikTok">
-                <svg className="w-5 h-5 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-                </svg>
-              </a>
-            </div>
+      <footer className="py-12 border-t border-white/5 relative z-10 bg-black/40 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-2">
+            <Logo size={24} />
+            <div className="font-bold text-xl tracking-tight">Visnly</div>
           </div>
-
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-sm text-gray-500 mb-8 sm:mb-12">
-            <a href="#" className="hover:text-white transition-colors px-2">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors px-2">Terms of Service</a>
-            <Link to="/pricing" className="hover:text-white transition-colors px-2">Pricing</Link>
-            <a href="mailto:support@visnly.com" className="hover:text-white transition-colors px-2">Contact</a>
-            <a href="mailto:support@visnly.com" className="hover:text-white transition-colors px-2">Support</a>
+          <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
+            <a href="#" className="hover:text-white transition-colors">Privacy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms</a>
+            <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+            <a href="mailto:support@visnly.com" className="hover:text-white transition-colors">Contact</a>
           </div>
-
-          <div className="border-t border-white/5 pt-6 sm:pt-8">
-            <p className="text-xs text-gray-500 text-center max-w-4xl mx-auto leading-relaxed px-2">
-              <span className="text-gray-400 font-medium">Visnly is not affiliated with, endorsed by, or sponsored by Honorlock, Respondus, Proctorio, Canvas, Zoom, or any other trademarks mentioned on the site.</span> All trademarks are the property of their respective owners. Visnly is designed to support both traditional studying methods and provide instant assistance when needed. <span className="text-white">You can still study the correct way—Visnly enhances your learning experience for both purposes.</span>
-            </p>
-            <p className="text-xs text-gray-500 text-center mt-3 sm:mt-4">
-              © 2025 Visnly Inc. All rights reserved.
-            </p>
-          </div>
+          <p className="text-xs text-gray-600">© 2025 Visnly Inc.</p>
         </div>
       </footer>
 
