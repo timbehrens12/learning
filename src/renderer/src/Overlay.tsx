@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Tesseract from 'tesseract.js';
-import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide, explainSegment, explainTeacherMeaning, getContextBefore, extractFormulas, rewriteInStyle, askContextQuestion, LearningStyle } from './ai';
+import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide, explainSegment, explainTeacherMeaning, getContextBefore, extractFormulas, rewriteInStyle, askContextQuestion, LearningStyle, analyzeTranscriptSections, detectTestWorthySections, detectConfusingSections, generateTopicTimeline, TranscriptSegmentAnalysis } from './ai';
 import { supabase } from './lib/supabase';
 import GlassCard from './components/GlassCard';
 import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon } from './components/Icons';
@@ -74,6 +74,24 @@ const Overlay: React.FC = () => {
   const [extractedFormulas, setExtractedFormulas] = useState<{ formula: string; explanation: string }[]>([]);
   const [showLearningStylePicker, setShowLearningStylePicker] = useState(false);
   const [hoveredSegmentIndex, setHoveredSegmentIndex] = useState<number | null>(null);
+  
+  // Phase 3: Advanced Intelligence State
+  const [segmentAnalysis, setSegmentAnalysis] = useState<TranscriptSegmentAnalysis[]>([]);
+  const [testWorthySections, setTestWorthySections] = useState<{
+    sections: { text: string; reason: string; confidence: 'likely' | 'very_likely' | 'certain' }[];
+    summary: string;
+  } | null>(null);
+  const [confusingSections, setConfusingSections] = useState<{
+    sections: { text: string; reason: string; suggestion: string; severity: 'minor' | 'moderate' | 'significant' }[];
+    overallClarity: string;
+  } | null>(null);
+  const [topicTimeline, setTopicTimeline] = useState<{
+    timeline: { time: string; topic: string; type: string; duration?: string }[];
+    totalTopics: number;
+  } | null>(null);
+  const [isAnalyzingTranscript, setIsAnalyzingTranscript] = useState(false);
+  const [showTranscriptTags, setShowTranscriptTags] = useState(true);
+  const [analysisFilter, setAnalysisFilter] = useState<'all' | 'test_worthy' | 'confusing' | 'topics'>('all');
   
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
@@ -840,6 +858,148 @@ const Overlay: React.FC = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showContextMenu]);
 
+  // --- PHASE 3: ADVANCED INTELLIGENCE HANDLERS ---
+
+  // Analyze transcript sections (Auto-Timestamps)
+  const handleAnalyzeTranscript = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (transcriptSegments.length === 0) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No transcript to analyze. Start recording first."}]);
+      return;
+    }
+    
+    setIsAnalyzingTranscript(true);
+    setMessages(prev => [...prev, {sender: 'system', text: "🔍 Analyzing transcript sections..."}]);
+    
+    try {
+      const analysis = await analyzeTranscriptSections(transcriptSegments, scannedText, userId);
+      setSegmentAnalysis(analysis);
+      
+      const testWorthyCount = analysis.filter(a => a.isTestWorthy).length;
+      const confusingCount = analysis.filter(a => a.isConfusing).length;
+      const newTopics = analysis.filter(a => a.tags.includes('new_topic')).length;
+      
+      setMessages(prev => [...prev, {
+        sender: 'system', 
+        text: `✅ Analysis complete: ${newTopics} topics, ${testWorthyCount} test-worthy, ${confusingCount} potentially confusing sections`
+      }]);
+    } catch (error: any) {
+      console.error('Failed to analyze transcript:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to analyze transcript'}`}]);
+    } finally {
+      setIsAnalyzingTranscript(false);
+    }
+  }, [userId, transcriptSegments, scannedText]);
+
+  // Detect Test-Worthy Sections
+  const handleDetectTestWorthy = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, testWorthy: true } }));
+    
+    try {
+      const result = await detectTestWorthySections(transcriptLog, scannedText, userId);
+      setTestWorthySections(result);
+      
+      if (result.sections.length === 0) {
+        setMessages(prev => [...prev, {sender: 'system', text: "ℹ️ No explicitly test-worthy sections detected."}]);
+      }
+    } catch (error: any) {
+      console.error('Failed to detect test-worthy sections:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to detect test-worthy sections'}`}]);
+    } finally {
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, testWorthy: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  // Detect Confusing Sections
+  const handleDetectConfusing = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, confusing: true } }));
+    
+    try {
+      const result = await detectConfusingSections(transcriptLog, scannedText, userId);
+      setConfusingSections(result);
+      
+      if (result.sections.length === 0) {
+        setMessages(prev => [...prev, {sender: 'system', text: "✅ No confusing sections detected - lecture seems clear!"}]);
+      }
+    } catch (error: any) {
+      console.error('Failed to detect confusing sections:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to analyze'}`}]);
+    } finally {
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, confusing: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  // Generate Topic Timeline
+  const handleGenerateTimeline = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (transcriptSegments.length === 0) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No transcript to analyze."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, timeline: true } }));
+    
+    try {
+      const result = await generateTopicTimeline(transcriptSegments, userId);
+      setTopicTimeline(result);
+    } catch (error: any) {
+      console.error('Failed to generate timeline:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to generate timeline'}`}]);
+    } finally {
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, timeline: false } }));
+    }
+  }, [userId, transcriptSegments]);
+
+  // Get tag color for segment
+  const getTagColor = (tag: string): string => {
+    const colors: Record<string, string> = {
+      'new_topic': '#8b5cf6',
+      'example': '#0ea5e9',
+      'definition': '#22c55e',
+      'review': '#f59e0b',
+      'important': '#ef4444',
+      'test_worthy': '#ec4899',
+      'confusing': '#f97316',
+      'summary': '#6366f1'
+    };
+    return colors[tag] || '#888';
+  };
+
+  // Get importance badge color
+  const getImportanceColor = (importance: string): string => {
+    const colors: Record<string, string> = {
+      'low': '#666',
+      'medium': '#888',
+      'high': '#f59e0b',
+      'critical': '#ef4444'
+    };
+    return colors[importance] || '#888';
+  };
+
   const handleQuickAnalysis = useCallback(async () => {
     if (isScanning || isThinking) return;
     await handleAnalyze();
@@ -1266,9 +1426,21 @@ const Overlay: React.FC = () => {
                 )}
               </div>
               <div style={{display: 'flex', gap: '6px', alignItems: 'center'}}>
+                <button 
+                  onClick={handleAnalyzeTranscript} 
+                  disabled={isAnalyzingTranscript}
+                  style={{
+                    ...styles.toolBtn,
+                    background: segmentAnalysis.length > 0 ? 'rgba(139,92,246,0.15)' : undefined
+                  }} 
+                  title="Analyze transcript sections"
+                >
+                  <TargetIcon size={14} color={segmentAnalysis.length > 0 ? '#8b5cf6' : 'currentColor'} />
+                  <span>{isAnalyzingTranscript ? '...' : 'Analyze'}</span>
+                </button>
                 <button onClick={() => handleTranscriptAction('copy')} style={styles.toolBtn} title="Copy all transcript">
                   <CopyIcon size={14} color="currentColor" />
-                  <span>Copy All</span>
+                  <span>Copy</span>
                 </button>
                 <button onClick={() => handleTranscriptAction('summarize')} style={styles.toolBtn} title="Summarize with AI">
                   <ZapIcon size={14} color="currentColor" />
@@ -1276,6 +1448,40 @@ const Overlay: React.FC = () => {
                 </button>
               </div>
             </div>
+            
+            {/* Analysis Filters (shown when analysis exists) */}
+            {segmentAnalysis.length > 0 && (
+              <div style={styles.analysisFiltersBar}>
+                <button 
+                  onClick={() => setShowTranscriptTags(!showTranscriptTags)}
+                  style={{
+                    ...styles.analysisFilterBtn,
+                    background: showTranscriptTags ? 'rgba(139,92,246,0.2)' : 'transparent'
+                  }}
+                >
+                  {showTranscriptTags ? '🏷️ Tags On' : '🏷️ Tags Off'}
+                </button>
+                <div style={styles.analysisFilterDivider}></div>
+                {[
+                  { key: 'all', label: 'All', count: segmentAnalysis.length },
+                  { key: 'test_worthy', label: '⭐ Test', count: segmentAnalysis.filter(s => s.isTestWorthy).length },
+                  { key: 'confusing', label: '⚠️ Review', count: segmentAnalysis.filter(s => s.isConfusing).length },
+                  { key: 'topics', label: '📌 Topics', count: segmentAnalysis.filter(s => s.tags.includes('new_topic')).length },
+                ].map(filter => (
+                  <button
+                    key={filter.key}
+                    onClick={() => setAnalysisFilter(filter.key as any)}
+                    style={{
+                      ...styles.analysisFilterBtn,
+                      background: analysisFilter === filter.key ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      opacity: filter.count === 0 ? 0.5 : 1
+                    }}
+                  >
+                    {filter.label} ({filter.count})
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Text Stream - Now with Tap-to-Explain */}
             <div style={styles.transcriptContent}>
@@ -1288,34 +1494,89 @@ const Overlay: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {transcriptSegments.map((seg, i) => (
-                    <div 
-                      key={i} 
-                      style={{
-                        ...styles.transcriptRow,
-                        ...styles.transcriptRowClickable,
-                        backgroundColor: selectedSegment?.index === i 
-                          ? 'rgba(139,92,246,0.15)' 
-                          : hoveredSegmentIndex === i 
-                            ? 'rgba(139,92,246,0.08)' 
-                            : 'transparent'
-                      }}
-                      onClick={(e) => handleSegmentClick({ index: i, text: seg.text, time: seg.time }, e)}
-                      onContextMenu={(e) => handleSegmentRightClick({ index: i, text: seg.text, time: seg.time }, e)}
-                      onMouseEnter={() => setHoveredSegmentIndex(i)}
-                      onMouseLeave={() => setHoveredSegmentIndex(null)}
-                      title="Click to explain • Right-click for more options"
-                    >
-                      <span style={styles.timestamp}>{seg.time}</span>
-                      <span style={styles.transcriptLineText}>{seg.text}</span>
-                      <span style={{
-                        ...styles.tapToExplainHint,
-                        opacity: hoveredSegmentIndex === i ? 1 : 0
-                      }}>
-                        <LightbulbIcon size={12} color="rgba(139,92,246,0.7)" />
-                      </span>
-                    </div>
-                  ))}
+                  {transcriptSegments.map((seg, i) => {
+                    const analysis = segmentAnalysis[i];
+                    const shouldShow = analysisFilter === 'all' || 
+                      (analysisFilter === 'test_worthy' && analysis?.isTestWorthy) ||
+                      (analysisFilter === 'confusing' && analysis?.isConfusing) ||
+                      (analysisFilter === 'topics' && analysis?.tags.includes('new_topic'));
+                    
+                    if (segmentAnalysis.length > 0 && !shouldShow) return null;
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        style={{
+                          ...styles.transcriptRow,
+                          ...styles.transcriptRowClickable,
+                          backgroundColor: selectedSegment?.index === i 
+                            ? 'rgba(139,92,246,0.15)' 
+                            : hoveredSegmentIndex === i 
+                              ? 'rgba(139,92,246,0.08)' 
+                              : analysis?.isTestWorthy 
+                                ? 'rgba(236,72,153,0.08)'
+                                : analysis?.isConfusing
+                                  ? 'rgba(249,115,22,0.08)'
+                                  : 'transparent',
+                          borderLeft: analysis?.importance === 'critical' 
+                            ? '3px solid #ef4444' 
+                            : analysis?.importance === 'high'
+                              ? '3px solid #f59e0b'
+                              : analysis?.isTestWorthy
+                                ? '3px solid #ec4899'
+                                : 'none',
+                          paddingLeft: analysis?.importance === 'critical' || analysis?.importance === 'high' || analysis?.isTestWorthy
+                            ? '10px' : undefined
+                        }}
+                        onClick={(e) => handleSegmentClick({ index: i, text: seg.text, time: seg.time }, e)}
+                        onContextMenu={(e) => handleSegmentRightClick({ index: i, text: seg.text, time: seg.time }, e)}
+                        onMouseEnter={() => setHoveredSegmentIndex(i)}
+                        onMouseLeave={() => setHoveredSegmentIndex(null)}
+                        title="Click to explain • Right-click for more options"
+                      >
+                        <span style={styles.timestamp}>{seg.time}</span>
+                        <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                          {/* Topic Label if new topic */}
+                          {showTranscriptTags && analysis?.topicLabel && (
+                            <span style={styles.topicLabel}>📌 {analysis.topicLabel}</span>
+                          )}
+                          
+                          <span style={styles.transcriptLineText}>{seg.text}</span>
+                          
+                          {/* Tags */}
+                          {showTranscriptTags && analysis && analysis.tags.length > 0 && (
+                            <div style={styles.segmentTagsRow}>
+                              {analysis.tags.map((tag, ti) => (
+                                <span 
+                                  key={ti} 
+                                  style={{
+                                    ...styles.segmentTag,
+                                    backgroundColor: `${getTagColor(tag)}20`,
+                                    borderColor: `${getTagColor(tag)}40`,
+                                    color: getTagColor(tag)
+                                  }}
+                                >
+                                  {tag.replace('_', ' ')}
+                                </span>
+                              ))}
+                              {analysis.isTestWorthy && (
+                                <span style={styles.testWorthyBadge}>⭐ TEST</span>
+                              )}
+                              {analysis.isConfusing && (
+                                <span style={styles.confusingBadge}>⚠️ REVIEW</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{
+                          ...styles.tapToExplainHint,
+                          opacity: hoveredSegmentIndex === i ? 1 : 0
+                        }}>
+                          <LightbulbIcon size={12} color="rgba(139,92,246,0.7)" />
+                        </span>
+                      </div>
+                    );
+                  })}
                   {isListening && (
                     <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '8px'}}>
                       Listening...
@@ -1611,6 +1872,60 @@ const Overlay: React.FC = () => {
               </div>
             </div>
 
+            {/* Phase 3: Advanced Analysis Section */}
+            <div style={styles.advancedAnalysisSection}>
+              <div style={styles.contextToolsHeader}>
+                <TargetIcon size={14} color="#ec4899" />
+                <span>Smart Analysis</span>
+              </div>
+              <div style={styles.contextToolsGrid}>
+                <button 
+                  onClick={handleDetectTestWorthy}
+                  disabled={notesState.isLoading.testWorthy}
+                  style={{
+                    ...styles.contextToolBtn,
+                    background: testWorthySections ? 'rgba(236,72,153,0.15)' : undefined,
+                    borderColor: testWorthySections ? 'rgba(236,72,153,0.3)' : undefined
+                  }}
+                >
+                  ⭐ Test-Worthy {notesState.isLoading.testWorthy && '...'}
+                </button>
+                <button 
+                  onClick={handleDetectConfusing}
+                  disabled={notesState.isLoading.confusing}
+                  style={{
+                    ...styles.contextToolBtn,
+                    background: confusingSections ? 'rgba(249,115,22,0.15)' : undefined,
+                    borderColor: confusingSections ? 'rgba(249,115,22,0.3)' : undefined
+                  }}
+                >
+                  ⚠️ Confusing Parts {notesState.isLoading.confusing && '...'}
+                </button>
+                <button 
+                  onClick={handleGenerateTimeline}
+                  disabled={notesState.isLoading.timeline}
+                  style={{
+                    ...styles.contextToolBtn,
+                    background: topicTimeline ? 'rgba(99,102,241,0.15)' : undefined,
+                    borderColor: topicTimeline ? 'rgba(99,102,241,0.3)' : undefined
+                  }}
+                >
+                  📍 Topic Timeline {notesState.isLoading.timeline && '...'}
+                </button>
+                <button 
+                  onClick={handleAnalyzeTranscript}
+                  disabled={isAnalyzingTranscript}
+                  style={{
+                    ...styles.contextToolBtn,
+                    background: segmentAnalysis.length > 0 ? 'rgba(139,92,246,0.15)' : undefined,
+                    borderColor: segmentAnalysis.length > 0 ? 'rgba(139,92,246,0.3)' : undefined
+                  }}
+                >
+                  🔍 Full Analysis {isAnalyzingTranscript && '...'}
+                </button>
+              </div>
+            </div>
+
             {/* Extracted Formulas Display */}
             {extractedFormulas.length > 0 && (
               <div style={styles.formulasSection}>
@@ -1639,6 +1954,141 @@ const Overlay: React.FC = () => {
                     <div key={i} style={styles.formulaItem}>
                       <div style={styles.formulaText}>{f.formula}</div>
                       <div style={styles.formulaExplanation}>{f.explanation}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Test-Worthy Sections Display */}
+            {testWorthySections && testWorthySections.sections.length > 0 && (
+              <div style={styles.testWorthySection}>
+                <div style={styles.notesSectionHeader}>
+                  <StarIcon size={16} color="#ec4899" />
+                  <span>Test-Worthy Material</span>
+                  <button 
+                    onClick={() => {
+                      const content = `TEST-WORTHY MATERIAL\n\n${testWorthySections.summary}\n\n${testWorthySections.sections.map(s => `[${s.confidence.toUpperCase()}] ${s.text}\n→ ${s.reason}`).join('\n\n')}`;
+                      navigator.clipboard.writeText(content);
+                      setMessages(prev => [...prev, {sender: 'system', text: '✅ Copied!'}]);
+                    }}
+                    style={styles.copySmallBtn}
+                  >
+                    <CopyIcon size={12} color="currentColor" />
+                  </button>
+                  <button 
+                    onClick={() => setTestWorthySections(null)}
+                    style={{...styles.copySmallBtn, marginLeft: '4px'}}
+                  >
+                    <XIcon size={12} color="currentColor" />
+                  </button>
+                </div>
+                <div style={styles.testWorthySummary}>{testWorthySections.summary}</div>
+                <div style={styles.testWorthyList}>
+                  {testWorthySections.sections.map((section, i) => (
+                    <div key={i} style={styles.testWorthyItem}>
+                      <div style={styles.testWorthyItemHeader}>
+                        <span style={{
+                          ...styles.confidenceBadge,
+                          background: section.confidence === 'certain' ? 'rgba(239,68,68,0.2)' :
+                                     section.confidence === 'very_likely' ? 'rgba(236,72,153,0.2)' : 'rgba(249,115,22,0.2)',
+                          color: section.confidence === 'certain' ? '#ef4444' :
+                                section.confidence === 'very_likely' ? '#ec4899' : '#f97316'
+                        }}>
+                          {section.confidence === 'certain' ? '🎯 CERTAIN' : 
+                           section.confidence === 'very_likely' ? '⭐ VERY LIKELY' : '📌 LIKELY'}
+                        </span>
+                      </div>
+                      <div style={styles.testWorthyText}>"{section.text}"</div>
+                      <div style={styles.testWorthyReason}>→ {section.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Confusing Sections Display */}
+            {confusingSections && confusingSections.sections.length > 0 && (
+              <div style={styles.confusingSection}>
+                <div style={styles.notesSectionHeader}>
+                  <HelpCircleIcon size={16} color="#f97316" />
+                  <span>Areas to Review</span>
+                  <span style={styles.clarityBadge}>
+                    {confusingSections.overallClarity === 'clear' ? '✅ Clear' :
+                     confusingSections.overallClarity === 'mostly_clear' ? '👍 Mostly Clear' :
+                     confusingSections.overallClarity === 'somewhat_confusing' ? '⚠️ Some Confusion' : '❗ Very Confusing'}
+                  </span>
+                  <button 
+                    onClick={() => setConfusingSections(null)}
+                    style={{...styles.copySmallBtn, marginLeft: 'auto'}}
+                  >
+                    <XIcon size={12} color="currentColor" />
+                  </button>
+                </div>
+                <div style={styles.confusingList}>
+                  {confusingSections.sections.map((section, i) => (
+                    <div key={i} style={{
+                      ...styles.confusingItem,
+                      borderLeftColor: section.severity === 'significant' ? '#ef4444' :
+                                       section.severity === 'moderate' ? '#f97316' : '#f59e0b'
+                    }}>
+                      <div style={styles.confusingSeverity}>
+                        {section.severity === 'significant' ? '🔴' : section.severity === 'moderate' ? '🟠' : '🟡'} 
+                        {section.severity.toUpperCase()}
+                      </div>
+                      <div style={styles.confusingText}>"{section.text}"</div>
+                      <div style={styles.confusingReason}>Why: {section.reason}</div>
+                      <div style={styles.confusingSuggestion}>💡 {section.suggestion}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Topic Timeline Display */}
+            {topicTimeline && topicTimeline.timeline.length > 0 && (
+              <div style={styles.timelineSection}>
+                <div style={styles.notesSectionHeader}>
+                  <ListIcon size={16} color="#6366f1" />
+                  <span>Topic Timeline ({topicTimeline.totalTopics} topics)</span>
+                  <button 
+                    onClick={() => {
+                      const content = topicTimeline.timeline.map(t => `${t.time} - ${t.topic} (${t.type})${t.duration ? ` [${t.duration}]` : ''}`).join('\n');
+                      navigator.clipboard.writeText(content);
+                      setMessages(prev => [...prev, {sender: 'system', text: '✅ Copied timeline!'}]);
+                    }}
+                    style={styles.copySmallBtn}
+                  >
+                    <CopyIcon size={12} color="currentColor" />
+                  </button>
+                  <button 
+                    onClick={() => setTopicTimeline(null)}
+                    style={{...styles.copySmallBtn, marginLeft: '4px'}}
+                  >
+                    <XIcon size={12} color="currentColor" />
+                  </button>
+                </div>
+                <div style={styles.timelineList}>
+                  {topicTimeline.timeline.map((item, i) => (
+                    <div key={i} style={styles.timelineItem}>
+                      <div style={styles.timelineTime}>{item.time}</div>
+                      <div style={styles.timelineDot}></div>
+                      <div style={styles.timelineContent}>
+                        <div style={styles.timelineTopic}>{item.topic}</div>
+                        <div style={styles.timelineMeta}>
+                          <span style={{
+                            ...styles.timelineType,
+                            background: item.type === 'intro' ? 'rgba(139,92,246,0.2)' :
+                                       item.type === 'deep_dive' ? 'rgba(14,165,233,0.2)' :
+                                       item.type === 'example' ? 'rgba(34,197,94,0.2)' :
+                                       item.type === 'review' ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)'
+                          }}>
+                            {item.type === 'intro' ? '🆕' : item.type === 'deep_dive' ? '🔍' : 
+                             item.type === 'example' ? '📝' : item.type === 'review' ? '🔄' : '➡️'} {item.type}
+                          </span>
+                          {item.duration && <span style={styles.timelineDuration}>{item.duration}</span>}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2933,6 +3383,247 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '11px',
     color: '#888',
     lineHeight: '1.4'
+  },
+  
+  // --- PHASE 3: ADVANCED INTELLIGENCE STYLES ---
+  
+  // Analysis Filters Bar
+  analysisFiltersBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    background: 'rgba(0,0,0,0.2)',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    overflowX: 'auto'
+  },
+  analysisFilterBtn: {
+    padding: '4px 8px',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '4px',
+    color: '#888',
+    fontSize: '10px',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'all 0.15s ease'
+  },
+  analysisFilterDivider: {
+    width: '1px',
+    height: '16px',
+    background: 'rgba(255,255,255,0.1)',
+    margin: '0 4px'
+  },
+  
+  // Segment Tags
+  topicLabel: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#8b5cf6',
+    background: 'rgba(139,92,246,0.15)',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    alignSelf: 'flex-start'
+  },
+  segmentTagsRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '4px',
+    marginTop: '2px'
+  },
+  segmentTag: {
+    fontSize: '9px',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    border: '1px solid',
+    fontWeight: 500,
+    textTransform: 'uppercase'
+  },
+  testWorthyBadge: {
+    fontSize: '9px',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    background: 'rgba(236,72,153,0.2)',
+    color: '#ec4899',
+    fontWeight: 700
+  },
+  confusingBadge: {
+    fontSize: '9px',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    background: 'rgba(249,115,22,0.2)',
+    color: '#f97316',
+    fontWeight: 700
+  },
+  
+  // Advanced Analysis Section
+  advancedAnalysisSection: {
+    padding: '10px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    background: 'rgba(236,72,153,0.03)'
+  },
+  
+  // Test-Worthy Section
+  testWorthySection: {
+    margin: '0 14px 14px',
+    padding: '12px',
+    background: 'rgba(236,72,153,0.05)',
+    borderRadius: '10px',
+    border: '1px solid rgba(236,72,153,0.15)'
+  },
+  testWorthySummary: {
+    fontSize: '12px',
+    color: '#fff',
+    padding: '10px',
+    background: 'rgba(236,72,153,0.1)',
+    borderRadius: '6px',
+    marginBottom: '10px',
+    lineHeight: '1.5'
+  },
+  testWorthyList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  testWorthyItem: {
+    padding: '10px',
+    background: 'rgba(0,0,0,0.2)',
+    borderRadius: '6px',
+    borderLeft: '3px solid #ec4899'
+  },
+  testWorthyItemHeader: {
+    marginBottom: '6px'
+  },
+  confidenceBadge: {
+    fontSize: '10px',
+    fontWeight: 700,
+    padding: '2px 6px',
+    borderRadius: '4px'
+  },
+  testWorthyText: {
+    fontSize: '12px',
+    color: '#fff',
+    fontStyle: 'italic',
+    marginBottom: '4px',
+    lineHeight: '1.5'
+  },
+  testWorthyReason: {
+    fontSize: '11px',
+    color: '#888',
+    lineHeight: '1.4'
+  },
+  
+  // Confusing Section
+  confusingSection: {
+    margin: '0 14px 14px',
+    padding: '12px',
+    background: 'rgba(249,115,22,0.05)',
+    borderRadius: '10px',
+    border: '1px solid rgba(249,115,22,0.15)'
+  },
+  clarityBadge: {
+    fontSize: '10px',
+    color: '#888',
+    marginLeft: '8px'
+  },
+  confusingList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  confusingItem: {
+    padding: '10px',
+    background: 'rgba(0,0,0,0.2)',
+    borderRadius: '6px',
+    borderLeft: '3px solid #f97316'
+  },
+  confusingSeverity: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: '#f97316',
+    marginBottom: '4px'
+  },
+  confusingText: {
+    fontSize: '12px',
+    color: '#fff',
+    fontStyle: 'italic',
+    marginBottom: '4px',
+    lineHeight: '1.5'
+  },
+  confusingReason: {
+    fontSize: '11px',
+    color: '#888',
+    marginBottom: '4px',
+    lineHeight: '1.4'
+  },
+  confusingSuggestion: {
+    fontSize: '11px',
+    color: '#22c55e',
+    background: 'rgba(34,197,94,0.1)',
+    padding: '6px 8px',
+    borderRadius: '4px',
+    lineHeight: '1.4'
+  },
+  
+  // Timeline Section
+  timelineSection: {
+    margin: '0 14px 14px',
+    padding: '12px',
+    background: 'rgba(99,102,241,0.05)',
+    borderRadius: '10px',
+    border: '1px solid rgba(99,102,241,0.15)'
+  },
+  timelineList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0'
+  },
+  timelineItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+    padding: '8px 0',
+    position: 'relative'
+  },
+  timelineTime: {
+    fontSize: '10px',
+    color: '#6366f1',
+    fontWeight: 600,
+    minWidth: '45px',
+    flexShrink: 0
+  },
+  timelineDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: '#6366f1',
+    flexShrink: 0,
+    marginTop: '4px',
+    position: 'relative'
+  },
+  timelineContent: {
+    flex: 1
+  },
+  timelineTopic: {
+    fontSize: '12px',
+    color: '#fff',
+    fontWeight: 500,
+    marginBottom: '4px'
+  },
+  timelineMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  timelineType: {
+    fontSize: '10px',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    color: '#ccc'
+  },
+  timelineDuration: {
+    fontSize: '10px',
+    color: '#666'
   }
 };
 

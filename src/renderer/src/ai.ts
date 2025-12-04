@@ -657,3 +657,295 @@ Answer the question based on the lecture content.`;
     throw error;
   }
 }
+
+// ============================================
+// PHASE 3: ADVANCED INTELLIGENCE FEATURES
+// ============================================
+
+// Types for transcript analysis
+export interface TranscriptSegmentAnalysis {
+  segmentIndex: number;
+  segmentText: string;
+  timestamp: string;
+  tags: ('new_topic' | 'example' | 'definition' | 'review' | 'important' | 'test_worthy' | 'confusing' | 'summary')[];
+  topicLabel?: string;
+  importance: 'low' | 'medium' | 'high' | 'critical';
+  isTestWorthy: boolean;
+  isConfusing: boolean;
+  notes?: string;
+}
+
+export interface LectureAnalysisResult {
+  segments: TranscriptSegmentAnalysis[];
+  topics: { name: string; startIndex: number; endIndex: number }[];
+  testWorthyCount: number;
+  confusingCount: number;
+}
+
+// Auto-Timestamps: Analyze transcript and tag sections
+export async function analyzeTranscriptSections(
+  segments: { time: string; text: string }[],
+  scannedText: string,
+  userId: string | null
+): Promise<TranscriptSegmentAnalysis[]> {
+  if (segments.length === 0) return [];
+  
+  const systemPrompt = `You are an expert at analyzing lecture transcripts. Analyze each segment and tag it appropriately.
+
+Your response MUST be a JSON array (no markdown, just raw JSON) with one object per segment:
+[
+  {
+    "segmentIndex": 0,
+    "tags": ["new_topic", "definition"],
+    "topicLabel": "Introduction to Derivatives",
+    "importance": "high",
+    "isTestWorthy": true,
+    "isConfusing": false,
+    "notes": "Key definition introduced"
+  }
+]
+
+Available tags:
+- "new_topic" - A new subject/topic is being introduced
+- "example" - An example or demonstration is being given
+- "definition" - A term or concept is being defined
+- "review" - Previously covered material is being reviewed
+- "important" - Professor emphasizes this is important
+- "test_worthy" - Likely to appear on exam (phrases like "this will be on the test", "remember this", "important to know")
+- "confusing" - Complex explanation, professor repeats themselves, or uses hedging language
+- "summary" - Summarizing or wrapping up a topic
+
+Importance levels:
+- "low" - Background info, tangents
+- "medium" - Regular lecture content
+- "high" - Key concepts, emphasized points
+- "critical" - Must-know, explicitly marked as test material
+
+Rules:
+- Analyze EACH segment provided
+- A segment can have multiple tags
+- Look for phrases like "this is important", "remember this", "on the exam" for test_worthy
+- Look for repetition, "let me explain again", complex phrasing for confusing
+- topicLabel should be a short 2-5 word description when a new topic starts`;
+
+  // Format segments for analysis
+  const segmentsList = segments.map((seg, i) => 
+    `[${i}] ${seg.time}: ${seg.text}`
+  ).join('\n');
+
+  const userPrompt = `Analyze these lecture transcript segments:
+
+${segmentsList}
+
+${scannedText ? `\nSCREEN CONTEXT:\n${scannedText}` : ''}
+
+Return a JSON array with analysis for each segment.`;
+
+  try {
+    const response = await callAISimple(systemPrompt, userPrompt, userId, 0.3);
+    const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const analysis = JSON.parse(cleaned);
+    
+    // Merge with original segment data
+    return segments.map((seg, i) => {
+      const aiAnalysis = analysis.find((a: any) => a.segmentIndex === i) || {};
+      return {
+        segmentIndex: i,
+        segmentText: seg.text,
+        timestamp: seg.time,
+        tags: aiAnalysis.tags || [],
+        topicLabel: aiAnalysis.topicLabel,
+        importance: aiAnalysis.importance || 'medium',
+        isTestWorthy: aiAnalysis.isTestWorthy || false,
+        isConfusing: aiAnalysis.isConfusing || false,
+        notes: aiAnalysis.notes
+      };
+    });
+  } catch (error) {
+    console.error("Failed to analyze transcript sections:", error);
+    return segments.map((seg, i) => ({
+      segmentIndex: i,
+      segmentText: seg.text,
+      timestamp: seg.time,
+      tags: [],
+      importance: 'medium' as const,
+      isTestWorthy: false,
+      isConfusing: false
+    }));
+  }
+}
+
+// Test-Worthy Detection: Find sections likely to be on exams
+export async function detectTestWorthySections(
+  transcript: string,
+  scannedText: string,
+  userId: string | null
+): Promise<{
+  sections: { text: string; reason: string; confidence: 'likely' | 'very_likely' | 'certain' }[];
+  summary: string;
+}> {
+  const systemPrompt = `You are an expert at identifying test-worthy material in lectures.
+
+Identify sections that are likely to appear on exams based on:
+1. Explicit mentions ("this will be on the test", "remember this", "important")
+2. Repeated emphasis
+3. Core concepts and definitions
+4. Formulas and key equations
+5. Professor's tone and phrasing
+
+Your response MUST be in this exact JSON format (no markdown):
+{
+  "sections": [
+    {
+      "text": "The exact quote or paraphrase from the lecture",
+      "reason": "Why this is likely test material",
+      "confidence": "likely" | "very_likely" | "certain"
+    }
+  ],
+  "summary": "A brief summary of the most test-critical topics"
+}
+
+Confidence levels:
+- "certain" - Professor explicitly said it would be on the test
+- "very_likely" - Strong emphasis, repeated multiple times, or core definition
+- "likely" - Important concept but not explicitly emphasized`;
+
+  const userPrompt = `Identify test-worthy material in this lecture:
+
+TRANSCRIPT:
+${transcript || "(No transcript)"}
+
+SCREEN CONTENT:
+${scannedText || "(No screen content)"}
+
+Find all sections likely to be on exams.`;
+
+  try {
+    const response = await callAISimple(systemPrompt, userPrompt, userId, 0.3);
+    const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (error) {
+    console.error("Failed to detect test-worthy sections:", error);
+    return { sections: [], summary: "Unable to analyze test-worthy content." };
+  }
+}
+
+// Confusion Detection: Find potentially confusing parts
+export async function detectConfusingSections(
+  transcript: string,
+  scannedText: string,
+  userId: string | null
+): Promise<{
+  sections: { 
+    text: string; 
+    reason: string; 
+    suggestion: string;
+    severity: 'minor' | 'moderate' | 'significant' 
+  }[];
+  overallClarity: 'clear' | 'mostly_clear' | 'somewhat_confusing' | 'very_confusing';
+}> {
+  const systemPrompt = `You are an expert at identifying confusing parts in lectures that students might struggle with.
+
+Look for:
+1. Complex explanations without examples
+2. Jargon without definitions
+3. Professor repeating themselves or rephrasing (sign they know it's confusing)
+4. Quick transitions between topics
+5. Abstract concepts without concrete examples
+6. Contradictory or unclear statements
+7. Dense information delivered too quickly
+
+Your response MUST be in this exact JSON format (no markdown):
+{
+  "sections": [
+    {
+      "text": "The confusing part (quote or paraphrase)",
+      "reason": "Why this might confuse students",
+      "suggestion": "What the student should do (re-read, ask professor, look up, etc.)",
+      "severity": "minor" | "moderate" | "significant"
+    }
+  ],
+  "overallClarity": "clear" | "mostly_clear" | "somewhat_confusing" | "very_confusing"
+}
+
+Severity levels:
+- "minor" - Slightly unclear but manageable
+- "moderate" - Needs extra attention to understand
+- "significant" - Likely to cause misunderstanding without clarification`;
+
+  const userPrompt = `Identify confusing parts in this lecture:
+
+TRANSCRIPT:
+${transcript || "(No transcript)"}
+
+SCREEN CONTENT:
+${scannedText || "(No screen content)"}
+
+Find sections that might confuse students.`;
+
+  try {
+    const response = await callAISimple(systemPrompt, userPrompt, userId, 0.4);
+    const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (error) {
+    console.error("Failed to detect confusing sections:", error);
+    return { sections: [], overallClarity: 'mostly_clear' };
+  }
+}
+
+// Topic Timeline: Generate a timeline of topics covered
+export async function generateTopicTimeline(
+  segments: { time: string; text: string }[],
+  userId: string | null
+): Promise<{
+  timeline: { 
+    time: string; 
+    topic: string; 
+    type: 'intro' | 'deep_dive' | 'example' | 'review' | 'transition';
+    duration?: string;
+  }[];
+  totalTopics: number;
+}> {
+  if (segments.length === 0) return { timeline: [], totalTopics: 0 };
+  
+  const systemPrompt = `You are an expert at creating topic timelines from lecture transcripts.
+
+Create a timeline showing when each topic was discussed.
+
+Your response MUST be in this exact JSON format (no markdown):
+{
+  "timeline": [
+    {
+      "time": "10:30",
+      "topic": "Introduction to Calculus",
+      "type": "intro",
+      "duration": "5 min"
+    }
+  ],
+  "totalTopics": 5
+}
+
+Types:
+- "intro" - Topic is first introduced
+- "deep_dive" - Detailed explanation of a topic
+- "example" - Example or problem solving
+- "review" - Reviewing or summarizing
+- "transition" - Moving between topics`;
+
+  const segmentsList = segments.map(seg => `${seg.time}: ${seg.text}`).join('\n');
+
+  const userPrompt = `Create a topic timeline from this lecture:
+
+${segmentsList}
+
+Generate a clear timeline of topics covered.`;
+
+  try {
+    const response = await callAISimple(systemPrompt, userPrompt, userId, 0.3);
+    const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (error) {
+    console.error("Failed to generate topic timeline:", error);
+    return { timeline: [], totalTopics: 0 };
+  }
+}
