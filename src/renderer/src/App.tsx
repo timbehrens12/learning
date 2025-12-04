@@ -4,7 +4,6 @@ import { supabase } from './lib/supabase';
 import OnboardingFlow from './OnboardingFlow';
 import Dashboard from './Dashboard';
 import Overlay from './Overlay';
-import LoadingScreen from './components/LoadingScreen';
 import './i18n/config'; // Initialize i18n
 import { testEnvironmentVariables } from './test-env';
 
@@ -378,7 +377,59 @@ const MainFlow = () => {
 
   // Show loading state while checking session
   if (loading) {
-    return <LoadingScreen />;
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        background: '#050505',
+        color: '#fff',
+        fontFamily: "'Inter', sans-serif"
+      }}>
+        <style>
+          {`
+            @keyframes pulse-ring {
+              0% { transform: scale(0.33); opacity: 1; }
+              80%, 100% { transform: scale(1); opacity: 0; }
+            }
+            @keyframes pulse-dot {
+              0% { transform: scale(0.8); }
+              50% { transform: scale(1); }
+              100% { transform: scale(0.8); }
+            }
+          `}
+        </style>
+        <div style={{ position: 'relative', width: '80px', height: '80px', marginBottom: '24px' }}>
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0,
+            width: '100%', height: '100%',
+            borderRadius: '50%',
+            border: '2px solid #646cff',
+            opacity: 0,
+            animation: 'pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            top: '20%', left: '20%',
+            width: '60%', height: '60%',
+            borderRadius: '50%',
+            background: '#646cff',
+            animation: 'pulse-dot 1.25s cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite'
+          }}></div>
+        </div>
+        <div style={{ 
+          opacity: 0.7, 
+          fontSize: '14px', 
+          letterSpacing: '0.05em',
+          fontWeight: 500
+        }}>
+          INITIALIZING
+        </div>
+      </div>
+    );
   }
 
   // If onboarding is complete, show Dashboard

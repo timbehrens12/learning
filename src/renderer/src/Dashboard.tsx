@@ -33,8 +33,8 @@ const Dashboard: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [userCredits, setUserCredits] = useState<{ credits: number; plan: string } | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  
-  
+
+
   // Session State
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
@@ -51,7 +51,7 @@ const Dashboard: React.FC = () => {
   });
   // Check if user is pro
   const isProUser = userCredits?.plan === 'pro' || userCredits?.plan === 'unlimited';
-  
+
   // Check if user has credits available
   const hasCredits = userCredits && (userCredits.plan === 'unlimited' || userCredits.credits > 0);
 
@@ -77,7 +77,7 @@ const Dashboard: React.FC = () => {
     const saved = localStorage.getItem('show_cheat_mode');
     return saved !== null ? saved === 'true' : true; // Default to showing
   });
-  
+
   // Update Cheat mode visibility when setting changes
   useEffect(() => {
     const handleStorageChange = () => {
@@ -87,16 +87,16 @@ const Dashboard: React.FC = () => {
       // If Cheat was selected and now hidden, switch to Study
       // If Cheat mode is hidden, selectedMode will default to 'Study' on next session
     };
-    
+
     const handleCustomEvent = (e: CustomEvent) => {
       const newValue = e.detail;
       setShowCheatMode(newValue);
       // If Cheat mode is hidden, selectedMode will default to 'Study' on next session
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('cheatModeSettingChanged', handleCustomEvent as EventListener);
-    
+
     // Also check on mount/update
     const saved = localStorage.getItem('show_cheat_mode');
     const newValue = saved !== null ? saved === 'true' : true;
@@ -104,7 +104,7 @@ const Dashboard: React.FC = () => {
       setShowCheatMode(newValue);
       // If Cheat mode is hidden, selectedMode will default to 'Study' on next session
     }
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('cheatModeSettingChanged', handleCustomEvent as EventListener);
@@ -135,12 +135,12 @@ const Dashboard: React.FC = () => {
       // User has no credits, could show a message or redirect to pricing
       return;
     }
-    
+
     setIsSessionActive(true);
     setSessionStartTime(new Date());
     setElapsedSeconds(0);
     // Send signal to Main process
-    (window as any).electron.ipcRenderer.send('open-overlay'); 
+    (window as any).electron.ipcRenderer.send('open-overlay');
   };
 
   const handleEndSession = () => {
@@ -157,42 +157,42 @@ const Dashboard: React.FC = () => {
             };
             return modeLabels[selectedMode] || 'Session';
           }
-          
+
           // Clean and extract meaningful title
           const lines = raw.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-          
+
           // Try to find a meaningful title (skip very short lines, URLs, etc.)
           let title = '';
           for (const line of lines) {
             // Skip lines that are too short, URLs, or look like code/errors
-            if (line.length < 10 || 
-                line.startsWith('http') || 
-                line.includes('Error:') ||
-                line.match(/^[^a-zA-Z]*$/)) {
+            if (line.length < 10 ||
+              line.startsWith('http') ||
+              line.includes('Error:') ||
+              line.match(/^[^a-zA-Z]*$/)) {
               continue;
             }
-            
+
             // Take first meaningful line, but limit length
             title = line;
             break;
           }
-          
+
           // If no good title found, use first line anyway
           if (!title && lines.length > 0) {
             title = lines[0];
           }
-          
+
           // Clean up the title
           title = title
             .replace(/\s+/g, ' ') // Multiple spaces to single
             .replace(/[^\w\s\-.,:()]/g, '') // Remove special chars except common punctuation
             .trim();
-          
+
           // Truncate if too long
           if (title.length > 60) {
             title = title.slice(0, 57) + '...';
           }
-          
+
           // If still empty or too short, use mode-based default
           if (!title || title.length < 3) {
             const modeLabels: Record<string, string> = {
@@ -202,7 +202,7 @@ const Dashboard: React.FC = () => {
             };
             return modeLabels[selectedMode] || 'Session';
           }
-          
+
           return title;
         } catch {
           const modeLabels: Record<string, string> = {
@@ -229,7 +229,7 @@ const Dashboard: React.FC = () => {
       });
     }
   };
-  
+
   // Load sessions from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('user_sessions');
@@ -256,11 +256,11 @@ const Dashboard: React.FC = () => {
           .select('display_name')
           .eq('id', user.id)
           .single();
-        
+
         if (profileError && profileError.code !== 'PGRST116' && profileError.code !== '404') {
           console.error('Profile fetch error:', profileError);
         }
-        
+
         setUserName(profile?.display_name || user.email?.split('@')[0] || "");
       } catch (error: any) {
         if (error?.code !== 'PGRST116' && error?.status !== 404) {
@@ -282,12 +282,12 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadUserData();
-    
+
     // Refresh credits periodically
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       loadUserData();
     });
-    
+
     const creditsInterval = setInterval(() => {
       if (userId) {
         userCreditsService.getCredits(userId).then(credits => {
@@ -295,7 +295,7 @@ const Dashboard: React.FC = () => {
         }).catch(err => console.error('Failed to refresh credits:', err));
       }
     }, 5000);
-    
+
     return () => {
       subscription.unsubscribe();
       clearInterval(creditsInterval);
@@ -327,27 +327,55 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={styles.container}>
+      <style>
+        {`
+          @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(100, 108, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(100, 108, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(100, 108, 255, 0); }
+          }
+          @keyframes slide-down {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .hero-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+          }
+          .hero-card:hover {
+            border-color: rgba(100, 108, 255, 0.3);
+            transform: translateY(-2px);
+          }
+          .system-menu {
+            animation: slide-down 0.2s ease-out;
+            transform-origin: top right;
+          }
+        `}
+      </style>
       {/* Liquid Background like Overlay */}
       <LiquidBackground />
-      
+
       {/* Background Gradient Blob for visual flair */}
       <div style={styles.backgroundBlob}></div>
 
       {/* --- Top Bar --- */}
       <header style={styles.topBar}>
         <div style={styles.logo}>
-          <span style={{color: '#fff'}}>Visnly</span>
+          <span style={{ color: '#fff', letterSpacing: '-0.5px' }}>Visnly</span>
         </div>
-        
+
         <div style={styles.controls}>
 
           {/* Credit Display */}
           {userCredits && (
             <div style={{
               ...styles.creditBadge,
-              background: userCredits.plan === 'unlimited' 
-                ? 'linear-gradient(135deg, #10b981, #059669)' 
-                : 'rgba(255,255,255,0.1)',
+              background: userCredits.plan === 'unlimited'
+                ? 'linear-gradient(135deg, #10b981, #059669)'
+                : 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
               color: '#fff'
             }}>
               {userCredits.plan === 'unlimited' ? 'PRO' : `${userCredits.credits} credits`}
@@ -358,8 +386,8 @@ const Dashboard: React.FC = () => {
             onClick={toggleDetectability}
             style={styles.dropdownButton}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.8)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.65)';
@@ -367,76 +395,52 @@ const Dashboard: React.FC = () => {
             }}
           >
             <div style={styles.toggleContainer}>
-              <div 
+              <div
                 style={{
                   ...styles.toggleSwitch,
-                  backgroundColor: isDetectable ? '#d32f2f' : '#4caf50',
+                  backgroundColor: isDetectable ? '#ef4444' : '#22c55e',
                   transform: isDetectable ? 'translateX(0)' : 'translateX(18px)',
-                  boxShadow: isDetectable 
-                    ? '0 0 8px rgba(211, 47, 47, 0.5)' 
-                    : '0 0 8px rgba(76, 175, 80, 0.5)'
+                  boxShadow: isDetectable
+                    ? '0 0 10px rgba(239, 68, 68, 0.4)'
+                    : '0 0 10px rgba(34, 197, 94, 0.4)'
                 }}
               />
             </div>
-            <span>{isDetectable ? "Detectable" : "Undetectable"}</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px' }}>
+              {isDetectable ? "VISIBLE" : "STEALTH"}
+            </span>
           </button>
 
           <div style={styles.profileContainer} ref={profileRef}>
-            <button 
+            <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               style={{
                 ...styles.profile,
-                backgroundColor: isProfileOpen ? 'rgba(255, 255, 255, 0.1)' : 'rgba(42, 42, 47, 0.6)'
+                backgroundColor: isProfileOpen ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                borderColor: isProfileOpen ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'
               }}
-              title="Profile"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.transform = 'scale(1.1)';
-                const icon = e.currentTarget.querySelector('svg');
-                if (icon) {
-                  icon.style.color = '#fff';
-                  icon.style.filter = 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isProfileOpen) {
-                  e.currentTarget.style.backgroundColor = 'rgba(42, 42, 47, 0.6)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                  const icon = e.currentTarget.querySelector('svg');
-                  if (icon) {
-                    icon.style.color = '#aaa';
-                    icon.style.filter = 'none';
-                  }
-                }
-              }}
+              title="System Menu"
             >
-              <UserIcon size={18} color={isProfileOpen ? "#fff" : "#aaa"} />
+              <UserIcon size={18} color={isProfileOpen ? "#fff" : "#ccc"} />
             </button>
 
             {isProfileOpen && (
-              <GlassCard style={styles.profileMenu}>
+              <GlassCard style={{ ...styles.profileMenu, padding: '8px' }} className="system-menu">
                 {/* User Info Section */}
-                <div style={styles.profileHeader}>
-                  <div style={styles.profileName}>{userName || "User"}</div>
-                  <div style={styles.profileEmail}>{userEmail || ""}</div>
+                <div style={{ padding: '12px 16px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontWeight: 600, color: '#fff', fontSize: '14px' }}>{userName || "User"}</div>
+                  <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{userEmail || ""}</div>
                 </div>
-                <div style={styles.profileDivider}></div>
 
-                {/* Menu Items - Direct to Settings */}
+                {/* Menu Items */}
                 <div style={styles.profileMenuItem}
                   onClick={() => {
                     setShowSettingsModal(true);
                     setIsProfileOpen(false);
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
                 >
-                  <SettingsIcon size={16} color="#aaa" />
-                  <span>Settings</span>
+                  <SettingsIcon size={16} color="#fff" />
+                  <span>System Settings</span>
                 </div>
 
                 <div style={styles.profileMenuItem}
@@ -444,31 +448,21 @@ const Dashboard: React.FC = () => {
                     // Handle billing
                     setIsProfileOpen(false);
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
                 >
-                  <CreditCardIcon size={16} color="#aaa" />
-                  <span>Billing</span>
+                  <CreditCardIcon size={16} color="#ccc" />
+                  <span>Subscription</span>
                 </div>
+
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '8px 0' }}></div>
 
                 <div style={styles.profileMenuItem}
                   onClick={() => {
                     // Handle get help
                     setIsProfileOpen(false);
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
                 >
-                  <HelpCircleIcon size={16} color="#aaa" />
-                  <span>Get help</span>
+                  <HelpCircleIcon size={16} color="#ccc" />
+                  <span>Help & Support</span>
                 </div>
               </GlassCard>
             )}
@@ -482,138 +476,112 @@ const Dashboard: React.FC = () => {
           <>
             {/* Active / Start Section */}
             <div style={styles.heroSection}>
-          {!isSessionActive ? (
-            <GlassCard style={styles.startCard}>
-              <h2 style={styles.heroTitle}>{t('ready_to_learn')}</h2>
-              <p style={styles.heroSub}>{t('ai_assistant_standby')}</p>
-              
-              {!hasCredits && (
-                <div style={styles.sessionLimit}>
-                  <span style={styles.limitReached}>No credits remaining. Please purchase more credits to continue.</span>
-                </div>
-              )}
-              
-              <button 
-                onClick={handleStartSession} 
-                className="start-session-button"
-                disabled={!hasCredits}
-                style={{
-                  marginBottom: '12px',
-                  opacity: !hasCredits ? 0.5 : 1,
-                  cursor: !hasCredits ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {t('button_start')}
-              </button>
-              
-              {/* Test Onboarding Button - Remove in production */}
-              <button 
-                onClick={async () => {
-                  localStorage.removeItem('onboarding_complete');
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session?.user) {
-                      await supabase
-                        .from('profiles')
-                        .update({ onboarding_complete: false })
-                        .eq('id', session.user.id);
-                    }
-                  } catch (error) {
-                    console.log('Onboarding reset (Supabase update skipped):', error);
-                  }
-                  window.location.reload();
-                }}
-                style={{
-                  ...styles.secondaryBtn,
-                  marginBottom: '12px',
-                  fontSize: '12px',
-                  padding: '8px 16px',
-                  background: 'rgba(100, 108, 255, 0.2)',
-                  border: '1px solid rgba(100, 108, 255, 0.4)',
-                  color: '#646cff'
-                }}
-                title="Test Onboarding Flow"
-              >
-                🧪 Test Onboarding
-              </button>
-              
-              <p style={styles.hotkeyHint}>
-                Press <kbd style={styles.kbd}>Ctrl</kbd> + <kbd style={styles.kbd}>Shift</kbd> + <kbd style={styles.kbd}>Space</kbd>
-              </p>
-            </GlassCard>
-          ) : (
-            <GlassCard style={styles.activeCard}>
-              <div style={styles.activeSessionContent}>
-                <div style={styles.sessionStatusRow}>
-                  <div style={styles.statusIndicator}>
-                    <div style={styles.statusDot}></div>
-                    <span style={styles.statusLabel}>{t('session_in_progress')}</span>
+              {!isSessionActive ? (
+                <div className="hero-card" style={styles.startCard}>
+                  <div style={{
+                    width: '80px', height: '80px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #646cff 0%, #8b5cf6 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '24px',
+                    boxShadow: '0 10px 30px rgba(100, 108, 255, 0.3)'
+                  }}>
+                    <span style={{ fontSize: '32px' }}>🚀</span>
                   </div>
-                  <span style={styles.timer}>{formatTimerDisplay(elapsedSeconds)}</span>
-                </div>
-                <button 
-                  onClick={handleEndSession} 
-                  style={styles.endBtn}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(211, 47, 47, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(211, 47, 47, 0.6)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.borderColor = 'rgba(211, 47, 47, 0.4)';
-                  }}
-                >
-                  {t('button_end')}
-                </button>
-              </div>
-            </GlassCard>
-          )}
-        </div>
 
-        {/* --- History List (simpler, Cluely-style) --- */}
-        <div style={styles.historySection}>
-          <h3 style={styles.sectionHeader}>{t('recent_activity')}</h3>
-          <div style={styles.listContainer}>
-            {sessions.length === 0 && (
-              <div style={styles.emptyHistory}>
-                <span style={styles.emptyHistoryTitle}>No sessions yet</span>
-                <span style={styles.emptyHistorySub}>Your recent sessions will appear here.</span>
-              </div>
-            )}
-            {sessions.map(session => (
-              <div key={session.id} style={styles.row}>
-                <div style={styles.rowLeft}>
-                  <div style={styles.rowTextBlock}>
-                    <div style={styles.rowTitle}>{session.title}</div>
-                    <div style={styles.rowMeta}>
-                      <span style={styles.modePill}>
-                        <span
-                          style={{
-                            ...styles.modeDot,
-                            backgroundColor: getModeColor(session.mode)
-                          }}
-                        />
-                        <span>{session.mode}</span>
-                      </span>
-                      <span style={styles.rowDividerDot}>•</span>
-                      <span style={styles.rowSub}>{session.time}</span>
+                  <h2 style={styles.heroTitle}>{t('ready_to_learn')}</h2>
+                  <p style={styles.heroSub}>{t('ai_assistant_standby')}</p>
+
+                  {!hasCredits && (
+                    <div style={styles.sessionLimit}>
+                      <span style={styles.limitReached}>No credits remaining. Please purchase more credits to continue.</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleStartSession}
+                    className="start-session-button"
+                    disabled={!hasCredits}
+                    style={{
+                      marginBottom: '16px',
+                      opacity: !hasCredits ? 0.5 : 1,
+                      cursor: !hasCredits ? 'not-allowed' : 'pointer',
+                      padding: '16px 48px',
+                      fontSize: '16px',
+                      animation: hasCredits ? 'pulse-glow 2s infinite' : 'none'
+                    }}
+                  >
+                    {t('button_start')}
+                  </button>
+
+                  <p style={styles.hotkeyHint}>
+                    Press <kbd style={styles.kbd}>Ctrl</kbd> + <kbd style={styles.kbd}>Shift</kbd> + <kbd style={styles.kbd}>Space</kbd>
+                  </p>
+                </div>
+              ) : (
+                <GlassCard style={styles.activeCard}>
+                  <div style={styles.activeSessionContent}>
+                    <div style={styles.sessionStatusRow}>
+                      <div style={styles.statusIndicator}>
+                        <div style={styles.statusDot}></div>
+                        <span style={styles.statusLabel}>{t('session_in_progress')}</span>
+                      </div>
+                      <span style={styles.timer}>{formatTimerDisplay(elapsedSeconds)}</span>
+                    </div>
+                    <button
+                      onClick={handleEndSession}
+                      style={styles.endBtn}
+                    >
+                      {t('button_end')}
+                    </button>
+                  </div>
+                </GlassCard>
+              )}
+            </div>
+
+            {/* --- History List --- */}
+            <div style={styles.historySection}>
+              <h3 style={styles.sectionHeader}>{t('recent_activity')}</h3>
+              <div style={styles.listContainer}>
+                {sessions.length === 0 && (
+                  <div style={styles.emptyHistory}>
+                    <span style={styles.emptyHistoryTitle}>No sessions yet</span>
+                    <span style={styles.emptyHistorySub}>Your recent sessions will appear here.</span>
+                  </div>
+                )}
+                {sessions.map(session => (
+                  <div key={session.id} style={styles.row}>
+                    <div style={styles.rowLeft}>
+                      <div style={styles.rowTextBlock}>
+                        <div style={styles.rowTitle}>{session.title}</div>
+                        <div style={styles.rowMeta}>
+                          <span style={styles.modePill}>
+                            <span
+                              style={{
+                                ...styles.modeDot,
+                                backgroundColor: getModeColor(session.mode)
+                              }}
+                            />
+                            <span>{session.mode}</span>
+                          </span>
+                          <span style={styles.rowDividerDot}>•</span>
+                          <span style={styles.rowSub}>{session.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={styles.rowRight}>
+                      <div style={styles.rowTime}>{session.duration}</div>
                     </div>
                   </div>
-                </div>
-                <div style={styles.rowRight}>
-                  <div style={styles.rowTime}>{session.duration}</div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
           </>
         )}
 
         {/* Settings Modal */}
         {showSettingsModal && (
-          <SettingsModal 
-            onClose={() => setShowSettingsModal(false)} 
+          <SettingsModal
+            onClose={() => setShowSettingsModal(false)}
             onLogout={() => {
               // Reset onboarding or clear tokens here
               setShowSettingsModal(false);
@@ -622,7 +590,7 @@ const Dashboard: React.FC = () => {
           />
         )}
       </main>
-      
+
       {/* Social links – bottom right */}
       <div style={styles.socialBar}>
         <button
@@ -657,13 +625,13 @@ const Dashboard: React.FC = () => {
 
 // --- Styles (CSS-in-JS for V1 speed) ---
 const styles: Record<string, React.CSSProperties> = {
-  container: { 
-    height: '100vh', 
+  container: {
+    height: '100vh',
     backgroundColor: '#050509', // Match overlay vibe: deep neutral
     backgroundImage: 'radial-gradient(circle at top, rgba(100,108,255,0.25) 0, transparent 55%)',
-    color: '#e0e0e0', 
+    color: '#e0e0e0',
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    display: 'flex', 
+    display: 'flex',
     flexDirection: 'column',
     position: 'relative',
     overflow: 'hidden'
@@ -678,12 +646,12 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 0,
     pointerEvents: 'none'
   },
-  topBar: { 
-    height: '70px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    padding: '0 40px', 
+  topBar: {
+    height: '70px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 40px',
     zIndex: 10,
     borderBottom: '1px solid rgba(255,255,255,0.05)'
   },
@@ -748,17 +716,17 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     zIndex: 100
   },
-  profile: { 
-    width: '36px', 
-    height: '36px', 
-    borderRadius: '50%', 
-    backgroundColor: 'rgba(42, 42, 47, 0.6)', 
+  profile: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(42, 42, 47, 0.6)',
     backdropFilter: 'blur(10px)',
     WebkitBackdropFilter: 'blur(10px)',
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    cursor: 'pointer', 
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     transition: 'all 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)',
     padding: 0,
@@ -809,54 +777,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontWeight: 500
   },
-  
+
   main: { flex: 1, padding: '40px', overflowY: 'auto', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  
-  heroSection: { 
-    width: '100%', 
-    maxWidth: '500px', 
-    marginBottom: '50px', 
-    marginTop: '20px',
-    animation: 'fadeInUp 0.6s ease-out'
-  },
-  heroTitle: { 
-    fontSize: '36px', 
-    fontWeight: 700, 
-    margin: '0 0 12px 0', 
-    textAlign: 'center' as const,
-    background: 'linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.8) 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    letterSpacing: '-0.5px'
-  },
-  heroSub: { 
-    fontSize: '16px', 
-    color: '#999', 
-    margin: '0 0 32px 0', 
-    textAlign: 'center' as const,
-    lineHeight: '1.6'
-  },
-  
+
+  heroSection: { width: '100%', maxWidth: '500px', marginBottom: '50px', marginTop: '20px' },
+  heroTitle: { fontSize: '32px', fontWeight: 700, margin: '0 0 10px 0', textAlign: 'center' as const },
+  heroSub: { fontSize: '16px', color: '#888', margin: '0 0 30px 0', textAlign: 'center' as const },
+
   startCard: {
-    display: 'flex', 
-    flexDirection: 'column', 
+    display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
-    padding: '56px 48px',
-    textAlign: 'center' as const,
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    position: 'relative',
-    overflow: 'hidden'
+    padding: '50px 40px',
+    textAlign: 'center' as const
   },
-  startBtn: { 
-    padding: '18px 60px', 
-    fontSize: '16px', 
-    fontWeight: 700, 
-    background: 'linear-gradient(135deg, #646cff 0%, #4c54d4 100%)', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '12px', 
-    cursor: 'pointer', 
+  startBtn: {
+    padding: '18px 60px',
+    fontSize: '16px',
+    fontWeight: 700,
+    background: 'linear-gradient(135deg, #646cff 0%, #4c54d4 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
     boxShadow: '0 10px 30px rgba(100, 108, 255, 0.3)',
     transition: 'all 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)',
     letterSpacing: '0.5px',
@@ -864,15 +807,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   hotkeyHint: { marginTop: '20px', color: '#666', fontSize: '16px', fontWeight: 500 },
   kbd: { backgroundColor: '#222', padding: '4px 8px', borderRadius: '4px', border: '1px solid #333', fontFamily: 'monospace', color: '#ccc', fontSize: '14px', fontWeight: 600 },
-  sessionLimit: { 
-    fontSize: '14px', 
-    color: '#888', 
-    marginBottom: '16px', 
+  sessionLimit: {
+    fontSize: '14px',
+    color: '#888',
+    marginBottom: '16px',
     fontWeight: 500,
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   },
-  limitReached: { 
-    color: '#ff8a80', 
+  limitReached: {
+    color: '#ff8a80',
     fontWeight: 600,
     marginLeft: '8px'
   },
@@ -953,15 +896,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   activeCard: {
-    padding: '28px',
-    display: 'flex', 
-    flexDirection: 'column', 
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
     width: '100%',
-    gap: '20px',
-    background: 'linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(100, 108, 255, 0.05) 100%)',
-    border: '1px solid rgba(100, 108, 255, 0.2)',
-    boxShadow: '0 8px 32px rgba(100, 108, 255, 0.15)',
-    animation: 'fadeInScale 0.4s ease-out'
+    gap: '16px'
   },
   activeSessionContent: {
     display: 'flex',
@@ -986,27 +925,27 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#646cff',
     animation: 'pulse-status 2s ease-in-out infinite'
   },
-  statusLabel: { 
-    fontSize: '13px', 
-    color: 'rgba(255, 255, 255, 0.7)', 
-    fontWeight: 500, 
+  statusLabel: {
+    fontSize: '13px',
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: 500,
     letterSpacing: '0.5px',
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   },
-  timer: { 
-    fontSize: '24px', 
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace', 
-    fontWeight: 600, 
+  timer: {
+    fontSize: '24px',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace',
+    fontWeight: 600,
     color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: '0.5px'
   },
-  endBtn: { 
-    padding: '10px 24px', 
-    backgroundColor: 'transparent', 
-    color: '#ff8a80', 
-    border: '1px solid rgba(211, 47, 47, 0.4)', 
-    borderRadius: '8px', 
-    cursor: 'pointer', 
+  endBtn: {
+    padding: '10px 24px',
+    backgroundColor: 'transparent',
+    color: '#ff8a80',
+    border: '1px solid rgba(211, 47, 47, 0.4)',
+    borderRadius: '8px',
+    cursor: 'pointer',
     fontWeight: 500,
     fontSize: '13px',
     transition: 'all 0.2s ease',
@@ -1035,13 +974,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     color: 'rgba(255,255,255,0.45)'
   },
-  row: { 
+  row: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center', 
-    padding: '10px 14px', 
-    backgroundColor: 'rgba(15,15,18,0.9)', 
-    borderRadius: '10px', 
+    alignItems: 'center',
+    padding: '10px 14px',
+    backgroundColor: 'rgba(15,15,18,0.9)',
+    borderRadius: '10px',
     border: '1px solid rgba(255,255,255,0.03)',
     transition: 'background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease'
   },
@@ -1107,26 +1046,5 @@ const styles: Record<string, React.CSSProperties> = {
   }
 };
 
-
-// Add CSS animations
-const dashboardStyleSheet = document.createElement('style');
-dashboardStyleSheet.textContent = `
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes fadeInScale {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  @keyframes pulse-status {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.1); }
-  }
-`;
-if (!document.head.querySelector('style[data-dashboard-animations]')) {
-  dashboardStyleSheet.setAttribute('data-dashboard-animations', 'true');
-  document.head.appendChild(dashboardStyleSheet);
-}
 
 export default Dashboard;

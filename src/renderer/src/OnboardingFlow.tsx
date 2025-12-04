@@ -29,7 +29,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         }, 500);
       }
     });
-    
+
     return () => {
       subscription.unsubscribe();
     };
@@ -57,7 +57,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       // The app will intercept the redirect and extract the code
       const siteUrl = import.meta.env.VITE_SITE_URL || 'https://www.visnly.com';
       const redirectUrl = `${siteUrl}/auth/callback?app=true`;
-      
+
       // Use PKCE flow - load OAuth URL directly in the app window
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -70,14 +70,14 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
           skipBrowserRedirect: false, // Let Supabase handle the redirect
         }
       });
-      
+
       if (error) {
         console.error('OAuth error:', error);
         alert('Failed to start sign-in. Please try again.');
         setAuthLoading(false);
         return;
       }
-      
+
       if (data?.url) {
         // Load OAuth URL directly in the Electron app window
         // This keeps everything within the app - no browser popup
@@ -114,19 +114,19 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   // Slide 1: Welcome - "Welcome to Visnly"
   const renderSlide1 = () => (
     <>
-      <div style={styles.logoBadge}>V</div>
-      <h1 style={styles.title}>Welcome to Visnly</h1>
-      <p style={styles.subtitle}>
+      <div style={{ ...styles.logoBadge, animationDelay: '0ms' }} className="animate-fade-in-up">V</div>
+      <h1 style={{ ...styles.title, animationDelay: '100ms' }} className="animate-fade-in-up">Welcome to Visnly</h1>
+      <p style={{ ...styles.subtitle, animationDelay: '200ms' }} className="animate-fade-in-up">
         The invisible advantage.
       </p>
-      <button 
-        onClick={handleNext} 
-        className="start-session-button"
-        style={{width: '100%', marginBottom: '24px'}}
+      <button
+        onClick={handleNext}
+        className="start-session-button animate-fade-in-up"
+        style={{ width: '100%', marginBottom: '24px', animationDelay: '300ms' }}
       >
         Sign up →
       </button>
-      <p style={styles.legalText}>
+      <p style={{ ...styles.legalText, animationDelay: '400ms' }} className="animate-fade-in-up">
         By signing up, you agree to our{" "}
         <a href="#" style={styles.legalLink}>Terms of Service</a>
         {" "}and{" "}
@@ -136,7 +136,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   );
 
   const renderSlide1Visual = () => (
-    <div style={styles.floatingApp}>
+    <div style={styles.floatingApp} className="animate-float">
       <div style={styles.appWindow}>
         <div style={styles.appHeader}>
           <div style={styles.appDots}>
@@ -160,7 +160,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       <p style={styles.text}>
         Sign in to sync your progress across devices.
       </p>
-      <button 
+      <button
         onClick={handleGoogleAuth}
         disabled={authLoading}
         className="start-session-button"
@@ -177,18 +177,18 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
           <>Signing in...</>
         ) : (
           <>
-            <svg width="20" height="20" viewBox="0 0 24 24" style={{marginRight: '8px'}}>
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginRight: '8px' }}>
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
             Continue with Google
           </>
         )}
       </button>
-      <button 
-        onClick={handleNext} 
+      <button
+        onClick={handleNext}
         style={{
           background: 'transparent',
           border: 'none',
@@ -223,7 +223,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   const renderSlide3 = () => (
     <>
       <h2 style={styles.heading}>Tell us more</h2>
-      
+
       {/* Education Level */}
       <div style={styles.questionSection}>
         <p style={styles.questionText}>What level of education are you pursuing?</p>
@@ -286,7 +286,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      <button 
+      <button
         onClick={handleNext}
         disabled={!educationLevel || !referralSource}
         className="start-session-button"
@@ -322,10 +322,10 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       <p style={styles.text}>
         Ask any question. Get instant answers.
       </p>
-      <button 
-        onClick={handleNext} 
+      <button
+        onClick={handleNext}
         className="start-session-button"
-        style={{width: '100%', maxWidth: '320px'}}
+        style={{ width: '100%', maxWidth: '320px' }}
       >
         Next →
       </button>
@@ -357,10 +357,10 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
           <kbd style={styles.kbd}>Ctrl</kbd> + <kbd style={styles.kbd}>Shift</kbd> + <kbd style={styles.kbd}>Space</kbd>
         </div>
       </div>
-      <button 
-        onClick={handleNext} 
+      <button
+        onClick={handleNext}
         className="start-session-button"
-        style={{width: '100%', maxWidth: '320px'}}
+        style={{ width: '100%', maxWidth: '320px' }}
       >
         Got it →
       </button>
@@ -393,16 +393,18 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
     <>
       <h1 style={styles.pricingTitle}>Unlock all features with Visnly Pro</h1>
 
+      <h1 style={styles.pricingTitle}>Unlock all features with Visnly Pro</h1>
+
       {/* Annual Toggle - Positioned on the right */}
       <div style={styles.pricingHeaderRow}>
-        <div style={{flex: 1}}></div>
+        <div style={{ flex: 1 }}></div>
         <div style={styles.annualToggleContainer}>
-          <span style={{...styles.toggleLabel, opacity: !billingAnnual ? 1 : 0.5}}>Annual</span>
-          <div 
+          <span style={{ ...styles.toggleLabel, opacity: !billingAnnual ? 1 : 0.5 }}>Annual</span>
+          <div
             style={{
               ...styles.toggleSwitch,
               background: billingAnnual ? '#646cff' : 'rgba(255,255,255,0.2)'
-            }} 
+            }}
             onClick={() => setBillingAnnual(!billingAnnual)}
           >
             <div style={{
@@ -426,18 +428,18 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         }}>
           <div style={styles.proCardHeader}>
             <h3 style={styles.proCardTitle}>Pro plan</h3>
-            <span style={{...styles.popularBadge, background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e'}}>Popular</span>
+            <span style={{ ...styles.popularBadge, background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e' }}>Popular</span>
           </div>
           <div style={styles.proPrice}>
             ${billingAnnual ? '12' : '15'}<span style={styles.perMonth}>/month</span>
           </div>
           <ul style={styles.proFeatures}>
             <li style={styles.proFeatureItem}>
-              <span style={{...styles.infinityIcon, color: '#22c55e'}}>∞</span>
+              <span style={{ ...styles.infinityIcon, color: '#22c55e' }}>∞</span>
               <span>Unlimited AI Responses</span>
             </li>
             <li style={styles.proFeatureItem}>
-              <span style={{...styles.infinityIcon, color: '#22c55e'}}>∞</span>
+              <span style={{ ...styles.infinityIcon, color: '#22c55e' }}>∞</span>
               <span>Unlimited meetings</span>
             </li>
             <li style={styles.proFeatureItem}>
@@ -449,10 +451,10 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
               <span>Priority chat support</span>
             </li>
           </ul>
-          <button 
-            onClick={onComplete} 
+          <button
+            onClick={onComplete}
             className="start-session-button"
-            style={{width: '100%', marginTop: 'auto', background: '#22c55e', border: 'none'}}
+            style={{ width: '100%', marginTop: 'auto', background: '#22c55e', border: 'none' }}
           >
             Upgrade
           </button>
@@ -481,36 +483,28 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
             </p>
             <div style={styles.undetectabilityVisual}>
               <div style={styles.videoCallMockup}>
-                <div style={{...styles.videoCallScreen, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)'}}></div>
+                <div style={{ ...styles.videoCallScreen, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}></div>
                 <div style={styles.crossedEyeIcon}>
                   <Icons.EyeIcon size={32} color="#ef4444" />
-                  <div style={{...styles.crossedLine, background: '#ef4444'}}></div>
+                  <div style={{ ...styles.crossedLine, background: '#ef4444' }}></div>
                 </div>
               </div>
             </div>
           </div>
-          <button 
-            onClick={onComplete} 
+          <button
+            onClick={onComplete}
             className="start-session-button"
-            style={{width: '100%', marginTop: 'auto', background: '#ef4444', border: 'none'}}
+            style={{ width: '100%', marginTop: 'auto', background: '#ef4444', border: 'none' }}
           >
             Upgrade
           </button>
         </div>
       </div>
 
-      {/* Trust Indicators */}
-      <div style={styles.trustIndicators}>
-        <div style={styles.starsContainer}>
-          {'★★★★★'.split('').map((star, i) => (
-            <span key={i} style={styles.star}>{star}</span>
-          ))}
-        </div>
-        <p style={styles.trustedByText}>Trusted by 10k users</p>
-      </div>
+      {/* Trust Indicators Removed */}
 
-      <button 
-        onClick={onComplete} 
+      <button
+        onClick={onComplete}
         style={{
           background: 'transparent',
           border: 'none',
@@ -585,6 +579,31 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   return (
     <div style={styles.container}>
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+          }
+          .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+          }
+          .animate-float {
+            animation: float 6s ease-in-out infinite;
+          }
+          .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+          }
+        `}
+      </style>
       {/* LEFT PANEL */}
       <div style={styles.leftPanel}>
         {step > 0 && (
@@ -611,15 +630,15 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
 
 // --- STYLES ---
 const styles: Record<string, React.CSSProperties> = {
-  container: { 
-    width: '100vw', 
-    height: '100vh', 
-    display: 'flex', 
-    background: '#050505', 
-    color: '#fff', 
-    overflow: 'hidden' 
+  container: {
+    width: '100vw',
+    height: '100vh',
+    display: 'flex',
+    background: '#050505',
+    color: '#fff',
+    overflow: 'hidden'
   },
-  
+
   fullScreenContainer: {
     width: '100vw',
     height: '100vh',
@@ -634,7 +653,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '60px 40px',
     boxSizing: 'border-box'
   },
-  
+
   fullScreenContent: {
     width: '100%',
     maxWidth: '1200px',
@@ -647,7 +666,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     paddingTop: '60px'
   },
-  
+
   backBtnFullScreen: {
     position: 'absolute',
     top: '32px',
@@ -664,140 +683,139 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     zIndex: 20
   },
-  
-  leftPanel: { 
-    width: '50%', 
-    height: '100vh', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    padding: '60px', 
-    boxSizing: 'border-box', 
-    borderRight: '1px solid rgba(255,255,255,0.05)', 
-    background: '#0a0a0a', 
-    position: 'relative', 
-    zIndex: 2 
+
+  leftPanel: {
+    width: '50%',
+    height: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '60px',
+    boxSizing: 'border-box',
+    borderRight: '1px solid rgba(255,255,255,0.05)',
+    background: '#0a0a0a',
+    position: 'relative',
+    zIndex: 2
   },
-  
-  rightPanel: { 
-    width: '50%', 
-    height: '100vh', 
-    position: 'relative', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    overflow: 'hidden' 
+
+  rightPanel: {
+    width: '50%',
+    height: '100vh',
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
   },
-  
-  contentWrapper: { 
-    maxWidth: '600px', 
-    width: '100%', 
-    animation: 'fadeIn 0.4s ease-out', 
-    textAlign: 'center', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    alignItems: 'center', 
+
+  contentWrapper: {
+    maxWidth: '600px',
+    width: '100%',
+    animation: 'fadeIn 0.4s ease-out',
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
     minHeight: 0,
     padding: '40px 20px',
     boxSizing: 'border-box'
   },
-  
-  backBtn: { 
-    position: 'absolute', 
-    top: '32px', 
-    left: '32px', 
-    background: 'none', 
-    border: 'none', 
-    color: '#888', 
-    cursor: 'pointer', 
-    fontSize: '15px', 
-    fontWeight: 500, 
-    padding: '8px 12px', 
-    borderRadius: '6px', 
+
+  backBtn: {
+    position: 'absolute',
+    top: '32px',
+    left: '32px',
+    background: 'none',
+    border: 'none',
+    color: '#888',
+    cursor: 'pointer',
+    fontSize: '15px',
+    fontWeight: 500,
+    padding: '8px 12px',
+    borderRadius: '6px',
     transition: '0.2s',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   // Typography
-  title: { 
-    fontSize: '56px', 
-    fontWeight: 700, 
-    marginBottom: '16px', 
-    letterSpacing: '-1px', 
-    lineHeight: '1.2', 
-    textAlign: 'center', 
-    color: '#fff', 
+  title: {
+    fontSize: '56px',
+    fontWeight: 700,
+    marginBottom: '16px',
+    letterSpacing: '-1px',
+    lineHeight: '1.2',
+    textAlign: 'center',
+    color: '#fff',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     width: '100%'
   },
-  
-  heading: { 
-    fontSize: '42px', 
-    fontWeight: 700, 
-    marginBottom: '40px', 
-    lineHeight: '1.2', 
-    color: '#fff', 
+
+  heading: {
+    fontSize: '42px',
+    fontWeight: 700,
+    marginBottom: '40px',
+    lineHeight: '1.2',
+    color: '#fff',
     textAlign: 'center',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     width: '100%',
     letterSpacing: '-0.5px'
   },
-  
-  subtitle: { 
-    fontSize: '18px', 
-    color: '#888', 
-    lineHeight: '1.5', 
-    marginBottom: '40px', 
-    textAlign: 'center', 
+
+  subtitle: {
+    fontSize: '18px',
+    color: '#888',
+    lineHeight: '1.5',
+    marginBottom: '40px',
+    textAlign: 'center',
     fontWeight: 400,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     width: '100%'
   },
-  
-  text: { 
-    fontSize: '18px', 
-    color: '#999', 
-    marginBottom: '32px', 
-    lineHeight: '1.6', 
-    fontWeight: 400, 
+
+  text: {
+    fontSize: '18px',
+    color: '#999',
+    marginBottom: '32px',
+    lineHeight: '1.6',
+    fontWeight: 400,
     textAlign: 'center',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     width: '100%'
   },
-  
+
   // Visuals
-  visualContent: { 
-    position: 'relative', 
-    zIndex: 5, 
-    width: '100%', 
-    height: '100%', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  visualContent: {
+    position: 'relative',
+    zIndex: 5,
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  
-  gridOverlay: { 
-    position: 'absolute', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0, 
-    backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', 
-    backgroundSize: '40px 40px', 
-    opacity: 0.5, 
-    zIndex: 1 
+
+  gridOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+    backgroundSize: '40px 40px',
+    opacity: 0.5,
+    zIndex: 1
   },
-  
+
   // Slide 1 Visual - Floating App
   floatingApp: {
     position: 'relative',
-    animation: 'float 4s ease-in-out infinite',
-    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+    animation: 'float 3s ease-in-out infinite'
   },
-  
+
   appWindow: {
     width: '300px',
     height: '200px',
@@ -807,23 +825,23 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
     overflow: 'hidden'
   },
-  
+
   appHeader: {
     padding: '12px',
     borderBottom: '1px solid rgba(255,255,255,0.1)',
     display: 'flex',
     alignItems: 'center'
   },
-  
+
   appDots: {
     display: 'flex',
     gap: '6px'
   },
-  
+
   dotRed: { width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f56' },
   dotYellow: { width: '10px', height: '10px', borderRadius: '50%', background: '#ffbd2e' },
   dotGreen: { width: '10px', height: '10px', borderRadius: '50%', background: '#27c93f' },
-  
+
   appContent: {
     display: 'flex',
     flexDirection: 'column',
@@ -832,7 +850,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 'calc(100% - 50px)',
     gap: '12px'
   },
-  
+
   appIcon: {
     width: '64px',
     height: '64px',
@@ -845,20 +863,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '24px',
     color: '#fff'
   },
-  
+
   appText: {
     fontSize: '18px',
     fontWeight: 600,
     color: '#fff'
   },
-  
+
   // Slide 2 Visual - Profile Mock
   profileMock: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   profileCard: {
     width: '280px',
     padding: '32px',
@@ -870,7 +888,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '20px'
   },
-  
+
   profileAvatar: {
     width: '80px',
     height: '80px',
@@ -881,17 +899,17 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     border: '2px solid #646cff'
   },
-  
+
   profileLoader: {
     animation: 'spin 1s linear infinite'
   },
-  
+
   profileName: {
     fontSize: '16px',
     color: '#888',
     fontWeight: 500
   },
-  
+
   // Slide 3 Visual - Persona Adapt
   adaptVisual: {
     display: 'flex',
@@ -902,7 +920,7 @@ const styles: Record<string, React.CSSProperties> = {
     paddingBottom: '40px',
     position: 'relative'
   },
-  
+
   timeSaveMessage: {
     position: 'absolute',
     bottom: '60px',
@@ -917,7 +935,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0 40px',
     boxSizing: 'border-box'
   },
-  
+
   timeSaveText: {
     fontSize: '28px',
     fontWeight: 500,
@@ -925,7 +943,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: '1.5',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   // Slide 4 Visual - Chat Bubble
   chatBubble: {
     display: 'flex',
@@ -934,7 +952,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     padding: '40px'
   },
-  
+
   chatMessage: {
     width: '100%',
     maxWidth: '400px',
@@ -944,7 +962,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(255,255,255,0.1)',
     boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
   },
-  
+
   chatQuestion: {
     padding: '16px',
     background: 'rgba(100,108,255,0.1)',
@@ -954,7 +972,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: '1.6',
     color: '#fff'
   },
-  
+
   chatAnswer: {
     padding: '16px',
     background: 'rgba(255,255,255,0.05)',
@@ -963,7 +981,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: '1.6',
     color: '#ccc'
   },
-  
+
   // Slide 5 Visual - Stealth
   stealthContainer: {
     display: 'flex',
@@ -972,13 +990,13 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     height: '100%'
   },
-  
+
   stealthApp: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   stealthWindow: {
     width: '320px',
     padding: '32px',
@@ -991,7 +1009,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '20px'
   },
-  
+
   stealthHeader: {
     fontSize: '14px',
     fontWeight: 700,
@@ -999,27 +1017,27 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '1px'
   },
-  
+
   stealthContent: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '16px'
   },
-  
+
   stealthText: {
     fontSize: '18px',
     fontWeight: 600,
     color: '#fff'
   },
-  
+
   hotkeyDemo: {
     marginBottom: '32px',
     width: '100%',
     display: 'flex',
     justifyContent: 'center'
   },
-  
+
   hotkeyBox: {
     padding: '20px 32px',
     background: 'rgba(100,108,255,0.1)',
@@ -1032,7 +1050,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     fontFamily: "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace"
   },
-  
+
   kbd: {
     padding: '6px 12px',
     background: 'rgba(255,255,255,0.1)',
@@ -1042,7 +1060,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontFamily: "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace"
   },
-  
+
   // Slide 6 Visual - Pricing
   pricingVisual: {
     display: 'flex',
@@ -1052,13 +1070,13 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     position: 'relative'
   },
-  
+
   proCardGlow: {
     width: '300px',
     height: '400px',
     position: 'relative'
   },
-  
+
   glowEffect: {
     width: '100%',
     height: '100%',
@@ -1066,13 +1084,13 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '20px',
     filter: 'blur(40px)'
   },
-  
+
   // Question Sections
   questionSection: {
     marginBottom: '40px',
     width: '100%'
   },
-  
+
   questionText: {
     fontSize: '15px',
     color: '#aaa',
@@ -1081,7 +1099,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   // Education Level Chips
   chipsContainer: {
     display: 'flex',
@@ -1094,7 +1112,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginLeft: 'auto',
     marginRight: 'auto'
   },
-  
+
   educationChip: {
     padding: '12px 24px',
     background: 'rgba(255,255,255,0.08)',
@@ -1109,7 +1127,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
     boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
   },
-  
+
   educationChipActive: {
     background: 'rgba(100,108,255,0.25)',
     border: '1px solid #646cff',
@@ -1117,7 +1135,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 2px 8px rgba(100,108,255,0.3)',
     transform: 'translateY(-1px)'
   },
-  
+
   // Referral Source Grid
   referralGrid: {
     display: 'grid',
@@ -1127,7 +1145,7 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '600px',
     margin: '0 auto'
   },
-  
+
   referralChip: {
     padding: '11px 16px',
     background: 'rgba(255,255,255,0.08)',
@@ -1143,7 +1161,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
     boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
   },
-  
+
   referralChipActive: {
     background: 'rgba(100,108,255,0.25)',
     border: '1px solid #646cff',
@@ -1151,7 +1169,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 2px 8px rgba(100,108,255,0.3)',
     transform: 'translateY(-1px)'
   },
-  
+
   // Pricing
   pricingTitle: {
     fontSize: '42px',
@@ -1164,7 +1182,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     letterSpacing: '-0.5px'
   },
-  
+
   trustLogosRow: {
     display: 'flex',
     gap: '24px',
@@ -1174,7 +1192,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
     width: '100%'
   },
-  
+
   trustLogo: {
     fontSize: '13px',
     fontWeight: 500,
@@ -1182,7 +1200,7 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.6,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   pricingHeaderRow: {
     display: 'flex',
     alignItems: 'center',
@@ -1193,13 +1211,13 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0 20px',
     boxSizing: 'border-box'
   },
-  
+
   annualToggleContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  
+
   toggleLabel: {
     fontSize: '16px',
     fontWeight: 500,
@@ -1207,7 +1225,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: '0.3s',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   toggleSwitch: {
     width: '48px',
     height: '24px',
@@ -1217,7 +1235,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.3s ease',
     border: '1px solid rgba(255,255,255,0.1)'
   },
-  
+
   toggleThumb: {
     width: '18px',
     height: '18px',
@@ -1229,7 +1247,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
   },
-  
+
   pricingCardsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -1240,7 +1258,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0 20px',
     boxSizing: 'border-box'
   },
-  
+
   proCard: {
     padding: '32px',
     background: 'linear-gradient(135deg, rgba(100,108,255,0.2) 0%, rgba(100,108,255,0.1) 100%)',
@@ -1253,23 +1271,23 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.3s ease',
     minHeight: '500px'
   },
-  
+
   proCardLeft: {
     // Left card specific styles
   },
-  
+
   proCardRight: {
     background: 'linear-gradient(135deg, rgba(100,108,255,0.15) 0%, rgba(100,108,255,0.08) 100%)',
     border: '2px solid rgba(100,108,255,0.3)'
   },
-  
+
   proCardHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     justifyContent: 'flex-start'
   },
-  
+
   proCardTitle: {
     fontSize: '24px',
     fontWeight: 700,
@@ -1277,7 +1295,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   popularBadge: {
     fontSize: '12px',
     fontWeight: 600,
@@ -1287,7 +1305,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   proPrice: {
     fontSize: '48px',
     fontWeight: 700,
@@ -1295,14 +1313,14 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '10px',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   perMonth: {
     fontSize: '18px',
     fontWeight: 400,
     opacity: 0.8,
     marginLeft: '8px'
   },
-  
+
   proFeatures: {
     listStyle: 'none',
     padding: 0,
@@ -1316,14 +1334,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     flex: 1
   },
-  
+
   proFeatureItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     color: '#fff'
   },
-  
+
   infinityIcon: {
     fontSize: '20px',
     color: '#646cff',
@@ -1334,27 +1352,27 @@ const styles: Record<string, React.CSSProperties> = {
     width: '24px',
     height: '24px'
   },
-  
+
   undetectabilityFeature: {
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
     flex: 1
   },
-  
+
   undetectabilityFeatureHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
   },
-  
+
   undetectabilityFeatureTitle: {
     fontSize: '18px',
     fontWeight: 600,
     color: '#fff',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   undetectabilityFeatureDesc: {
     fontSize: '14px',
     color: '#999',
@@ -1362,7 +1380,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
+
   undetectabilityVisual: {
     marginTop: '20px',
     display: 'flex',
@@ -1371,7 +1389,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     minHeight: '200px'
   },
-  
+
   videoCallMockup: {
     position: 'relative',
     width: '200px',
@@ -1383,7 +1401,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   videoCallScreen: {
     width: '80%',
     height: '60%',
@@ -1391,7 +1409,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     border: '1px solid rgba(100,108,255,0.2)'
   },
-  
+
   crossedEyeIcon: {
     position: 'absolute',
     top: '50%',
@@ -1401,7 +1419,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
+
   crossedLine: {
     position: 'absolute',
     width: '40px',
@@ -1413,7 +1431,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginLeft: '-20px',
     marginTop: '-1px'
   },
-  
+
   trustIndicators: {
     display: 'flex',
     flexDirection: 'column',
@@ -1422,81 +1440,81 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '32px',
     marginBottom: '24px'
   },
-  
+
   starsContainer: {
     display: 'flex',
     gap: '4px',
     fontSize: '20px',
     color: '#ffa500'
   },
-  
+
   star: {
     fontSize: '20px',
     color: '#ffa500'
   },
-  
+
   trustedByText: {
     fontSize: '16px',
     color: '#999',
     margin: 0,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
-  
+
+
   // Welcome page specific styles
-  logoBadge: { 
-    width: '48px', 
-    height: '48px', 
-    background: '#fff', 
-    color: '#000', 
-    borderRadius: '10px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    fontWeight: 900, 
-    fontSize: '20px', 
-    marginBottom: '32px', 
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+  logoBadge: {
+    width: '48px',
+    height: '48px',
+    background: '#fff',
+    color: '#000',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 900,
+    fontSize: '20px',
+    marginBottom: '32px',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
-  
-  legalText: { 
-    fontSize: '14px', 
-    color: '#666', 
-    lineHeight: '1.6', 
-    marginTop: '24px', 
-    marginBottom: '48px', 
-    textAlign: 'center', 
-    fontWeight: 400, 
+
+
+  legalText: {
+    fontSize: '14px',
+    color: '#666',
+    lineHeight: '1.6',
+    marginTop: '24px',
+    marginBottom: '48px',
+    textAlign: 'center',
+    fontWeight: 400,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     width: '100%'
   },
-  
-  legalLink: { 
-    color: '#646cff', 
-    textDecoration: 'none', 
-    cursor: 'pointer', 
-    fontWeight: 500, 
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+
+  legalLink: {
+    color: '#646cff',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    fontWeight: 500,
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
-  
-  partners: { 
-    marginTop: 'auto', 
-    paddingTop: '48px', 
-    width: '100%' 
+
+  partners: {
+    marginTop: 'auto',
+    paddingTop: '48px',
+    width: '100%'
   },
-  
-  partnerLogos: { 
-    display: 'flex', 
-    gap: '24px', 
-    color: '#999', 
-    fontSize: '13px', 
-    fontWeight: 500, 
-    justifyContent: 'center', 
-    flexWrap: 'wrap', 
-    opacity: 0.6, 
-    lineHeight: '1.5', 
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+
+  partnerLogos: {
+    display: 'flex',
+    gap: '24px',
+    color: '#999',
+    fontSize: '13px',
+    fontWeight: 500,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    opacity: 0.6,
+    lineHeight: '1.5',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   }
 };
 
@@ -1504,8 +1522,8 @@ const styles: Record<string, React.CSSProperties> = {
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
   @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(2deg); }
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
   }
   @keyframes spin {
     from { transform: rotate(0deg); }
@@ -1515,30 +1533,7 @@ styleSheet.textContent = `
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(30px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-30px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
-  }
-  @keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
-  }
 `;
-if (!document.head.querySelector('style[data-onboarding-animations]')) {
-  styleSheet.setAttribute('data-onboarding-animations', 'true');
-  document.head.appendChild(styleSheet);
-}
+document.head.appendChild(styleSheet);
 
 export default OnboardingFlow;
