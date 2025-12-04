@@ -58,7 +58,13 @@ export const LandingPage = () => {
               onClick={() => {
                 // Production download URL - can be overridden with VITE_DOWNLOAD_URL env var
                 const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
-                window.open(downloadUrl, '_blank');
+                // Create a temporary anchor element to trigger download
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = 'Visnly-Setup.exe';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
               }}
             >
               <svg className="btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -167,7 +173,13 @@ export const LandingPage = () => {
                     onMouseLeave={() => setIsDownloading(false)}
                     onClick={() => {
                       const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
-                      window.open(downloadUrl, '_blank');
+                      // Create a temporary anchor element to trigger download
+                      const link = document.createElement('a');
+                      link.href = downloadUrl;
+                      link.download = 'Visnly-Setup.exe';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                     }}
                   >
                     <svg className="btn-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
