@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, Sparkles, Loader2 } from 'lucide-react';
+import { Check, Sparkles, Loader2, Zap, Trophy, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Navbar } from './Navbar';
 import { LiquidBackground } from './LiquidBackground';
@@ -13,46 +13,31 @@ export const Pricing = () => {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // Clear any stuck loading state on mount (handles case where user returns after redirect)
     setLoading(null);
-
-    // Check if user is signed in
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         setUser(session?.user || null);
-        // Clear loading in case user just returned from sign-in
         setLoading(null);
       });
-
-      // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         setUser(session?.user || null);
-        // Clear loading state when auth state changes (user just signed in)
         setLoading(null);
       });
-
       return () => subscription.unsubscribe();
     }
   }, []);
 
   const handleBuy = async (credits: number) => {
-    // Check if user is signed in
     if (!user) {
-      // Clear any loading state before redirecting
       setLoading(null);
-      // Redirect to sign in page
       navigate('/signin?redirect=pricing');
       return;
     }
-
-    // Only set loading if we're actually proceeding with checkout
     setLoading(credits);
     try {
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           credits,
           userId: user.id,
@@ -60,215 +45,199 @@ export const Pricing = () => {
           cancelUrl: `${window.location.origin}/pricing`,
         }),
       });
-
       const data = await response.json();
-
-      if (data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.url;
-      } else if (data.sessionId) {
-        // Fallback: redirect with session ID
-        window.location.href = `https://checkout.stripe.com/pay/${data.sessionId}`;
-      } else {
-        throw new Error('No checkout URL received');
-      }
+      if (data.url) window.location.href = data.url;
+      else if (data.sessionId) window.location.href = `https://checkout.stripe.com/pay/${data.sessionId}`;
+      else throw new Error('No checkout URL received');
     } catch (error) {
       console.error('Error creating checkout:', error);
       alert('Failed to start checkout. Please try again.');
       setLoading(null);
     }
   };
-  const creditPackages = [
+
+  const mainPackages = [
+    {
+      name: 'Student Pack',
+      credits: 50,
+      price: 9.99,
+      pricePerCredit: 0.20,
+      icon: <BookOpen className="w-6 h-6 text-indigo-400" strokeWidth={1.5} />,
+      features: ['Week of homework help', 'Perfect for midterms', 'Casual usage'],
+      cta: 'Get 50 Credits',
+      popular: false,
+    },
     {
       name: 'Power Pack',
       credits: 250,
       price: 34.99,
       pricePerCredit: 0.14,
-      badge: 'Most Popular',
-      features: ['Semester coverage', 'Serious students', '44% savings'],
-      cta: 'Buy 250 Credits',
-      ctaStyle: 'bg-white text-black hover:bg-gray-200 border border-transparent',
+      icon: <Trophy className="w-6 h-6 text-yellow-400" strokeWidth={1.5} />,
+      features: ['Full semester coverage', 'Best price per credit', 'Priority support'],
+      cta: 'Get 250 Credits',
       popular: true,
+      badge: 'Best Value'
     },
     {
       name: 'Value Pack',
       credits: 100,
       price: 16.99,
       pricePerCredit: 0.17,
-      badge: 'Best Value',
-      features: ['Month of study help', 'Regular students', '15% savings'],
-      cta: 'Buy 100 Credits',
-      ctaStyle: 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]',
-      popular: false, // Changed to false to make Power Pack the highlight
-    },
-    {
-      name: 'Student Pack',
-      credits: 50,
-      price: 9.99,
-      pricePerCredit: 0.20,
-      badge: null,
-      features: ['Week of homework help', 'Regular student needs', 'Best for casual use'],
-      cta: 'Buy 50 Credits',
-      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
-    },
-    {
-      name: 'Starter',
-      credits: 20,
-      price: 4.99,
-      pricePerCredit: 0.25,
-      badge: null,
-      features: ['One assignment covered', 'Quick help when needed', 'Flexible usage'],
-      cta: 'Buy 20 Credits',
-      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
-    },
-    {
-      name: 'Quick Fix',
-      credits: 10,
-      price: 2.99,
-      pricePerCredit: 0.30,
-      badge: null,
-      features: ['Perfect for one question', 'Instant access', 'No commitment'],
-      cta: 'Buy 10 Credits',
-      ctaStyle: 'bg-white/5 hover:bg-white/10 border border-white/10 text-white',
+      icon: <Zap className="w-6 h-6 text-purple-400" strokeWidth={1.5} />,
+      features: ['Month of study help', 'Finals week ready', 'Serious study sessions'],
+      cta: 'Get 100 Credits',
+      popular: false,
     },
   ];
 
+  const microPackages = [
+    { credits: 20, price: 4.99, label: "Starter" },
+    { credits: 10, price: 2.99, label: "Quick Fix" }
+  ];
+
   return (
-    <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
+    <div className="relative min-h-screen text-white font-sans bg-[#050505] selection:bg-indigo-500/30">
       <SEO
-        title="Pricing - Visnly | Pay As You Go"
+        title="Pricing - Visnly | Simple Credit Packs"
         description="Flexible credit-based pricing for students. Start with 25 free credits. No subscriptions, just pay for what you use."
-        keywords="visnly pricing, study credits, pay as you go, student discount"
+        keywords="visnly pricing, study credits, pay as you go"
       />
-      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%)' }} />
       <LiquidBackground />
       <Navbar />
-      <section id="pricing" className="pt-36 md:pt-48 pb-24 md:pb-32 px-4 relative z-10">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
-            <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">Fair Pricing</span>
-          </div>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 tracking-tight">
-            Pay only for what you use, <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">no subscriptions.</span>
-          </h2>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Credits never expire. Top up whenever you need more help.
-          </p>
-        </motion.div>
-
-        {/* Free Tier Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-          className="mb-12 max-w-2xl mx-auto"
-        >
-          <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-2xl p-1 relative overflow-hidden">
-            <div className="absolute inset-0 bg-white/5 animate-pulse" />
-            <div className="bg-[#0A0A0A] rounded-xl p-6 text-center relative z-10">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-xl font-bold text-white">Start for Free</h3>
-              </div>
-              <p className="text-gray-300">Create an account and get <span className="font-bold text-white">25 free credits</span> instantly. No credit card required.</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Credit Packages Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {creditPackages.map((pkg, index) => (
-          <motion.div
-              key={pkg.credits}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-              transition={{ delay: 0.1 + index * 0.1 }}
-              className={`relative group ${pkg.popular ? 'lg:col-span-1 lg:-mt-4' : ''}`}
-          >
-            {/* Popular Badge */}
-              {pkg.badge && (
-                <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
-                <div className={`text-xs font-bold px-4 py-1 rounded-full shadow-lg border ${
-                  pkg.popular 
-                    ? 'bg-white text-black border-white shadow-white/20' 
-                    : 'bg-indigo-600 text-white border-indigo-400 shadow-indigo-500/30'
-                }`}>
-                    {pkg.badge}
-                  </div>
-                </div>
-              )}
-
-              {/* Glow Effect for Popular */}
-              {pkg.popular && (
-                <div className="absolute -inset-[1px] bg-gradient-to-b from-indigo-500 to-purple-500 rounded-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
-              )}
+      
+      <section className="pt-32 pb-24 px-4 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-16 space-y-4">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md"
+            >
+              <Sparkles className="w-4 h-4 text-indigo-400" strokeWidth={1.5} />
+              <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">No Subscriptions</span>
+            </motion.div>
             
-              <div className={`relative h-full p-6 rounded-2xl border backdrop-blur-xl flex flex-col transition-all duration-300 ${
-                pkg.popular 
-                  ? 'border-transparent bg-[#0B0B15]' 
-                  : 'border-white/10 bg-black/40 hover:border-white/20'
-              }`}>
-                {/* Background Gradient for Popular */}
+            <motion.h1 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-4xl md:text-6xl font-bold tracking-tight"
+            >
+              Pay as you <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">learn.</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg text-gray-400 max-w-xl mx-auto font-light"
+            >
+              Credits never expire. Top up when you need them. <br/>
+              <span className="text-white font-medium">New accounts get 25 credits free.</span>
+            </motion.p>
+          </div>
+
+          {/* Main Packages Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16 items-start">
+            {mainPackages.map((pkg, i) => (
+              <motion.div
+                key={pkg.credits}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className={`relative group ${pkg.popular ? 'md:-mt-4' : ''}`}
+              >
+                {/* Popular Glow */}
                 {pkg.popular && (
-                  <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-b from-indigo-500/10 to-transparent opacity-50 pointer-events-none rounded-2xl" />
+                  <div className="absolute -inset-0.5 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-3xl opacity-20 group-hover:opacity-40 transition-opacity blur-xl" />
                 )}
-              
-                <div className="mb-6 relative z-10">
-                  <h3 className="text-lg font-bold text-white mb-1">{pkg.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-3xl font-bold text-white">${pkg.price}</span>
-                    <span className="text-gray-400 text-sm">one-time</span>
+                
+                <div className={`relative h-full p-8 rounded-3xl border backdrop-blur-xl flex flex-col transition-all duration-300 ${
+                  pkg.popular 
+                    ? 'bg-[#0A0A0A] border-indigo-500/30' 
+                    : 'bg-black/20 border-white/10 hover:border-white/20'
+                }`}>
+                  {pkg.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                      {pkg.badge}
+                    </div>
+                  )}
+
+                  <div className="mb-6 flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-300 mb-1">{pkg.name}</h3>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-white">${pkg.price}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">${pkg.pricePerCredit.toFixed(2)} / credit</p>
+                    </div>
+                    <div className={`p-3 rounded-2xl ${pkg.popular ? 'bg-indigo-500/10' : 'bg-white/5'}`}>
+                      {pkg.icon}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-2xl font-bold ${pkg.popular ? 'text-white' : 'text-indigo-400'}`}>{pkg.credits}</span>
-                    <span className="text-gray-400 text-sm">credits</span>
-                </div>
-                  <p className="text-xs text-gray-400">${pkg.pricePerCredit.toFixed(2)} per credit</p>
-              </div>
 
-                <div className="flex-grow mb-6 relative z-10">
-                  <ul className="space-y-3">
-                    {pkg.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <div className={`p-0.5 rounded-full ${pkg.popular ? 'bg-white text-black' : 'bg-white/10 text-gray-400'}`}>
-                          <Check size={10} strokeWidth={3} />
+                  <div className="flex-grow space-y-4 mb-8">
+                    <div className="text-2xl font-bold text-white flex items-center gap-2">
+                      {pkg.credits} <span className="text-sm font-normal text-gray-500">credits</span>
+                    </div>
+                    <div className="space-y-3">
+                      {pkg.features.map((feat, j) => (
+                        <div key={j} className="flex items-center gap-3 text-sm text-gray-400">
+                          <Check className={`w-4 h-4 ${pkg.popular ? 'text-indigo-400' : 'text-gray-600'}`} strokeWidth={2} />
+                          {feat}
                         </div>
-                        <span className={`text-sm ${pkg.popular ? 'text-white' : 'text-gray-300'}`}>{feature}</span>
-                    </li>
-                    ))}
-                </ul>
-              </div>
+                      ))}
+                    </div>
+                  </div>
 
-                <button 
+                  <button
+                    onClick={() => handleBuy(pkg.credits)}
+                    disabled={loading !== null}
+                    className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                      pkg.popular
+                        ? 'bg-white text-black hover:bg-gray-200'
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    {loading === pkg.credits ? <Loader2 className="w-4 h-4 animate-spin" /> : pkg.cta}
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Micro Packages */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="max-w-2xl mx-auto"
+          >
+            <h3 className="text-center text-sm font-medium text-gray-500 mb-6 uppercase tracking-wider">Micro Packs</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {microPackages.map((pkg) => (
+                <button
+                  key={pkg.credits}
                   onClick={() => handleBuy(pkg.credits)}
                   disabled={loading !== null}
-                  className={`w-full py-3 rounded-xl font-bold text-sm transition-all relative z-10 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${pkg.ctaStyle}`}
+                  className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all group"
                 >
-                  {loading === pkg.credits ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Processing...
-                    </span>
-                  ) : (
-                    pkg.cta
-                  )}
-              </button>
+                  <div className="text-left">
+                    <div className="font-medium text-white">{pkg.label}</div>
+                    <div className="text-sm text-gray-500">{pkg.credits} credits</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-white">${pkg.price}</div>
+                    <div className="text-xs text-indigo-400 group-hover:translate-x-1 transition-transform">Buy &rarr;</div>
+                  </div>
+                </button>
+              ))}
             </div>
           </motion.div>
-          ))}
         </div>
-      </div>
-    </section>
+      </section>
     </div>
   );
 };
