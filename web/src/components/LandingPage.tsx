@@ -7,7 +7,7 @@ import { FAQ } from './FAQ';
 import { DownloadModal } from './DownloadModal';
 import { Navbar } from './Navbar';
 import { Logo } from './Logo';
-import { ArrowRight, Brain, Zap, Shield, Sparkles, BookOpen, Layers, Target, MousePointer2, AlertCircle } from 'lucide-react';
+import { ArrowRight, Brain, Zap, Sparkles, BookOpen, Layers, Target, MousePointer2, AlertCircle } from 'lucide-react';
 
 export const LandingPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
