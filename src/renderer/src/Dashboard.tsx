@@ -113,10 +113,10 @@ const Dashboard: React.FC = () => {
 
   // Mode Colors Helper
   const getModeColor = (mode: string) => {
-    if (mode === 'Study') return 'rgba(255,255,255,0.6)'; // Glassy gray
+    if (mode === 'Study') return 'rgba(135, 206, 250, 0.8)'; // Sky blue
     if (mode === 'Solve') return '#0ea5e9'; // Cyan
     if (mode === 'Cheat') return '#ff5252'; // Red
-    return 'rgba(255,255,255,0.6)'; // Default to Study color
+    return 'rgba(135, 206, 250, 0.8)'; // Default to Study color
   };
 
 
@@ -546,7 +546,7 @@ const Dashboard: React.FC = () => {
                       padding: '8px 16px',
                       background: 'rgba(100, 108, 255, 0.2)',
                       border: '1px solid rgba(100, 108, 255, 0.4)',
-                      color: 'rgba(255,255,255,0.7)'
+                      color: 'rgba(135, 206, 250, 0.9)'
                     }}
                     title="Test Onboarding Flow"
                   >
@@ -676,7 +676,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: '100vh',
     backgroundColor: '#050509', // Match overlay vibe: deep neutral
-    backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.1) 0, transparent 55%)',
+    backgroundImage: 'radial-gradient(circle at top, rgba(135, 206, 250, 0.15) 0, transparent 55%)',
     color: '#e0e0e0',
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     display: 'flex',
@@ -843,7 +843,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '18px 60px',
     fontSize: '16px',
     fontWeight: 700,
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
+    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.3) 0%, rgba(135, 206, 250, 0.15) 100%)',
     color: 'white',
     border: 'none',
     borderRadius: '12px',
@@ -904,7 +904,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 14px',
     borderRadius: '10px',
     border: 'none',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1))',
+    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.3), rgba(135, 206, 250, 0.15))',
     color: '#fff',
     fontSize: '13px',
     fontWeight: 600,
@@ -970,7 +970,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '8px',
     height: '8px',
     borderRadius: '50%',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(135, 206, 250, 0.3)',
     animation: 'pulse-status 2s ease-in-out infinite'
   },
   statusLabel: {

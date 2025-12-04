@@ -36,7 +36,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   blob1: {
     top: '-10%', left: '-10%', width: '50vw', height: '50vw',
-    backgroundColor: 'rgba(255,255,255,0.08)', // Glassy gray (Study)
+    backgroundColor: 'rgba(135, 206, 250, 0.15)', // Sky blue (Study)
     animationDelay: '0s',
   },
   blob2: {

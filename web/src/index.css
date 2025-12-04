@@ -35,7 +35,7 @@
   }
 
   .text-gradient-primary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white/80 to-white/60;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-300 to-sky-200;
   }
 
   .perspective-1000 {

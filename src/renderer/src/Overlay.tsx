@@ -977,7 +977,7 @@ const Overlay: React.FC = () => {
   // Get tag color for segment
   const getTagColor = (tag: string): string => {
     const colors: Record<string, string> = {
-      'new_topic': 'rgba(255,255,255,0.5)',
+      'new_topic': 'rgba(135, 206, 250, 0.8)',
       'example': '#0ea5e9',
       'definition': '#22c55e',
       'review': '#f59e0b',
@@ -1059,7 +1059,7 @@ const Overlay: React.FC = () => {
                 style={{
                   ...styles.modeBtn,
                   ...(mode === m ? styles.modeBtnActive : {}),
-                  color: mode === m ? (m === 'Cheat' ? '#ff5252' : m === 'Solve' ? '#0ea5e9' : 'rgba(255,255,255,0.7)') : '#888'
+                  color: mode === m ? (m === 'Cheat' ? '#ff5252' : m === 'Solve' ? '#0ea5e9' : 'rgba(135, 206, 250, 0.9)') : '#888'
                 }}
               >
                 {m}
@@ -1166,7 +1166,7 @@ const Overlay: React.FC = () => {
             <div style={styles.tabContent}>
               <div style={styles.notesGrid}>
                 <button onClick={handleGenerateNotes} style={styles.noteCard}>
-                  <FileTextIcon size={24} color="rgba(255,255,255,0.6)" />
+                  <FileTextIcon size={24} color="rgba(135, 206, 250, 0.8)" />
                   <span>Simplify</span>
                 </button>
                 <button onClick={handleExtractKeyConcepts} style={styles.noteCard}>
@@ -1286,7 +1286,7 @@ const Overlay: React.FC = () => {
       borderRadius: '8px', display: 'flex', alignItems: 'center'
     },
     sendBtn: {
-      background: 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', padding: '8px',
+      background: 'rgba(135, 206, 250, 0.3)', border: 'none', cursor: 'pointer', padding: '8px',
       borderRadius: '8px', display: 'flex', alignItems: 'center', color: '#fff'
     },
     bottomNav: {
@@ -1299,7 +1299,7 @@ const Overlay: React.FC = () => {
     },
     navBtnActive: {
       background: 'rgba(100, 108, 255, 0.1)', border: 'none', cursor: 'pointer', padding: '12px',
-      borderRadius: '12px', color: 'rgba(255,255,255,0.7)'
+      borderRadius: '12px', color: 'rgba(135, 206, 250, 0.9)'
     },
     toolbar: { display: 'flex', gap: '8px', padding: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' },
     toolBtn: {

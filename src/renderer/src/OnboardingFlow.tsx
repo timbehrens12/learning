@@ -222,10 +222,10 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
     <div style={styles.profileMock}>
       <div style={styles.profileCard}>
         <div style={styles.profileAvatar}>
-          <Icons.UserIcon size={48} color="rgba(255,255,255,0.6)" />
+          <Icons.UserIcon size={48} color="rgba(135, 206, 250, 0.8)" />
         </div>
         <div style={styles.profileLoader}>
-          <Icons.LoaderIcon size={24} color="rgba(255,255,255,0.6)" />
+          <Icons.LoaderIcon size={24} color="rgba(135, 206, 250, 0.8)" />
         </div>
         <div style={styles.profileName}>Loading profile...</div>
       </div>
@@ -247,14 +247,14 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
               onClick={() => setEducationLevel(level)}
               onMouseEnter={(e) => {
                 if (educationLevel !== level) {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.background = 'rgba(135, 206, 250, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(135, 206, 250, 0.3)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (educationLevel !== level) {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                  e.currentTarget.style.background = 'rgba(135, 206, 250, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(135, 206, 250, 0.2)';
                 }
               }}
               style={{
@@ -278,14 +278,14 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
               onClick={() => setReferralSource(source)}
               onMouseEnter={(e) => {
                 if (referralSource !== source) {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.background = 'rgba(135, 206, 250, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(135, 206, 250, 0.3)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (referralSource !== source) {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                  e.currentTarget.style.background = 'rgba(135, 206, 250, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(135, 206, 250, 0.2)';
                 }
               }}
               style={{
@@ -391,7 +391,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         <div style={styles.stealthWindow}>
           <div style={styles.stealthHeader}>Visnly Overlay</div>
           <div style={styles.stealthContent}>
-            <Icons.IncognitoIcon size={48} color="rgba(255,255,255,0.6)" />
+            <Icons.IncognitoIcon size={48} color="rgba(135, 206, 250, 0.8)" />
             <div style={styles.stealthText}>
               {stealthVisible ? 'Visible' : 'Hidden'}
             </div>
@@ -414,7 +414,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div
             style={{
               ...styles.toggleSwitch,
-              background: billingAnnual ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.2)'
+              background: billingAnnual ? 'rgba(135, 206, 250, 0.3)' : 'rgba(135, 206, 250, 0.2)'
             }}
             onClick={() => setBillingAnnual(!billingAnnual)}
           >
@@ -687,7 +687,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     padding: '60px',
     boxSizing: 'border-box',
-    borderRight: '1px solid rgba(255,255,255,0.05)',
+    borderRight: '1px solid rgba(135, 206, 250, 0.1)',
     background: '#0a0a0a',
     position: 'relative',
     zIndex: 2
@@ -742,13 +742,13 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-2px',
     lineHeight: '1.1',
     textAlign: 'center',
-    background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.6) 100%)',
+    background: 'linear-gradient(135deg, rgba(135, 206, 250, 1) 0%, rgba(135, 206, 250, 0.8) 50%, rgba(135, 206, 250, 0.6) 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     width: '100%',
-    textShadow: '0 0 40px rgba(255,255,255,0.2)'
+    textShadow: '0 0 40px rgba(135, 206, 250, 0.3)'
   },
 
   heading: {
@@ -805,7 +805,7 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+    backgroundImage: 'linear-gradient(rgba(135, 206, 250, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(135, 206, 250, 0.05) 1px, transparent 1px)',
     backgroundSize: '40px 40px',
     opacity: 0.5,
     zIndex: 1
@@ -828,7 +828,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '600px',
     height: '600px',
     borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(135, 206, 250, 0.1) 0%, transparent 70%)',
     top: '20%',
     left: '10%',
     filter: 'blur(100px)',
@@ -841,7 +841,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '500px',
     height: '500px',
     borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(135, 206, 250, 0.08) 0%, transparent 70%)',
     bottom: '15%',
     right: '15%',
     filter: 'blur(100px)',
@@ -855,7 +855,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '200px',
     top: '25%',
     left: '20%',
-    border: '1px solid rgba(255,255,255,0.15)',
+    border: '1px solid rgba(135, 206, 250, 0.25)',
     borderRadius: '2px',
     transform: 'rotate(45deg)',
     animation: 'geometricRotate1 30s linear infinite',
@@ -892,7 +892,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '1px',
     height: '100%',
     left: '30%',
-    background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.08), transparent)',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.12), transparent)',
     animation: 'rayPulse1 8s ease-in-out infinite',
     opacity: 0.3
   },
@@ -902,7 +902,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '1px',
     height: '100%',
     right: '35%',
-    background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.06), transparent)',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.1), transparent)',
     animation: 'rayPulse2 10s ease-in-out infinite',
     opacity: 0.25
   },
@@ -1002,7 +1002,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   chatQuestion: {
     padding: '16px',
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(135, 206, 250, 0.12)',
     borderRadius: '12px',
     marginBottom: '16px',
     fontSize: '15px',
@@ -1039,8 +1039,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '32px',
     background: 'rgba(20,20,20,0.95)',
     borderRadius: '16px',
-    border: '2px solid rgba(255,255,255,0.3)',
-    boxShadow: '0 20px 50px rgba(255,255,255,0.15)',
+    border: '2px solid rgba(135, 206, 250, 0.4)',
+    boxShadow: '0 20px 50px rgba(135, 206, 250, 0.25)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -1050,7 +1050,7 @@ const styles: Record<string, React.CSSProperties> = {
   stealthHeader: {
     fontSize: '14px',
     fontWeight: 700,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(135, 206, 250, 0.9)',
     textTransform: 'uppercase',
     letterSpacing: '1px'
   },
@@ -1077,9 +1077,9 @@ const styles: Record<string, React.CSSProperties> = {
 
   hotkeyBox: {
     padding: '20px 32px',
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(135, 206, 250, 0.12)',
     borderRadius: '12px',
-    border: '1px solid rgba(255,255,255,0.2)',
+    border: '1px solid rgba(135, 206, 250, 0.3)',
     fontSize: '18px',
     fontWeight: 600,
     display: 'flex',
@@ -1092,7 +1092,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '6px 12px',
     background: 'rgba(255,255,255,0.1)',
     borderRadius: '6px',
-    border: '1px solid rgba(255,255,255,0.2)',
+    border: '1px solid rgba(135, 206, 250, 0.3)',
     fontSize: '14px',
     fontWeight: 600,
     fontFamily: "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace"
@@ -1117,7 +1117,7 @@ const styles: Record<string, React.CSSProperties> = {
   glowEffect: {
     width: '100%',
     height: '100%',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(135, 206, 250, 0.2) 0%, transparent 70%)',
     borderRadius: '20px',
     filter: 'blur(40px)'
   },
@@ -1152,7 +1152,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   educationChip: {
     padding: '12px 24px',
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(135, 206, 250, 0.12)',
     border: '1px solid rgba(255,255,255,0.12)',
     borderRadius: '10px',
     cursor: 'pointer',
@@ -1166,10 +1166,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   educationChipActive: {
-    background: 'rgba(255,255,255,0.15)',
-    border: '1px solid rgba(255,255,255,0.3)',
+    background: 'rgba(135, 206, 250, 0.2)',
+    border: '1px solid rgba(135, 206, 250, 0.4)',
     color: '#fff',
-    boxShadow: '0 2px 8px rgba(255,255,255,0.15)',
+    boxShadow: '0 2px 8px rgba(135, 206, 250, 0.25)',
     transform: 'translateY(-1px)'
   },
 
@@ -1185,7 +1185,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   referralChip: {
     padding: '11px 16px',
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(135, 206, 250, 0.12)',
     border: '1px solid rgba(255,255,255,0.12)',
     borderRadius: '10px',
     cursor: 'pointer',
@@ -1200,10 +1200,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   referralChipActive: {
-    background: 'rgba(255,255,255,0.15)',
-    border: '1px solid rgba(255,255,255,0.3)',
+    background: 'rgba(135, 206, 250, 0.2)',
+    border: '1px solid rgba(135, 206, 250, 0.4)',
     color: '#fff',
-    boxShadow: '0 2px 8px rgba(255,255,255,0.15)',
+    boxShadow: '0 2px 8px rgba(135, 206, 250, 0.25)',
     transform: 'translateY(-1px)'
   },
 
@@ -1281,9 +1281,9 @@ const styles: Record<string, React.CSSProperties> = {
 
   proCard: {
     padding: '32px',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)',
+    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.18) 0%, rgba(135, 206, 250, 0.1) 100%)',
     borderRadius: '20px',
-    border: '2px solid rgba(255,255,255,0.3)',
+    border: '2px solid rgba(135, 206, 250, 0.4)',
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
@@ -1297,8 +1297,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   proCardRight: {
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-    border: '2px solid rgba(255,255,255,0.2)'
+    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.15) 0%, rgba(135, 206, 250, 0.08) 100%)',
+    border: '2px solid rgba(135, 206, 250, 0.3)'
   },
 
   proCardHeader: {
@@ -1319,7 +1319,7 @@ const styles: Record<string, React.CSSProperties> = {
   popularBadge: {
     fontSize: '12px',
     fontWeight: 600,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(135, 206, 250, 0.9)',
     background: 'rgba(255,255,255,0.15)',
     padding: '4px 12px',
     borderRadius: '12px',
@@ -1364,7 +1364,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   infinityIcon: {
     fontSize: '20px',
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(135, 206, 250, 0.9)',
     fontWeight: 600,
     display: 'flex',
     alignItems: 'center',
@@ -1425,9 +1425,9 @@ const styles: Record<string, React.CSSProperties> = {
   videoCallScreen: {
     width: '80%',
     height: '60%',
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(135, 206, 250, 0.12)',
     borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.15)'
+    border: '1px solid rgba(135, 206, 250, 0.25)'
   },
 
   crossedEyeIcon: {
@@ -1444,7 +1444,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     width: '40px',
     height: '2px',
-    background: 'rgba(255,255,255,0.3)',
+    background: 'rgba(135, 206, 250, 0.4)',
     transform: 'rotate(45deg)',
     top: '50%',
     left: '50%',
@@ -1485,7 +1485,7 @@ const styles: Record<string, React.CSSProperties> = {
   logoBadge: {
     width: '64px',
     height: '64px',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)',
+    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.3) 0%, rgba(135, 206, 250, 0.2) 100%)',
     color: '#fff',
     borderRadius: '16px',
     display: 'flex',
@@ -1495,7 +1495,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '28px',
     marginBottom: '40px',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    boxShadow: '0 10px 40px rgba(255,255,255,0.15), inset 0 0 20px rgba(255,255,255,0.1)',
+    boxShadow: '0 10px 40px rgba(135, 206, 250, 0.25), inset 0 0 20px rgba(135, 206, 250, 0.15)',
     animation: 'logoGlow 3s ease-in-out infinite',
     position: 'relative',
     zIndex: 1
@@ -1515,7 +1515,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   legalLink: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(135, 206, 250, 0.9)',
     textDecoration: 'none',
     cursor: 'pointer',
     fontWeight: 500,
@@ -1601,8 +1601,8 @@ styleSheet.textContent = `
     }
   }
   @keyframes logoGlow {
-    0%, 100% { box-shadow: 0 10px 40px rgba(255,255,255,0.15), inset 0 0 20px rgba(255,255,255,0.1); }
-    50% { box-shadow: 0 10px 60px rgba(255,255,255,0.25), inset 0 0 30px rgba(255,255,255,0.2); }
+    0%, 100% { box-shadow: 0 10px 40px rgba(135, 206, 250, 0.25), inset 0 0 20px rgba(135, 206, 250, 0.15); }
+    50% { box-shadow: 0 10px 60px rgba(135, 206, 250, 0.35), inset 0 0 30px rgba(135, 206, 250, 0.25); }
   }
 `;
 document.head.appendChild(styleSheet);

@@ -157,7 +157,7 @@ export const SuccessPage = () => {
 
           {isLoading ? (
             <>
-              <div className="w-20 h-20 border-4 border-white/30 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
+              <div className="w-20 h-20 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
                 Signing you in...
               </h1>
@@ -178,7 +178,7 @@ export const SuccessPage = () => {
               </p>
               <a
                 href="/"
-                className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-sky-500/30 hover:bg-sky-500/40 text-white font-semibold transition-colors"
               >
                 Return to Home
                 <ArrowRight className="w-4 h-4" />
@@ -204,7 +204,7 @@ export const SuccessPage = () => {
               redirectToPricing ? (
                 <a
                   href="/pricing"
-                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors"
+                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-sky-500/30 hover:bg-sky-500/40 text-white font-semibold transition-colors"
                 >
                   Continue to Pricing
                   <ArrowRight className="w-4 h-4" />
@@ -216,7 +216,7 @@ export const SuccessPage = () => {
                     e.preventDefault();
                     window.location.href = '/';
                   }}
-                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors"
+                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-sky-500/30 hover:bg-sky-500/40 text-white font-semibold transition-colors"
                 >
                   Download App
                   <ArrowRight className="w-4 h-4" />
@@ -225,7 +225,7 @@ export const SuccessPage = () => {
             ) : (
               <a
                 href="/pricing"
-                className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-xl bg-sky-500/30 hover:bg-sky-500/40 text-white font-semibold transition-colors"
               >
                 Back to Pricing
                 <ArrowRight className="w-4 h-4" />

@@ -109,7 +109,7 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
                 {/* Download Button */}
                 <button
                   onClick={handleDownload}
-                  className="w-full py-4 rounded-xl font-semibold text-base bg-gradient-to-r from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 text-white mb-4 flex items-center justify-center gap-2 transition-all shadow-lg shadow-white/10"
+                  className="w-full py-4 rounded-xl font-semibold text-base bg-gradient-to-r from-sky-500/30 to-sky-400/20 hover:from-sky-500/40 hover:to-sky-400/30 text-white mb-4 flex items-center justify-center gap-2 transition-all shadow-lg shadow-sky-500/20"
                 >
                   <Download className="w-5 h-5" />
                   Download for Windows
