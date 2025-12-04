@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Tesseract from 'tesseract.js';
 import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide, explainSegment, explainTeacherMeaning, getContextBefore, extractFormulas, rewriteInStyle, askContextQuestion, LearningStyle, analyzeTranscriptSections, detectTestWorthySections, detectConfusingSections, generateTopicTimeline, TranscriptSegmentAnalysis } from './ai';
 import { supabase } from './lib/supabase';
 import GlassCard from './components/GlassCard';
-import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon } from './components/Icons';
+import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon, CameraIcon, MicIcon, MicOffIcon, SettingsIcon, MaximizeIcon, MinimizeIcon } from './components/Icons';
 
 declare global { interface Window { webkitSpeechRecognition: any; } }
 
@@ -29,7 +30,8 @@ interface NotesState {
 
 const Overlay: React.FC = () => {
   // --- STATE ---
-  const [activeTab, setActiveTab] = useState<'chat' | 'transcript' | 'notes'>('chat');
+  const [viewMode, setViewMode] = useState<'compact' | 'expanded'>('compact');
+  const [inputMode, setInputMode] = useState<'chat' | 'screen' | 'voice'>('chat');
   const [userId, setUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<{sender: 'user' | 'ai' | 'system', text: string, answer?: string, steps?: string, timestamp?: string}[]>([]);
   const [showStepsForMessage, setShowStepsForMessage] = useState<{[key: number]: boolean}>({});
@@ -1037,40 +1039,84 @@ const Overlay: React.FC = () => {
 
   // --- RENDER ---
   return (
-    <div style={styles.container}>
-      <div style={styles.tintOverlay}></div>
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+      onClick={(e) => e.target === e.currentTarget && handleClose()}
+    >
+      <canvas ref={canvasRef} className="hidden" />
 
-      {/* --- MAIN CARD --- */}
-      {isCardVisible && (
-        <GlassCard style={styles.mainCard}>
-          {/* Tabs */}
-          <div style={styles.tabRow}>
-          <button 
-            onClick={() => setActiveTab('chat')}
-              style={activeTab === 'chat' ? styles.tabActive : styles.tab}
+      {/* --- MAIN OVERLAY --- */}
+      <AnimatePresence>
+        {isCardVisible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className={`fixed bg-[#0A0A0A]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden ${
+              viewMode === 'expanded' ? 'w-[800px] h-[600px]' : 'w-[500px] h-auto'
+            }`}
+            style={{
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
+            }}
           >
-            Chat
-            </button>
-            <button 
-            onClick={() => setActiveTab('transcript')}
-              style={activeTab === 'transcript' ? styles.tabActive : styles.tab}
-          >
-            Transcript
-            </button>
-            <button 
-            onClick={() => setActiveTab('notes')}
-              style={activeTab === 'notes' ? styles.tabActive : styles.tab}
-          >
-            Notes
-            </button>
-            {activeTab === 'transcript' && (
-               <div style={styles.recIndicator}>
-                 <span style={{...styles.recDot, background: isListening ? '#ef4444' : '#555'}}></span>
-                 {isListening ? (isAudioDetected ? "Listening..." : "On") : "Off"}
-               </div>
-          )}
-        </div>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                  <ZapIcon className="w-4 h-4 text-indigo-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-white">Visnly</h2>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Mode Selector */}
+                <div className="flex rounded-lg bg-black/20 p-1">
+                  {[
+                    { key: 'Study', icon: BookOpenIcon, color: 'text-blue-400' },
+                    { key: 'Solve', icon: TargetIcon, color: 'text-purple-400' },
+                    { key: 'Cheat', icon: ZapIcon, color: 'text-red-400' }
+                  ].map(({ key, icon: Icon, color }) => (
+                    <button
+                      key={key}
+                      onClick={() => setMode(key as "Study" | "Solve" | "Cheat")}
+                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                        mode === key
+                          ? 'bg-white/10 text-white'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className={`w-3 h-3 inline mr-1 ${color}`} />
+                      {key}
+                    </button>
+                  ))}
+                </div>
+
+                {/* View Toggle */}
+                <button
+                  onClick={() => setViewMode(viewMode === 'compact' ? 'expanded' : 'compact')}
+                  className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center hover:bg-white/5 transition-colors"
+                >
+                  {viewMode === 'compact' ?
+                    <MaximizeIcon className="w-4 h-4 text-gray-400" /> :
+                    <MinimizeIcon className="w-4 h-4 text-gray-400" />
+                  }
+                </button>
+
+                {/* Close Button */}
+                <button
+                  onClick={handleClose}
+                  className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/30 border border-transparent transition-all"
+                >
+                  <XIcon className="w-4 h-4 text-gray-400" />
+                </button>
+              </div>
+            </div>
 
           {/* Content */}
           <div style={styles.contentArea}>
