@@ -7,8 +7,8 @@ const features = [
     desc: "Completely undetectable by Proctorio, Honorlock, and other screen monitoring tools. The overlay draws directly to the GPU buffer, bypassing standard capture methods.",
     icon: <Ghost className="w-6 h-6" />,
     colSpan: "md:col-span-2",
-    bg: "bg-gradient-to-br from-indigo-900/20 to-black/40",
-    border: "border-indigo-500/20"
+    bg: "bg-gradient-to-br from-white/10 to-black/40",
+    border: "border-white/10"
   },
   {
     title: "Auto-Capture",
@@ -44,7 +44,7 @@ export const FeatureBento = () => {
             <div className="max-w-2xl">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-6 text-white">
                 Unfair Advantage. <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Engineered for Stealth.</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/60">Engineered for Stealth.</span>
                 </h2>
                 <p className="text-lg text-gray-400 leading-relaxed">
                 The only study assistant built with proprietary "Anti-Proctor" technology at its core. 
@@ -74,7 +74,7 @@ export const FeatureBento = () => {
                 </div>
                 
                 {/* Decorative Gradient Blob on Hover */}
-                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-indigo-500/10 blur-[100px] group-hover:opacity-100 opacity-0 transition-opacity duration-500" />
+                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-white/5 blur-[100px] group-hover:opacity-100 opacity-0 transition-opacity duration-500" />
             </GlassCard>
           ))}
         </div>

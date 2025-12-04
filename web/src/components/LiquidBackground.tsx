@@ -15,7 +15,7 @@ export const LiquidBackground = () => {
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute -top-[20%] -left-[10%] h-[60vh] w-[60vh] rounded-full bg-indigo-600/30 blur-[120px]"
+        className="absolute -top-[20%] -left-[10%] h-[60vh] w-[60vh] rounded-full bg-white/5 blur-[120px]"
       />
       <motion.div
         animate={{
@@ -29,7 +29,7 @@ export const LiquidBackground = () => {
           ease: "easeInOut",
           delay: 2,
         }}
-        className="absolute top-[10%] -right-[10%] h-[70vh] w-[70vh] rounded-full bg-purple-600/20 blur-[120px]"
+        className="absolute top-[10%] -right-[10%] h-[70vh] w-[70vh] rounded-full bg-white/5 blur-[120px]"
       />
       <motion.div
         animate={{

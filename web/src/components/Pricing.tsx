@@ -62,7 +62,7 @@ export const Pricing = () => {
       credits: 50,
       price: 9.99,
       pricePerCredit: 0.20,
-      icon: <Star className="w-6 h-6 text-indigo-400" strokeWidth={1.5} fill="currentColor" />,
+      icon: <Star className="w-6 h-6 text-white/60" strokeWidth={1.5} fill="currentColor" />,
       features: ['Week of homework help', 'Perfect for midterms', 'Casual usage'],
       cta: 'Get 50 Credits',
       popular: false,
@@ -84,7 +84,7 @@ export const Pricing = () => {
       credits: 100,
       price: 16.99,
       pricePerCredit: 0.17,
-      icon: <BookOpen className="w-6 h-6 text-purple-400" strokeWidth={1.5} fill="currentColor" />,
+      icon: <BookOpen className="w-6 h-6 text-white/60" strokeWidth={1.5} fill="currentColor" />,
       features: ['Month of study help', 'Finals week ready', 'Serious study sessions'],
       cta: 'Get 100 Credits',
       popular: false,
@@ -97,7 +97,7 @@ export const Pricing = () => {
   ];
 
   return (
-    <div className="relative min-h-screen text-white font-sans bg-[#050505] selection:bg-indigo-500/30">
+    <div className="relative min-h-screen text-white font-sans bg-[#050505] selection:bg-white/20">
       <SEO
         title="Pricing - Visnly | Simple Credit Packs"
         description="Flexible credit-based pricing for students. Start with 25 free credits. No subscriptions, just pay for what you use."
@@ -115,7 +115,7 @@ export const Pricing = () => {
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md"
             >
-              <Sparkles className="w-4 h-4 text-indigo-400" strokeWidth={1.5} />
+              <Sparkles className="w-4 h-4 text-white/60" strokeWidth={1.5} />
               <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">No Subscriptions</span>
         </motion.div>
 
@@ -125,7 +125,7 @@ export const Pricing = () => {
           transition={{ delay: 0.1 }}
               className="text-4xl md:text-6xl font-bold tracking-tight"
         >
-              Pay as you <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">learn.</span>
+              Pay as you <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/60">learn.</span>
             </motion.h1>
             
             <motion.p 
@@ -152,16 +152,16 @@ export const Pricing = () => {
           >
                 {/* Popular Glow */}
                 {pkg.popular && (
-                  <div className="absolute -inset-0.5 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-3xl opacity-20 group-hover:opacity-40 transition-opacity blur-xl" />
+                  <div className="absolute -inset-0.5 bg-gradient-to-b from-white/20 to-white/10 rounded-3xl opacity-20 group-hover:opacity-40 transition-opacity blur-xl" />
                 )}
 
                 <div className={`relative h-full p-8 rounded-3xl border backdrop-blur-xl flex flex-col transition-all duration-300 ${
                   pkg.popular
-                    ? 'bg-[#0A0A0A] border-indigo-500/30'
+                    ? 'bg-[#0A0A0A] border-white/20'
                     : 'bg-black/20 border-white/10 hover:border-white/20'
                 }`}>
                   {pkg.badge && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-white/20 to-white/10 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                       {pkg.badge}
                     </div>
                 )}
@@ -174,7 +174,7 @@ export const Pricing = () => {
                       </div>
                       <p className="text-xs text-gray-500 mt-1">${pkg.pricePerCredit.toFixed(2)} / credit</p>
                     </div>
-                    <div className={`p-3 rounded-2xl ${pkg.popular ? 'bg-indigo-500/10' : 'bg-white/5'}`}>
+                    <div className={`p-3 rounded-2xl ${pkg.popular ? 'bg-white/5' : 'bg-white/5'}`}>
                       {pkg.icon}
                     </div>
                   </div>
@@ -186,7 +186,7 @@ export const Pricing = () => {
                     <div className="space-y-3">
                       {pkg.features.map((feat, j) => (
                         <div key={j} className="flex items-center gap-3 text-sm text-gray-400">
-                          <Check className={`w-4 h-4 ${pkg.popular ? 'text-indigo-400' : 'text-gray-600'}`} strokeWidth={2} />
+                          <Check className={`w-4 h-4 ${pkg.popular ? 'text-white/60' : 'text-gray-600'}`} strokeWidth={2} />
                           {feat}
                         </div>
                       ))}
@@ -231,7 +231,7 @@ export const Pricing = () => {
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-white">${pkg.price}</div>
-                    <div className="text-xs text-indigo-400 group-hover:translate-x-1 transition-transform">Buy &rarr;</div>
+                    <div className="text-xs text-white/60 group-hover:translate-x-1 transition-transform">Buy &rarr;</div>
                   </div>
               </button>
               ))}

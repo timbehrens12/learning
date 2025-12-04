@@ -31,13 +31,13 @@ const features = [
     title: "Lecture Mode",
     desc: "Auto-tags new topics and generates study guides.",
     icon: <BookOpen className="w-5 h-5" />,
-    color: "indigo"
+    color: "gray"
   },
   {
     title: "Study Mode",
     desc: "Interactive tutor that explains concepts step-by-step.",
     icon: <Brain className="w-5 h-5" />,
-    color: "purple"
+    color: "gray"
   },
   {
     title: "Detection Mode",
@@ -72,7 +72,7 @@ export const HowItWorksPage = () => {
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 md:mb-8 leading-[1.1]">
             Zero Friction. <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Maximum Intelligence.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/60">Maximum Intelligence.</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed font-light">
             We designed Visnly to be the fastest way to get answers and understand complex topics without breaking your flow.
@@ -99,7 +99,7 @@ export const HowItWorksPage = () => {
                   <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 md:mb-6 backdrop-blur-md relative z-10">
                     {step.icon}
                   </div>
-                  <div className="text-xs md:text-sm font-mono text-indigo-400 mb-2">STEP {step.id}</div>
+                  <div className="text-xs md:text-sm font-mono text-white/60 mb-2">STEP {step.id}</div>
                   <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3 text-white">{step.title}</h3>
                   <p className="text-sm md:text-base text-gray-400 leading-relaxed">{step.description}</p>
                 </GlassCard>
@@ -125,8 +125,8 @@ export const HowItWorksPage = () => {
                     className="flex gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
                   >
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      feature.color === 'indigo' ? 'bg-indigo-500/20 text-indigo-400' :
-                      feature.color === 'purple' ? 'bg-purple-500/20 text-purple-400' :
+                      feature.color === 'gray' ? 'bg-white/10 text-white/60' :
+                      feature.color === 'gray' ? 'bg-white/10 text-white/60' :
                       'bg-pink-500/20 text-pink-400'
                     }`}>
                       {feature.icon}
@@ -140,7 +140,7 @@ export const HowItWorksPage = () => {
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-3xl rounded-full" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-white/5 blur-3xl rounded-full" />
               <GlassCard className="relative p-8 border-white/10 bg-black/60 backdrop-blur-xl">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
@@ -149,8 +149,8 @@ export const HowItWorksPage = () => {
                     <div className="w-3 h-3 rounded-full bg-green-500" />
                     <div className="ml-auto text-xs text-gray-500">Visnly Overlay</div>
                   </div>
-                  <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                    <div className="text-xs text-indigo-400 font-bold mb-1">LECTURE DETECTED</div>
+                  <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                    <div className="text-xs text-white/60 font-bold mb-1">LECTURE DETECTED</div>
                     <div className="text-sm text-gray-300">Topic: Introduction to Quantum Mechanics</div>
                   </div>
                   <div className="p-3 bg-white/5 border border-white/10 rounded-lg">

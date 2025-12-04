@@ -113,10 +113,10 @@ const Dashboard: React.FC = () => {
 
   // Mode Colors Helper
   const getModeColor = (mode: string) => {
-    if (mode === 'Study') return '#8b5cf6'; // Violet
+    if (mode === 'Study') return 'rgba(255,255,255,0.6)'; // Glassy gray
     if (mode === 'Solve') return '#0ea5e9'; // Cyan
     if (mode === 'Cheat') return '#ff5252'; // Red
-    return '#8b5cf6'; // Default to Study color
+    return 'rgba(255,255,255,0.6)'; // Default to Study color
   };
 
 
@@ -327,33 +327,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      <style>
-        {`
-          @keyframes pulse-glow {
-            0% { box-shadow: 0 0 0 0 rgba(100, 108, 255, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(100, 108, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(100, 108, 255, 0); }
-          }
-          @keyframes slide-down {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .hero-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-          }
-          .hero-card:hover {
-            border-color: rgba(100, 108, 255, 0.3);
-            transform: translateY(-2px);
-          }
-          .system-menu {
-            animation: slide-down 0.2s ease-out;
-            transform-origin: top right;
-          }
-        `}
-      </style>
       {/* Liquid Background like Overlay */}
       <LiquidBackground />
 
@@ -363,7 +336,7 @@ const Dashboard: React.FC = () => {
       {/* --- Top Bar --- */}
       <header style={styles.topBar}>
         <div style={styles.logo}>
-          <span style={{ color: '#fff', letterSpacing: '-0.5px' }}>Visnly</span>
+          <span style={{ color: '#fff' }}>Visnly</span>
         </div>
 
         <div style={styles.controls}>
@@ -374,8 +347,7 @@ const Dashboard: React.FC = () => {
               ...styles.creditBadge,
               background: userCredits.plan === 'unlimited'
                 ? 'linear-gradient(135deg, #10b981, #059669)'
-                : 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
+                : 'rgba(255,255,255,0.1)',
               color: '#fff'
             }}>
               {userCredits.plan === 'unlimited' ? 'PRO' : `${userCredits.credits} credits`}
@@ -386,8 +358,8 @@ const Dashboard: React.FC = () => {
             onClick={toggleDetectability}
             style={styles.dropdownButton}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.8)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.65)';
@@ -398,17 +370,15 @@ const Dashboard: React.FC = () => {
               <div
                 style={{
                   ...styles.toggleSwitch,
-                  backgroundColor: isDetectable ? '#ef4444' : '#22c55e',
+                  backgroundColor: isDetectable ? '#d32f2f' : '#4caf50',
                   transform: isDetectable ? 'translateX(0)' : 'translateX(18px)',
                   boxShadow: isDetectable
-                    ? '0 0 10px rgba(239, 68, 68, 0.4)'
-                    : '0 0 10px rgba(34, 197, 94, 0.4)'
+                    ? '0 0 8px rgba(211, 47, 47, 0.5)'
+                    : '0 0 8px rgba(76, 175, 80, 0.5)'
                 }}
               />
             </div>
-            <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px' }}>
-              {isDetectable ? "VISIBLE" : "STEALTH"}
-            </span>
+            <span>{isDetectable ? "Detectable" : "Undetectable"}</span>
           </button>
 
           <div style={styles.profileContainer} ref={profileRef}>
@@ -416,31 +386,57 @@ const Dashboard: React.FC = () => {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               style={{
                 ...styles.profile,
-                backgroundColor: isProfileOpen ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                borderColor: isProfileOpen ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'
+                backgroundColor: isProfileOpen ? 'rgba(255, 255, 255, 0.1)' : 'rgba(42, 42, 47, 0.6)'
               }}
-              title="System Menu"
+              title="Profile"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'scale(1.1)';
+                const icon = e.currentTarget.querySelector('svg');
+                if (icon) {
+                  icon.style.color = '#fff';
+                  icon.style.filter = 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isProfileOpen) {
+                  e.currentTarget.style.backgroundColor = 'rgba(42, 42, 47, 0.6)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                  const icon = e.currentTarget.querySelector('svg');
+                  if (icon) {
+                    icon.style.color = '#aaa';
+                    icon.style.filter = 'none';
+                  }
+                }
+              }}
             >
-              <UserIcon size={18} color={isProfileOpen ? "#fff" : "#ccc"} />
+              <UserIcon size={18} color={isProfileOpen ? "#fff" : "#aaa"} />
             </button>
 
             {isProfileOpen && (
-              <GlassCard style={{ ...styles.profileMenu, padding: '8px' }} className="system-menu">
+              <GlassCard style={styles.profileMenu}>
                 {/* User Info Section */}
-                <div style={{ padding: '12px 16px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontWeight: 600, color: '#fff', fontSize: '14px' }}>{userName || "User"}</div>
-                  <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{userEmail || ""}</div>
+                <div style={styles.profileHeader}>
+                  <div style={styles.profileName}>{userName || "User"}</div>
+                  <div style={styles.profileEmail}>{userEmail || ""}</div>
                 </div>
+                <div style={styles.profileDivider}></div>
 
                 {/* Menu Items */}
                 <div style={styles.profileMenuItem}
                   onClick={() => {
-                    setShowSettingsModal(true);
+                    // Handle invite friends
                     setIsProfileOpen(false);
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
-                  <SettingsIcon size={16} color="#fff" />
-                  <span>System Settings</span>
+                  <UserPlusIcon size={16} color="#aaa" />
+                  <span>Invite Friends</span>
                 </div>
 
                 <div style={styles.profileMenuItem}
@@ -448,21 +444,47 @@ const Dashboard: React.FC = () => {
                     // Handle billing
                     setIsProfileOpen(false);
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
-                  <CreditCardIcon size={16} color="#ccc" />
-                  <span>Subscription</span>
+                  <CreditCardIcon size={16} color="#aaa" />
+                  <span>Billing</span>
                 </div>
-
-                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '8px 0' }}></div>
 
                 <div style={styles.profileMenuItem}
                   onClick={() => {
                     // Handle get help
                     setIsProfileOpen(false);
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
-                  <HelpCircleIcon size={16} color="#ccc" />
-                  <span>Help & Support</span>
+                  <HelpCircleIcon size={16} color="#aaa" />
+                  <span>Get help</span>
+                </div>
+
+                <div style={styles.profileMenuItem}
+                  onClick={() => {
+                    setShowSettingsModal(true);
+                    setIsProfileOpen(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <SettingsIcon size={16} color="#aaa" />
+                  <span>Settings</span>
                 </div>
               </GlassCard>
             )}
@@ -477,17 +499,7 @@ const Dashboard: React.FC = () => {
             {/* Active / Start Section */}
             <div style={styles.heroSection}>
               {!isSessionActive ? (
-                <div className="hero-card" style={styles.startCard}>
-                  <div style={{
-                    width: '80px', height: '80px', borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #646cff 0%, #8b5cf6 100%)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: '24px',
-                    boxShadow: '0 10px 30px rgba(100, 108, 255, 0.3)'
-                  }}>
-                    <span style={{ fontSize: '32px' }}>🚀</span>
-                  </div>
-
+                <GlassCard style={styles.startCard}>
                   <h2 style={styles.heroTitle}>{t('ready_to_learn')}</h2>
                   <p style={styles.heroSub}>{t('ai_assistant_standby')}</p>
 
@@ -502,21 +514,49 @@ const Dashboard: React.FC = () => {
                     className="start-session-button"
                     disabled={!hasCredits}
                     style={{
-                      marginBottom: '16px',
+                      marginBottom: '12px',
                       opacity: !hasCredits ? 0.5 : 1,
-                      cursor: !hasCredits ? 'not-allowed' : 'pointer',
-                      padding: '16px 48px',
-                      fontSize: '16px',
-                      animation: hasCredits ? 'pulse-glow 2s infinite' : 'none'
+                      cursor: !hasCredits ? 'not-allowed' : 'pointer'
                     }}
                   >
                     {t('button_start')}
                   </button>
 
+                  {/* Test Onboarding Button - Remove in production */}
+                  <button
+                    onClick={async () => {
+                      localStorage.removeItem('onboarding_complete');
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session?.user) {
+                          await supabase
+                            .from('profiles')
+                            .update({ onboarding_complete: false })
+                            .eq('id', session.user.id);
+                        }
+                      } catch (error) {
+                        console.log('Onboarding reset (Supabase update skipped):', error);
+                      }
+                      window.location.reload();
+                    }}
+                    style={{
+                      ...styles.secondaryBtn,
+                      marginBottom: '12px',
+                      fontSize: '12px',
+                      padding: '8px 16px',
+                      background: 'rgba(100, 108, 255, 0.2)',
+                      border: '1px solid rgba(100, 108, 255, 0.4)',
+                      color: 'rgba(255,255,255,0.7)'
+                    }}
+                    title="Test Onboarding Flow"
+                  >
+                    🧪 Test Onboarding
+                  </button>
+
                   <p style={styles.hotkeyHint}>
                     Press <kbd style={styles.kbd}>Ctrl</kbd> + <kbd style={styles.kbd}>Shift</kbd> + <kbd style={styles.kbd}>Space</kbd>
                   </p>
-                </div>
+                </GlassCard>
               ) : (
                 <GlassCard style={styles.activeCard}>
                   <div style={styles.activeSessionContent}>
@@ -530,6 +570,14 @@ const Dashboard: React.FC = () => {
                     <button
                       onClick={handleEndSession}
                       style={styles.endBtn}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(211, 47, 47, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(211, 47, 47, 0.6)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.borderColor = 'rgba(211, 47, 47, 0.4)';
+                      }}
                     >
                       {t('button_end')}
                     </button>
@@ -538,7 +586,7 @@ const Dashboard: React.FC = () => {
               )}
             </div>
 
-            {/* --- History List --- */}
+            {/* --- History List (simpler, Cluely-style) --- */}
             <div style={styles.historySection}>
               <h3 style={styles.sectionHeader}>{t('recent_activity')}</h3>
               <div style={styles.listContainer}>
@@ -628,7 +676,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: '100vh',
     backgroundColor: '#050509', // Match overlay vibe: deep neutral
-    backgroundImage: 'radial-gradient(circle at top, rgba(100,108,255,0.25) 0, transparent 55%)',
+    backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.1) 0, transparent 55%)',
     color: '#e0e0e0',
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     display: 'flex',
@@ -795,7 +843,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '18px 60px',
     fontSize: '16px',
     fontWeight: 700,
-    background: 'linear-gradient(135deg, #646cff 0%, #4c54d4 100%)',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
     color: 'white',
     border: 'none',
     borderRadius: '12px',
@@ -856,7 +904,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 14px',
     borderRadius: '10px',
     border: 'none',
-    background: 'linear-gradient(135deg, #646cff, #4c54d4)',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1))',
     color: '#fff',
     fontSize: '13px',
     fontWeight: 600,
@@ -922,7 +970,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '8px',
     height: '8px',
     borderRadius: '50%',
-    backgroundColor: '#646cff',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     animation: 'pulse-status 2s ease-in-out infinite'
   },
   statusLabel: {

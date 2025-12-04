@@ -146,7 +146,7 @@ export const AccountPage = () => {
             <h2 className="text-xl font-bold text-white">Credits</h2>
             <button
               onClick={() => navigate('/pricing')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-sm transition-all"
             >
               <CreditCard className="w-4 h-4" />
               Buy Credits

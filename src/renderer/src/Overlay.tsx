@@ -3,7 +3,7 @@ import Tesseract from 'tesseract.js';
 import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide, explainSegment, explainTeacherMeaning, getContextBefore, extractFormulas, rewriteInStyle, askContextQuestion, LearningStyle, analyzeTranscriptSections, detectTestWorthySections, detectConfusingSections, generateTopicTimeline, TranscriptSegmentAnalysis } from './ai';
 import { supabase } from './lib/supabase';
 import GlassCard from './components/GlassCard';
-import { EyeIcon, MessageCircleIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon } from './components/Icons';
+import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon } from './components/Icons';
 
 declare global { interface Window { webkitSpeechRecognition: any; } }
 
@@ -48,20 +48,6 @@ const Overlay: React.FC = () => {
   const [isAudioDetected, setIsAudioDetected] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [lastScanPreview, setLastScanPreview] = useState<string>("");
-  const [isLiveVision, setIsLiveVision] = useState(false); // Continuous scanning mode
-
-  // Continuous Scanning Loop
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isLiveVision && isCardVisible) {
-      interval = setInterval(async () => {
-        if (!isScanning && !isThinking) {
-          await scanScreen();
-        }
-      }, 2000); // Scan every 2 seconds
-    }
-    return () => clearInterval(interval);
-  }, [isLiveVision, isCardVisible, isScanning, isThinking]);
 
   // Notes tab state
   const [notesState, setNotesState] = useState<NotesState>({
@@ -991,7 +977,7 @@ const Overlay: React.FC = () => {
   // Get tag color for segment
   const getTagColor = (tag: string): string => {
     const colors: Record<string, string> = {
-      'new_topic': '#8b5cf6',
+      'new_topic': 'rgba(255,255,255,0.5)',
       'example': '#0ea5e9',
       'definition': '#22c55e',
       'review': '#f59e0b',
@@ -1046,291 +1032,293 @@ const Overlay: React.FC = () => {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleQuickAnalysis, handleManualScan, handleClose]);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleClose, handleQuickAnalysis, handleManualScan]);
 
-  // --- RENDER ---
   return (
-    <div style={styles.container}>
-      {/* Background Tint */}
-      <div style={styles.tintOverlay}></div>
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <div style={styles.container}>
+        {/* Background Tint */}
+        <div style={styles.tintOverlay}></div>
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* --- HEADER BAR --- */}
-      <div style={styles.headerBar}>
-        {/* Drag Handle */}
-        <div style={styles.dragArea}>
-          <div style={styles.dragHandle}></div>
-        </div>
+        {/* --- HEADER BAR --- */}
+        <div style={styles.headerBar}>
+          {/* Drag Handle */}
+          <div style={styles.dragArea}>
+            <div style={styles.dragHandle}></div>
+          </div>
 
-        {/* Mode Switcher */}
-        <div style={styles.modeSwitcher}>
-          {['Study', 'Solve', 'Cheat'].map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m as any)}
-              style={{
-                ...styles.modeBtn,
-                ...(mode === m ? styles.modeBtnActive : {}),
-                color: mode === m ? (m === 'Cheat' ? '#ff5252' : m === 'Solve' ? '#0ea5e9' : '#8b5cf6') : '#888'
-              }}
-            >
-              {m}
+          {/* Mode Switcher */}
+          <div style={styles.modeSwitcher}>
+            {['Study', 'Solve', 'Cheat'].map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m as any)}
+                style={{
+                  ...styles.modeBtn,
+                  ...(mode === m ? styles.modeBtnActive : {}),
+                  color: mode === m ? (m === 'Cheat' ? '#ff5252' : m === 'Solve' ? '#0ea5e9' : 'rgba(255,255,255,0.7)') : '#888'
+                }}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
+          {/* Window Controls */}
+          <div style={styles.windowControls}>
+            <button onClick={handleClose} style={styles.controlBtn} title="Close">
+              <XIcon size={16} color="#aaa" />
             </button>
-          ))}
+          </div>
         </div>
 
-        {/* Window Controls */}
-        <div style={styles.windowControls}>
-          <button onClick={handleClose} style={styles.controlBtn} title="Close">
-            <XIcon size={16} color="#aaa" />
+        {/* --- MAIN CONTENT --- */}
+        <div style={styles.mainContent}>
+
+          {/* CHAT TAB */}
+          {activeTab === 'chat' && (
+            <div style={styles.tabContent}>
+              <div style={styles.chatScroll}>
+                {messages.length === 0 && !scannedText && (
+                  <div style={styles.emptyState}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.2 }}>🧠</div>
+                    <p style={styles.emptyText}>Ready to analyze.</p>
+                    <p style={styles.shortcutsHint}>Ctrl + Enter to scan & solve</p>
+                  </div>
+                )}
+
+                {messages.map((msg, i) => (
+                  <div key={i} style={{ ...styles.messageRow, justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <div style={msg.sender === 'user' ? styles.userBubble : (msg.sender === 'system' ? styles.systemBubble : styles.aiBubble)}>
+                      {msg.text}
+                      {msg.steps && (
+                        <div style={styles.stepsContainer}>
+                          <div style={styles.stepsDivider}></div>
+                          <div style={styles.stepsText}>{msg.steps}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {isThinking && (
+                  <div style={styles.messageRow}>
+                    <div style={styles.thinkingBubble}>
+                      <div style={styles.dot}></div><div style={styles.dot}></div><div style={styles.dot}></div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Area */}
+              <div style={styles.inputArea}>
+                <div style={styles.inputWrapper}>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Ask anything..."
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                    style={styles.input}
+                  />
+                  <button onClick={() => scanScreen()} style={styles.actionBtn} title="Scan Screen">
+                    <EyeIcon size={16} color={isScanning ? '#0ea5e9' : '#888'} />
+                  </button>
+                  <button onClick={handleSend} style={styles.sendBtn}>
+                    <SendIcon size={16} color="#fff" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TRANSCRIPT TAB */}
+          {activeTab === 'transcript' && (
+            <div style={styles.tabContent}>
+              <div style={styles.toolbar}>
+                <button onClick={toggleListening} style={styles.toolBtn}>
+                  {isListening ? <PauseIcon size={14} color="#ff5252" /> : <PlayIcon size={14} color="#4caf50" />}
+                  <span>{isListening ? "Pause" : "Record"}</span>
+                </button>
+                <button onClick={() => handleTranscriptAction('clear')} style={styles.toolBtn}>
+                  <ClearIcon size={14} color="#aaa" />
+                </button>
+              </div>
+              <div style={styles.transcriptScroll}>
+                {transcriptSegments.map((seg, i) => (
+                  <div key={i} style={styles.transcriptItem}>
+                    <span style={styles.timeTag}>{seg.time}</span>
+                    <span>{seg.text}</span>
+                  </div>
+                ))}
+                <div ref={transcriptEndRef} />
+              </div>
+            </div>
+          )}
+
+          {/* NOTES TAB */}
+          {activeTab === 'notes' && (
+            <div style={styles.tabContent}>
+              <div style={styles.notesGrid}>
+                <button onClick={handleGenerateNotes} style={styles.noteCard}>
+                  <FileTextIcon size={24} color="rgba(255,255,255,0.6)" />
+                  <span>Simplify</span>
+                </button>
+                <button onClick={handleExtractKeyConcepts} style={styles.noteCard}>
+                  <LightbulbIcon size={24} color="#f59e0b" />
+                  <span>Concepts</span>
+                </button>
+                <button onClick={handleGenerateStudyGuide} style={styles.noteCard}>
+                  <BookIcon size={24} color="#ec4899" />
+                  <span>Guide</span>
+                </button>
+              </div>
+              <div style={styles.notesOutput}>
+                {notesState.simplifiedNotes && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Simplified Notes</div>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{notesState.simplifiedNotes}</div>
+                  </div>
+                )}
+                {/* Add other note results as needed */}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* --- BOTTOM NAVIGATION --- */}
+        <div style={styles.bottomNav}>
+          <button onClick={() => setActiveTab('chat')} style={activeTab === 'chat' ? styles.navBtnActive : styles.navBtn}>
+            <MessageCircleIcon size={20} color="currentColor" />
+          </button>
+          <button onClick={() => setActiveTab('transcript')} style={activeTab === 'transcript' ? styles.navBtnActive : styles.navBtn}>
+            <FileTextIcon size={20} color="currentColor" />
+          </button>
+          <button onClick={() => setActiveTab('notes')} style={activeTab === 'notes' ? styles.navBtnActive : styles.navBtn}>
+            <ListIcon size={20} color="currentColor" />
           </button>
         </div>
       </div>
+    );
+  };
 
-      {/* --- MAIN CONTENT --- */}
-      <div style={styles.mainContent}>
+  const styles: Record<string, React.CSSProperties> = {
+    container: {
+      height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
+      backgroundColor: 'rgba(18, 18, 20, 0.95)', fontFamily: '"Inter", sans-serif', overflow: 'hidden',
+      color: '#fff'
+    },
+    tintOverlay: {
+      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+      background: 'radial-gradient(circle at 50% 0%, rgba(100, 108, 255, 0.1), transparent 70%)'
+    },
+    headerBar: {
+      height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 16px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+      WebkitAppRegion: 'drag'
+    } as any,
+    dragArea: { flex: 1, height: '100%' },
+    dragHandle: { width: '40px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', margin: '22px 0 0 0' },
+    modeSwitcher: {
+      display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '8px',
+      WebkitAppRegion: 'no-drag'
+    } as any,
+    modeBtn: {
+      background: 'transparent',
+      border: 'none',
+      padding: '4px 12px',
+      borderRadius: '6px',
+      fontSize: '11px',
+      fontWeight: 600,
+      cursor: 'pointer',
+      transition: '0.2s'
+    },
+    modeBtnActive: { background: 'rgba(255,255,255,0.1)' },
+    windowControls: { display: 'flex', gap: '8px', WebkitAppRegion: 'no-drag' } as any,
+    controlBtn: {
+      background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px',
+      transition: '0.2s'
+    },
+    mainContent: { flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' },
+    tabContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+    chatScroll: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' },
+    emptyState: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.5 },
+    emptyText: { fontSize: '16px', fontWeight: 600, marginBottom: '8px' },
+    shortcutsHint: { fontSize: '12px' },
+    messageRow: { display: 'flex', width: '100%' },
+    userBubble: {
+      background: '#27272a', padding: '12px 16px', borderRadius: '16px 16px 4px 16px',
+      maxWidth: '85%', fontSize: '14px', lineHeight: '1.5', border: '1px solid rgba(255,255,255,0.1)'
+    },
+    aiBubble: {
+      background: 'rgba(100, 108, 255, 0.1)', padding: '12px 16px', borderRadius: '4px 16px 16px 16px',
+      maxWidth: '85%', fontSize: '14px', lineHeight: '1.5', border: '1px solid rgba(100, 108, 255, 0.2)',
+      whiteSpace: 'pre-wrap'
+    },
+    systemBubble: {
+      background: 'rgba(255,255,255,0.05)', padding: '4px 12px', borderRadius: '99px',
+      fontSize: '11px', color: '#888', alignSelf: 'center'
+    },
+    thinkingBubble: {
+      background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '12px',
+      display: 'flex', gap: '4px'
+    },
+    dot: { width: '4px', height: '4px', background: '#888', borderRadius: '50%', animation: 'pulse 1s infinite' },
+    stepsContainer: { marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' },
+    stepsText: { fontSize: '12px', color: '#ccc', lineHeight: '1.6' },
+    inputArea: { padding: '16px', background: 'rgba(18, 18, 20, 0.95)', borderTop: '1px solid rgba(255,255,255,0.05)' },
+    inputWrapper: {
+      display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.05)',
+      padding: '8px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)'
+    },
+    input: {
+      flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: '14px', outline: 'none'
+    },
+    actionBtn: {
+      background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px',
+      borderRadius: '8px', display: 'flex', alignItems: 'center'
+    },
+    sendBtn: {
+      background: 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', padding: '8px',
+      borderRadius: '8px', display: 'flex', alignItems: 'center', color: '#fff'
+    },
+    bottomNav: {
+      height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px',
+      borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(18, 18, 20, 0.98)'
+    },
+    navBtn: {
+      background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px',
+      borderRadius: '12px', color: '#666', transition: '0.2s'
+    },
+    navBtnActive: {
+      background: 'rgba(100, 108, 255, 0.1)', border: 'none', cursor: 'pointer', padding: '12px',
+      borderRadius: '12px', color: 'rgba(255,255,255,0.7)'
+    },
+    toolbar: { display: 'flex', gap: '8px', padding: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' },
+    toolBtn: {
+      display: 'flex', gap: '6px', alignItems: 'center', padding: '6px 12px',
+      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: '6px', color: '#ccc', fontSize: '12px', cursor: 'pointer'
+    },
+    transcriptScroll: { flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' },
+    transcriptItem: { display: 'flex', gap: '12px', fontSize: '13px', color: '#ccc', lineHeight: '1.5' },
+    timeTag: { fontSize: '11px', color: '#666', minWidth: '40px' },
+    notesGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', padding: '16px' },
+    noteCard: {
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+      padding: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: '12px', cursor: 'pointer', color: '#ccc', fontSize: '12px'
+    },
+    notesOutput: { flex: 1, overflowY: 'auto', padding: '16px' },
+    noteResult: { background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', fontSize: '13px', lineHeight: '1.6', color: '#ccc' },
+    noteHeader: { fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#fff' }
+  };
 
-        {/* CHAT TAB */}
-        {activeTab === 'chat' && (
-          <div style={styles.tabContent}>
-            <div style={styles.chatScroll}>
-              {messages.length === 0 && !scannedText && (
-                <div style={styles.emptyState}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.2 }}>🧠</div>
-                  <p style={styles.emptyText}>Ready to analyze.</p>
-                  <p style={styles.shortcutsHint}>Ctrl + Enter to scan & solve</p>
-                </div>
-              )}
-
-              {messages.map((msg, i) => (
-                <div key={i} style={{ ...styles.messageRow, justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-                  <div style={msg.sender === 'user' ? styles.userBubble : (msg.sender === 'system' ? styles.systemBubble : styles.aiBubble)}>
-                    {msg.text}
-                    {msg.steps && (
-                      <div style={styles.stepsContainer}>
-                        <div style={styles.stepsDivider}></div>
-                        <div style={styles.stepsText}>{msg.steps}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {isThinking && (
-                <div style={styles.messageRow}>
-                  <div style={styles.thinkingBubble}>
-                    <div style={styles.dot}></div><div style={styles.dot}></div><div style={styles.dot}></div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            <div style={styles.inputArea}>
-              <div style={styles.inputWrapper}>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Ask anything..."
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  style={styles.input}
-                />
-                <button
-                  onClick={() => setIsLiveVision(!isLiveVision)}
-                  style={{ ...styles.actionBtn, background: isLiveVision ? 'rgba(14, 165, 233, 0.15)' : 'transparent' }}
-                  title={isLiveVision ? "Stop Live Vision" : "Start Live Vision"}
-                >
-                  <EyeIcon size={16} color={isLiveVision ? '#0ea5e9' : '#888'} />
-                  {isLiveVision && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0ea5e9', marginLeft: '4px', animation: 'pulse 1s infinite' }}></div>}
-                </button>
-                <button onClick={handleSend} style={styles.sendBtn}>
-                  <SendIcon size={16} color="#fff" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TRANSCRIPT TAB */}
-        {activeTab === 'transcript' && (
-          <div style={styles.tabContent}>
-            <div style={styles.toolbar}>
-              <button onClick={toggleListening} style={styles.toolBtn}>
-                {isListening ? <PauseIcon size={14} color="#ff5252" /> : <PlayIcon size={14} color="#4caf50" />}
-                <span>{isListening ? "Pause" : "Record"}</span>
-              </button>
-              <button onClick={() => handleTranscriptAction('clear')} style={styles.toolBtn}>
-                <ClearIcon size={14} color="#aaa" />
-              </button>
-            </div>
-            <div style={styles.transcriptScroll}>
-              {transcriptSegments.map((seg, i) => (
-                <div key={i} style={styles.transcriptItem}>
-                  <span style={styles.timeTag}>{seg.time}</span>
-                  <span>{seg.text}</span>
-                </div>
-              ))}
-              <div ref={transcriptEndRef} />
-            </div>
-          </div>
-        )}
-
-        {/* NOTES TAB */}
-        {activeTab === 'notes' && (
-          <div style={styles.tabContent}>
-            <div style={styles.notesGrid}>
-              <button onClick={handleGenerateNotes} style={styles.noteCard}>
-                <FileTextIcon size={24} color="#8b5cf6" />
-                <span>Simplify</span>
-              </button>
-              <button onClick={handleExtractKeyConcepts} style={styles.noteCard}>
-                <LightbulbIcon size={24} color="#f59e0b" />
-                <span>Concepts</span>
-              </button>
-              <button onClick={handleGenerateStudyGuide} style={styles.noteCard}>
-                <BookIcon size={24} color="#ec4899" />
-                <span>Guide</span>
-              </button>
-            </div>
-            <div style={styles.notesOutput}>
-              {notesState.simplifiedNotes && (
-                <div style={styles.noteResult}>
-                  <div style={styles.noteHeader}>Simplified Notes</div>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{notesState.simplifiedNotes}</div>
-                </div>
-              )}
-              {/* Add other note results as needed */}
-            </div>
-          </div>
-        )}
-
-      </div>
-
-      {/* --- BOTTOM NAVIGATION --- */}
-      <div style={styles.bottomNav}>
-        <button onClick={() => setActiveTab('chat')} style={activeTab === 'chat' ? styles.navBtnActive : styles.navBtn}>
-          <MessageCircleIcon size={20} color="currentColor" />
-        </button>
-        <button onClick={() => setActiveTab('transcript')} style={activeTab === 'transcript' ? styles.navBtnActive : styles.navBtn}>
-          <FileTextIcon size={20} color="currentColor" />
-        </button>
-        <button onClick={() => setActiveTab('notes')} style={activeTab === 'notes' ? styles.navBtnActive : styles.navBtn}>
-          <ListIcon size={20} color="currentColor" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
-    backgroundColor: 'rgba(18, 18, 20, 0.95)', fontFamily: '"Inter", sans-serif', overflow: 'hidden',
-    color: '#fff'
-  },
-  tintOverlay: {
-    position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-    background: 'radial-gradient(circle at 50% 0%, rgba(100, 108, 255, 0.1), transparent 70%)'
-  },
-  headerBar: {
-    height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 16px', borderBottom: '1px solid rgba(255,255,255,0.05)',
-    WebkitAppRegion: 'drag'
-  } as any,
-  dragArea: { flex: 1, height: '100%' },
-  dragHandle: { width: '40px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', margin: '22px 0 0 0' },
-  modeSwitcher: {
-    display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '8px',
-    WebkitAppRegion: 'no-drag'
-  } as any,
-  modeBtn: {
-    background: 'transparent', border: 'none', padding: '4px 12px', borderRadius: '6px',
-    fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: '0.2s'
-  },
-  modeBtnActive: { background: 'rgba(255,255,255,0.1)' },
-  windowControls: { display: 'flex', gap: '8px', WebkitAppRegion: 'no-drag' } as any,
-  controlBtn: {
-    background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px',
-    transition: '0.2s'
-  },
-  mainContent: { flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' },
-  tabContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  chatScroll: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' },
-  emptyState: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.5 },
-  emptyText: { fontSize: '16px', fontWeight: 600, marginBottom: '8px' },
-  shortcutsHint: { fontSize: '12px' },
-  messageRow: { display: 'flex', width: '100%' },
-  userBubble: {
-    background: '#27272a', padding: '12px 16px', borderRadius: '16px 16px 4px 16px',
-    maxWidth: '85%', fontSize: '14px', lineHeight: '1.5', border: '1px solid rgba(255,255,255,0.1)'
-  },
-  aiBubble: {
-    background: 'rgba(100, 108, 255, 0.1)', padding: '12px 16px', borderRadius: '4px 16px 16px 16px',
-    maxWidth: '85%', fontSize: '14px', lineHeight: '1.5', border: '1px solid rgba(100, 108, 255, 0.2)',
-    whiteSpace: 'pre-wrap'
-  },
-  systemBubble: {
-    background: 'rgba(255,255,255,0.05)', padding: '4px 12px', borderRadius: '99px',
-    fontSize: '11px', color: '#888', alignSelf: 'center'
-  },
-  thinkingBubble: {
-    background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '12px',
-    display: 'flex', gap: '4px'
-  },
-  dot: { width: '4px', height: '4px', background: '#888', borderRadius: '50%', animation: 'pulse 1s infinite' },
-  stepsContainer: { marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' },
-  stepsText: { fontSize: '12px', color: '#ccc', lineHeight: '1.6' },
-  inputArea: { padding: '16px', background: 'rgba(18, 18, 20, 0.95)', borderTop: '1px solid rgba(255,255,255,0.05)' },
-  inputWrapper: {
-    display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.05)',
-    padding: '8px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)'
-  },
-  input: {
-    flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: '14px', outline: 'none'
-  },
-  actionBtn: {
-    background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px',
-    borderRadius: '8px', display: 'flex', alignItems: 'center'
-  },
-  sendBtn: {
-    background: '#646cff', border: 'none', cursor: 'pointer', padding: '8px',
-    borderRadius: '8px', display: 'flex', alignItems: 'center', color: '#fff'
-  },
-  bottomNav: {
-    height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px',
-    borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(18, 18, 20, 0.98)'
-  },
-  navBtn: {
-    background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px',
-    borderRadius: '12px', color: '#666', transition: '0.2s'
-  },
-  navBtnActive: {
-    background: 'rgba(100, 108, 255, 0.1)', border: 'none', cursor: 'pointer', padding: '12px',
-    borderRadius: '12px', color: '#646cff'
-  },
-  toolbar: { display: 'flex', gap: '8px', padding: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' },
-  toolBtn: {
-    display: 'flex', gap: '6px', alignItems: 'center', padding: '6px 12px',
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)',
-    borderRadius: '6px', color: '#ccc', fontSize: '12px', cursor: 'pointer'
-  },
-  transcriptScroll: { flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' },
-  transcriptItem: { display: 'flex', gap: '12px', fontSize: '13px', color: '#ccc', lineHeight: '1.5' },
-  timeTag: { fontSize: '11px', color: '#666', minWidth: '40px' },
-  notesGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', padding: '16px' },
-  noteCard: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-    padding: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
-    borderRadius: '12px', cursor: 'pointer', color: '#ccc', fontSize: '12px'
-  },
-  notesOutput: { flex: 1, overflowY: 'auto', padding: '16px' },
-  noteResult: { background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', fontSize: '13px', lineHeight: '1.6', color: '#ccc' },
-  noteHeader: { fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#fff' }
-};
-
-export default Overlay;
+  export default Overlay;

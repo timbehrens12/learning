@@ -8,7 +8,7 @@ import { Brain, MousePointer2, AlertCircle, ArrowRight, Zap, BookOpen, Target, L
 const newFeatures = [
   {
     category: "Phase 1: Intelligence",
-    icon: <Brain className="w-5 h-5 text-indigo-400" />,
+    icon: <Brain className="w-5 h-5 text-white/60" />,
     items: [
       {
         title: "Key Concepts Extraction",
@@ -29,7 +29,7 @@ const newFeatures = [
   },
   {
     category: "Phase 2: Interaction",
-    icon: <MousePointer2 className="w-5 h-5 text-purple-400" />,
+    icon: <MousePointer2 className="w-5 h-5 text-white/60" />,
     items: [
       {
         title: "Tap-to-Explain",
@@ -96,7 +96,7 @@ export const FeaturesPage = () => {
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 md:mb-8 leading-[1.1]">
             Intelligence. Interaction. <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Detection.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/60">Detection.</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed font-light">
             Visnly isn't just an answer bot. It's a complete intelligent layer that sits on top of your education,
@@ -114,7 +114,7 @@ export const FeaturesPage = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-8 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-colors">
-              <div className="h-12 w-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
+              <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center text-white/60 mb-4">
                 <Ghost size={24} />
               </div>
               <h3 className="text-xl font-bold mb-2">Ghost Mode Overlay</h3>
@@ -157,9 +157,9 @@ export const FeaturesPage = () => {
                 {section.items.map((feature, j) => (
                   <GlassCard 
                     key={j} 
-                    className="p-6 group hover:border-indigo-500/30 transition-all duration-300"
+                    className="p-6 group hover:border-white/20 transition-all duration-300"
                   >
-                    <div className="h-10 w-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 group-hover:text-indigo-400 group-hover:scale-110 transition-all mb-4">
+                    <div className="h-10 w-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 group-hover:text-white/60 group-hover:scale-110 transition-all mb-4">
                       {feature.icon}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>

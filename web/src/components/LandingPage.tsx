@@ -18,7 +18,7 @@ export const LandingPage = () => {
 
   return (
     <div 
-      className="relative min-h-screen text-white font-sans overflow-x-hidden selection:bg-indigo-500/30" 
+      className="relative min-h-screen text-white font-sans overflow-x-hidden selection:bg-white/20" 
       style={{ backgroundColor: '#050505' }}
     >
       <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%)' }} />
@@ -32,8 +32,8 @@ export const LandingPage = () => {
           style={{ opacity, y }}
           className="absolute inset-0 pointer-events-none"
         >
-          <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px]" />
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
+          <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-[120px]" />
+          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-[120px]" />
         </motion.div>
 
         <motion.div
@@ -44,8 +44,8 @@ export const LandingPage = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md hover:bg-white/10 transition-colors cursor-default">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/40 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white/50"></span>
             </span>
             <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">Visnly v2.0 is Live</span>
           </div>
@@ -54,7 +54,7 @@ export const LandingPage = () => {
             <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/60 pb-2">
               Your Invisible
             </span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-purple-300">
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white/80 via-white to-white/60">
               Second Brain.
             </span>
           </h1>
@@ -77,7 +77,7 @@ export const LandingPage = () => {
                 document.body.removeChild(link);
               }}
             >
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-10 blur-xl transition-opacity" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-white/10 opacity-0 group-hover:opacity-10 blur-xl transition-opacity" />
               <span className="flex items-center gap-2">
                 Download for Windows
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
@@ -97,7 +97,7 @@ export const LandingPage = () => {
           className="mt-24 relative w-full max-w-5xl perspective-1000"
         >
           <div className="relative bg-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden group ring-1 ring-white/5">
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-purple-500/5 opacity-50" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-white/3 opacity-50" />
             
             {/* Minimal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
@@ -106,9 +106,9 @@ export const LandingPage = () => {
                 <div className="w-3 h-3 rounded-full bg-[#2a2a2a] border border-white/10" />
                 <div className="w-3 h-3 rounded-full bg-[#2a2a2a] border border-white/10" />
               </div>
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                <span className="text-[10px] font-medium text-indigo-400 uppercase tracking-wide">Live Transcript Active</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
+                <span className="text-[10px] font-medium text-white/60 uppercase tracking-wide">Live Transcript Active</span>
               </div>
             </div>
 
@@ -131,11 +131,11 @@ export const LandingPage = () => {
 
                  <div className="flex flex-col gap-6 mt-auto z-20">
                     <div className="flex gap-4">
-                      <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                         <Zap className="w-4 h-4 text-white" fill="currentColor" />
                       </div>
                       <div className="p-4 rounded-2xl rounded-tl-none bg-[#151515] border border-white/10 shadow-xl max-w-lg">
-                        <div className="flex items-center gap-2 mb-2 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                        <div className="flex items-center gap-2 mb-2 text-white/60 text-xs font-bold uppercase tracking-wider">
                           <Sparkles size={12} /> Explanation
                         </div>
                         <p className="text-sm text-gray-300 leading-relaxed">
@@ -150,7 +150,7 @@ export const LandingPage = () => {
                       <div className="h-12 bg-white/5 rounded-xl border border-white/10 flex items-center px-4 text-gray-500 text-sm">
                         Ask a follow-up question...
                       </div>
-                      <div className="absolute right-2 top-2 bottom-2 aspect-square bg-indigo-600 rounded-lg flex items-center justify-center">
+                      <div className="absolute right-2 top-2 bottom-2 aspect-square bg-white/20 rounded-lg flex items-center justify-center">
                         <ArrowRight size={16} className="text-white" />
                       </div>
                     </div>
@@ -163,7 +163,7 @@ export const LandingPage = () => {
                 
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-3 mb-1">
-                    <Brain size={16} className="text-indigo-400" />
+                    <Brain size={16} className="text-white/60" />
                     <span className="font-medium text-sm text-gray-200">Key Concepts</span>
                   </div>
                   <p className="text-xs text-gray-500 ml-7">Extract definitions & terms</p>
@@ -177,13 +177,13 @@ export const LandingPage = () => {
                   <p className="text-xs text-gray-500 ml-7">Flag exam-likely topics</p>
           </div>
           
-                <div className="mt-auto p-4 rounded-xl bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20">
+                <div className="mt-auto p-4 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-indigo-300 uppercase">Live Confidence</span>
-                    <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                    <span className="text-xs font-bold text-white/70 uppercase">Live Confidence</span>
+                    <span className="flex h-1.5 w-1.5 rounded-full bg-white/50 animate-pulse" />
                   </div>
                   <div className="h-1 w-full bg-black/40 rounded-full overflow-hidden mb-2">
-                    <div className="h-full w-[92%] bg-indigo-500 rounded-full" />
+                    <div className="h-full w-[92%] bg-white/30 rounded-full" />
                   </div>
                   <div className="flex justify-between text-[10px] text-gray-500 font-mono">
                     <span>ACCURACY</span>
@@ -206,7 +206,7 @@ export const LandingPage = () => {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8 }}
             >
-              <div className="flex items-center gap-2 text-indigo-400 font-mono text-xs mb-6 tracking-widest uppercase">
+              <div className="flex items-center gap-2 text-white/60 font-mono text-xs mb-6 tracking-widest uppercase">
                 <Sparkles size={14} />
                 <span>Phase 1: Intelligence</span>
               </div>
@@ -225,7 +225,7 @@ export const LandingPage = () => {
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-4 text-gray-300">
                     <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 border border-white/10">
-                      <div className="h-2 w-2 rounded-full bg-indigo-500" />
+                      <div className="h-2 w-2 rounded-full bg-white/50" />
                     </div>
                     {item}
                   </li>
@@ -239,10 +239,10 @@ export const LandingPage = () => {
               transition={{ duration: 0.8 }}
               className="relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 blur-3xl -z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/3 blur-3xl -z-10" />
               <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-8 relative overflow-hidden group hover:border-white/20 transition-colors">
                 <div className="flex gap-5 mb-8">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white/60 border border-white/10">
                     <BookOpen size={24} strokeWidth={1.5} />
                   </div>
                   <div>
@@ -252,7 +252,7 @@ export const LandingPage = () => {
                 </div>
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors">
-                    <div className="text-[10px] text-indigo-400 font-bold mb-2 tracking-wider">KEY CONCEPT</div>
+                    <div className="text-[10px] text-white/60 font-bold mb-2 tracking-wider">KEY CONCEPT</div>
                     <div className="text-sm text-gray-300 leading-relaxed">The Chain Rule applies when differentiating composite functions.</div>
                   </div>
                   <div className="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors">
@@ -277,7 +277,7 @@ export const LandingPage = () => {
               transition={{ duration: 0.8 }}
               className="md:col-start-2"
             >
-              <div className="flex items-center gap-2 text-purple-400 font-mono text-xs mb-6 tracking-widest uppercase">
+              <div className="flex items-center gap-2 text-white/60 font-mono text-xs mb-6 tracking-widest uppercase">
                 <MousePointer2 size={14} />
                 <span>Phase 2: Interaction</span>
               </div>
@@ -296,7 +296,7 @@ export const LandingPage = () => {
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-4 text-gray-300">
                     <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 border border-white/10">
-                      <div className="h-2 w-2 rounded-full bg-purple-500" />
+                      <div className="h-2 w-2 rounded-full bg-white/50" />
                     </div>
                     {item}
                   </li>
@@ -310,7 +310,7 @@ export const LandingPage = () => {
               transition={{ duration: 0.8 }}
               className="relative md:col-start-1"
             >
-              <div className="absolute inset-0 bg-gradient-to-l from-purple-500/10 to-pink-500/10 blur-3xl -z-10" />
+              <div className="absolute inset-0 bg-gradient-to-l from-white/5 to-white/3 blur-3xl -z-10" />
               <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-8 relative overflow-hidden h-[400px]">
                 <div className="absolute top-1/2 right-10 w-12 h-12 bg-white/10 rounded-full animate-ping duration-[3s]" />
                 <div className="absolute top-1/2 right-10 w-12 h-12 bg-white rounded-full flex items-center justify-center text-black z-20 cursor-pointer shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-transform hover:scale-110">
@@ -324,9 +324,9 @@ export const LandingPage = () => {
                   <div className="h-4 bg-white/20 rounded w-4/5" />
             </div>
 
-                <div className="absolute bottom-8 left-8 right-8 p-5 bg-[#1A1A1A]/90 backdrop-blur-xl border border-purple-500/30 rounded-xl shadow-2xl z-30 transform transition-all hover:-translate-y-1">
+                <div className="absolute bottom-8 left-8 right-8 p-5 bg-[#1A1A1A]/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl z-30 transform transition-all hover:-translate-y-1">
                   <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2 text-purple-400 text-[10px] font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 text-white/60 text-[10px] font-bold uppercase tracking-wider">
                       <Zap size={12} fill="currentColor" /> AI Explanation
                     </div>
                     <div className="text-[10px] text-gray-600 font-mono">12:42 PM</div>
@@ -410,10 +410,10 @@ export const LandingPage = () => {
                         className={`absolute top-1/2 -translate-y-1/2 left-0 w-56 p-4 rounded-xl border backdrop-blur-md ${
                         i === 1 ? 'bg-pink-500/10 border-pink-500/20' : 
                         i === 2 ? 'bg-yellow-500/10 border-yellow-500/20' : 
-                        'bg-indigo-500/10 border-indigo-500/20'
+                        'bg-white/5 border-white/10'
                       }`}>
                         <div className={`text-[10px] font-bold mb-1 tracking-wider uppercase ${
-                          i === 1 ? 'text-pink-400' : i === 2 ? 'text-yellow-400' : 'text-indigo-400'
+                          i === 1 ? 'text-white/60' : i === 2 ? 'text-white/60' : 'text-white/60'
                         }`}>
                           {i === 1 ? 'TEST ALERT' : i === 2 ? 'CONFUSION DETECTED' : 'NEW TOPIC'}
                         </div>
@@ -436,7 +436,7 @@ export const LandingPage = () => {
 
       {/* CTA Section */}
       <section className="py-32 px-4 relative z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/10 to-transparent -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent -z-10" />
         <div className="max-w-4xl mx-auto text-center">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -446,7 +446,7 @@ export const LandingPage = () => {
             className="text-5xl sm:text-6xl md:text-7xl font-bold mb-8 tracking-tight"
           >
             Pass the Class. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Keep the Knowledge.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/60">Keep the Knowledge.</span>
           </motion.h2>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

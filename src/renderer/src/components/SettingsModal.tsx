@@ -328,7 +328,7 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
                         }}
                       >
                         {lang}
-                        {language === lang && <CheckIcon size={14} color="#646cff" />}
+                        {language === lang && <CheckIcon size={14} color="rgba(255,255,255,0.7)" />}
                       </div>
                     ))}
                   </GlassCard>
@@ -404,8 +404,8 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
               </div>
 
               {/* PRO CARD */}
-              <div style={{...styles.planCard, border: '1px solid #646cff', background: 'rgba(100, 108, 255, 0.05)'}}>
-                <div style={{...styles.planName, color: '#646cff'}}>{t('scholar_pro')}</div>
+              <div style={{...styles.planCard, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.05)'}}>
+                <div style={{...styles.planName, color: 'rgba(255,255,255,0.7)'}}>{t('scholar_pro')}</div>
                 <div style={styles.planPrice}>$9.99<span style={{fontSize: '14px'}}>/mo</span></div>
                 <ul style={styles.featureList}>
                   <li>✓ Unlimited Scans</li>
@@ -489,15 +489,15 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
                   onClick={() => setIsRecordingKey(true)}
                   style={{
                     ...styles.keybindBtn,
-                    borderColor: isRecordingKey ? '#646cff' : 'rgba(255,255,255,0.2)',
-                    color: isRecordingKey ? '#646cff' : '#fff',
+                    borderColor: isRecordingKey ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)',
+                    color: isRecordingKey ? 'rgba(255,255,255,0.8)' : '#fff',
                     backgroundColor: isRecordingKey ? 'rgba(100, 108, 255, 0.1)' : 'rgba(0,0,0,0.3)'
                   }}
                 >
                   {isRecordingKey ? "Press Keys..." : hotkey}
                 </button>
                 {isRecordingKey && (
-                  <div style={{fontSize: '12px', color: '#646cff', fontStyle: 'italic'}}>
+                  <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic'}}>
                     Listening for key combination...
                   </div>
                 )}
@@ -790,7 +790,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   
   // Buttons
-  primaryBtn: { padding: '10px 20px', backgroundColor: '#646cff', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: '14px' },
+  primaryBtn: { padding: '10px 20px', backgroundColor: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: '14px' },
   secondaryBtn: { padding: '10px 20px', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#ccc', fontWeight: 500, cursor: 'pointer', fontSize: '14px', marginRight: '10px' },
   dangerBtn: { padding: '8px 16px', backgroundColor: 'rgba(255, 82, 82, 0.1)', border: '1px solid #ff5252', borderRadius: '6px', color: '#ff5252', fontWeight: 600, cursor: 'pointer', fontSize: '12px' },
   textLink: { background: 'none', border: 'none', color: '#666', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px' },

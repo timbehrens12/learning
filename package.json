@@ -9,7 +9,8 @@
     "preview": "electron-vite preview",
     "build:win": "electron-vite build && electron-builder --win",
     "build:installer": "electron-vite build && electron-builder --win --x64 --publish never",
-    "build:production": "node scripts/build-production.js"
+    "build:production": "node scripts/build-production.js",
+    "copy-logos": "node scripts/copy-logos.js"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
@@ -40,6 +41,7 @@
   "build": {
     "appId": "com.visnly.app",
     "productName": "Visnly",
+    "icon": "logo/icon.png",
     "directories": {
       "output": "dist"
     },

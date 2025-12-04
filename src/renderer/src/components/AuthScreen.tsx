@@ -141,7 +141,7 @@ const styles: Record<string, React.CSSProperties> = {
   btn: { 
     width: '100%', 
     padding: '12px', 
-    background: '#646cff', 
+    background: 'rgba(255,255,255,0.2)', 
     border: 'none', 
     borderRadius: '8px', 
     color: 'white', 
@@ -156,7 +156,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#666' 
   },
   link: { 
-    color: '#646cff', 
+    color: 'rgba(255,255,255,0.7)', 
     cursor: 'pointer', 
     textDecoration: 'underline' 
   },

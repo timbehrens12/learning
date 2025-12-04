@@ -28,7 +28,7 @@ const MainFlow = () => {
   const handleOAuthCallback = async (callbackUrl: string) => {
     console.log('🔐 Handling OAuth callback:', callbackUrl.substring(0, 100) + '...');
     setLoading(true);
-    
+
     try {
       let code: string | null = null;
       let hashFragment: string | null = null;
@@ -41,38 +41,38 @@ const MainFlow = () => {
           hashFragment = hashMatch[1];
           const params = new URLSearchParams(hashFragment);
           code = params.get('code');
-          
+
           // If no code but has access_token, this is implicit flow
           if (!code && params.has('access_token')) {
             console.log('🔑 Detected implicit flow (access_token in hash)');
             // Parse tokens from hash
             const accessToken = params.get('access_token');
             const refreshToken = params.get('refresh_token');
-            
+
             if (accessToken && refreshToken) {
               // Set session directly (Supabase will calculate expires_at automatically)
               const { data, error } = await supabase.auth.setSession({
                 access_token: accessToken,
                 refresh_token: refreshToken
               });
-              
+
               if (error) {
                 console.error('❌ Session set error:', error);
                 throw error;
               }
-              
+
               console.log('✅ Session set successfully (implicit flow):', data.session?.user?.email);
-              
+
               // CRITICAL: Immediately mark onboarding as complete
               setOnboardingComplete(true);
               localStorage.setItem('onboarding_complete', 'true');
               setLoading(false);
-              
+
               // Notify main process that session is set
               if (window.electron?.ipcRenderer) {
                 window.electron.ipcRenderer.send('oauth-session-set');
               }
-              
+
               console.log('✅ Onboarding marked complete - Dashboard should show now');
               return;
             }
@@ -107,19 +107,19 @@ const MainFlow = () => {
           throw error;
         }
         console.log('✅ Session exchanged successfully:', data.session?.user?.email);
-        
+
         // CRITICAL: Immediately mark onboarding as complete and force Dashboard to show
         setOnboardingComplete(true);
         localStorage.setItem('onboarding_complete', 'true');
-        
+
         // Force a re-render by updating state
         setLoading(false);
-        
+
         // Notify main process that session is set
         if (window.electron?.ipcRenderer) {
           window.electron.ipcRenderer.send('oauth-session-set');
         }
-        
+
         console.log('✅ Onboarding marked complete - Dashboard should show now');
       } else {
         console.warn('⚠️ No code or access_token found in OAuth callback. URL:', callbackUrl);
@@ -130,7 +130,7 @@ const MainFlow = () => {
           setOnboardingComplete(true);
           localStorage.setItem('onboarding_complete', 'true');
           setLoading(false);
-          
+
           // Notify main process that session is set
           if (window.electron?.ipcRenderer) {
             window.electron.ipcRenderer.send('oauth-session-set');
@@ -173,21 +173,21 @@ const MainFlow = () => {
         // Check for existing session (auto sign-in if already signed in)
         // This will work if user signed in via browser - Supabase sessions are shared
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        console.log('Session check result:', { 
-          hasSession: !!session, 
+
+        console.log('Session check result:', {
+          hasSession: !!session,
           userEmail: session?.user?.email,
-          error: sessionError 
+          error: sessionError
         });
-        
+
         if (session?.user) {
           console.log('✅ Found existing session for:', session.user.email);
-          
+
           // User is signed in - ALWAYS mark onboarding as complete
           // The onboarding is just the sign-in flow, so if they're signed in, they're done
           setOnboardingComplete(true);
           localStorage.setItem('onboarding_complete', 'true');
-          
+
           // Update profile in background (non-blocking)
           (async () => {
             try {
@@ -219,24 +219,24 @@ const MainFlow = () => {
     let removeListener: (() => void) | null = null;
     if (window.electron?.ipcRenderer) {
       removeListener = window.electron.ipcRenderer.on('oauth-callback', (hash: string) => {
-      handleOAuthCallback(hash);
-    });
+        handleOAuthCallback(hash);
+      });
     }
 
     // Listen for auth changes (including OAuth callbacks and session refreshes)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth state changed:', event, session?.user?.email);
-      
+
       // Handle sign-in events
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
-        
+
         // CRITICAL: Mark onboarding complete IMMEDIATELY so Dashboard shows
         console.log('✅ IMMEDIATELY marking onboarding complete - Dashboard should show NOW');
         setOnboardingComplete(true);
         localStorage.setItem('onboarding_complete', 'true');
         setLoading(false);
-        
+
         // Do all the async work in the background (non-blocking)
         (async () => {
           try {
@@ -247,14 +247,14 @@ const MainFlow = () => {
               .single();
 
             if (profileError && profileError.code === 'PGRST116') {
-               const { error: insertError } = await supabase
+              const { error: insertError } = await supabase
                 .from('profiles')
                 .insert({
                   id: session.user.id,
                   email: session.user.email,
                   onboarding_complete: false
                 });
-               if (insertError) console.error('Error creating profile:', insertError);
+              if (insertError) console.error('Error creating profile:', insertError);
             }
 
             // Initialize user_credits if it doesn't exist (trigger should handle this, but ensure it exists)
@@ -289,10 +289,10 @@ const MainFlow = () => {
                 // Handle 403/RLS errors gracefully - user might not have permission to read pending_credits
                 if (pendingError) {
                   // Check for RLS/permission errors (code 42501 or message contains 403/forbidden)
-                  const isPermissionError = pendingError.code === '42501' || 
+                  const isPermissionError = pendingError.code === '42501' ||
                     pendingError.message?.toLowerCase().includes('permission') ||
                     pendingError.message?.toLowerCase().includes('forbidden');
-                  
+
                   if (isPermissionError) {
                     // RLS policy blocking access - this is expected for some users, don't log as error
                     console.log('Pending credits check skipped (RLS policy)');
@@ -342,35 +342,35 @@ const MainFlow = () => {
                 }
               } catch (e: any) {
                 // Only log if it's not an RLS/403 error
-                const isPermissionError = e?.code === '42501' || 
+                const isPermissionError = e?.code === '42501' ||
                   e?.message?.toLowerCase().includes('permission') ||
                   e?.message?.toLowerCase().includes('forbidden');
-                
+
                 if (!isPermissionError) {
                   console.error('Error claiming pending credits:', e);
                 }
               }
             }
-            } catch (error) {
-              console.error('Error during sign-in setup:', error);
-            }
-          })();
-        } else if (event === 'SIGNED_OUT') {
-          // User signed out - reset onboarding
-          console.log('👋 User signed out');
-          localStorage.removeItem('onboarding_complete');
-          setOnboardingComplete(false);
-          setLoading(false);
-        } else if (event === 'TOKEN_REFRESHED' && session) {
-          console.log('🔄 Token refreshed');
-          setLoading(false);
-        }
+          } catch (error) {
+            console.error('Error during sign-in setup:', error);
+          }
+        })();
+      } else if (event === 'SIGNED_OUT') {
+        // User signed out - reset onboarding
+        console.log('👋 User signed out');
+        localStorage.removeItem('onboarding_complete');
+        setOnboardingComplete(false);
+        setLoading(false);
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        console.log('🔄 Token refreshed');
+        setLoading(false);
+      }
     });
 
     return () => {
       subscription.unsubscribe();
       if (removeListener) {
-      removeListener();
+        removeListener();
       }
     };
   }, []);
@@ -378,56 +378,15 @@ const MainFlow = () => {
   // Show loading state while checking session
   if (loading) {
     return (
-      <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center', 
-        justifyContent: 'center', 
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         background: '#050505',
-        color: '#fff',
-        fontFamily: "'Inter', sans-serif"
+        color: '#fff'
       }}>
-        <style>
-          {`
-            @keyframes pulse-ring {
-              0% { transform: scale(0.33); opacity: 1; }
-              80%, 100% { transform: scale(1); opacity: 0; }
-            }
-            @keyframes pulse-dot {
-              0% { transform: scale(0.8); }
-              50% { transform: scale(1); }
-              100% { transform: scale(0.8); }
-            }
-          `}
-        </style>
-        <div style={{ position: 'relative', width: '80px', height: '80px', marginBottom: '24px' }}>
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0,
-            width: '100%', height: '100%',
-            borderRadius: '50%',
-            border: '2px solid #646cff',
-            opacity: 0,
-            animation: 'pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite'
-          }}></div>
-          <div style={{
-            position: 'absolute',
-            top: '20%', left: '20%',
-            width: '60%', height: '60%',
-            borderRadius: '50%',
-            background: '#646cff',
-            animation: 'pulse-dot 1.25s cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite'
-          }}></div>
-        </div>
-        <div style={{ 
-          opacity: 0.7, 
-          fontSize: '14px', 
-          letterSpacing: '0.05em',
-          fontWeight: 500
-        }}>
-          INITIALIZING
-        </div>
+        Loading...
       </div>
     );
   }
@@ -442,7 +401,7 @@ const MainFlow = () => {
   const handleOnboardingComplete = async () => {
     // Verify user is signed in before completing onboarding
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (!session?.user) {
       alert('Please sign in to continue. Sign-in is required to use Visnly.');
       return;
@@ -458,7 +417,7 @@ const MainFlow = () => {
         .from('profiles')
         .update({ onboarding_complete: true })
         .eq('id', session.user.id);
-      
+
       if (error) {
         console.log('Note: onboarding_complete column may not exist yet. Run ADD_ONBOARDING_COLUMN.sql in Supabase.');
       }

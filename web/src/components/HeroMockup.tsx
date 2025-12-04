@@ -22,7 +22,7 @@ export const HeroMockup = () => {
           
           {/* Background Mesh/Noise */}
           <div className="absolute inset-0 opacity-30 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-indigo-500/10 blur-[150px] rounded-full mix-blend-screen" />
+          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-white/5 blur-[150px] rounded-full mix-blend-screen" />
           <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-blue-600/10 blur-[150px] rounded-full mix-blend-screen" />
 
           {/* Central "App" Interface simulation */}
@@ -35,16 +35,16 @@ export const HeroMockup = () => {
                transition={{ delay: 0.5, duration: 0.5 }}
                className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden"
              >
-                <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                <div className="absolute top-0 left-0 w-1 h-full bg-white/30" />
                 
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60">
                            <Command size={16} />
                         </div>
                         <div>
                             <div className="text-sm font-semibold text-white">Visnly AI</div>
-                            <div className="text-xs text-indigo-300">Thinking...</div>
+                            <div className="text-xs text-white/70">Thinking...</div>
                         </div>
                     </div>
                     <span className="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded-md">0.2s</span>
@@ -82,7 +82,7 @@ export const HeroMockup = () => {
              {/* Floating Action Button */}
              <motion.div
                whileHover={{ scale: 1.05 }}
-               className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 rounded-full text-sm cursor-pointer hover:bg-indigo-600/30 transition-colors"
+               className="flex items-center gap-2 px-5 py-2.5 bg-white/10 border border-white/20 text-white/70 rounded-full text-sm cursor-pointer hover:bg-white/15 transition-colors"
              >
                 <Play size={14} fill="currentColor" />
                 <span className="font-medium">See it in action</span>

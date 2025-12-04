@@ -72,7 +72,7 @@ export const FAQPage = () => {
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 md:mb-8 leading-[1.1]">
             Frequently Asked <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Questions.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/60">Questions.</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed font-light">
             Everything you need to know about how Visnly keeps you ahead.
@@ -101,7 +101,7 @@ export const FAQPage = () => {
                     {faq.question}
                   </h3>
                   <div className={`p-1 rounded-full bg-white/5 transition-transform duration-300 ${
-                    openIndex === index ? 'rotate-180 bg-indigo-500/20 text-indigo-400' : 'text-gray-400'
+                    openIndex === index ? 'rotate-180 bg-white/10 text-white/60' : 'text-gray-400'
                   }`}>
                     <ChevronDown className="w-4 h-4" />
                   </div>

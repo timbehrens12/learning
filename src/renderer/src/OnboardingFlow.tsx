@@ -114,19 +114,33 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   // Slide 1: Welcome - "Welcome to Visnly"
   const renderSlide1 = () => (
     <>
-      <div style={{ ...styles.logoBadge, animationDelay: '0ms' }} className="animate-fade-in-up">V</div>
-      <h1 style={{ ...styles.title, animationDelay: '100ms' }} className="animate-fade-in-up">Welcome to Visnly</h1>
-      <p style={{ ...styles.subtitle, animationDelay: '200ms' }} className="animate-fade-in-up">
+      <div style={styles.logoBadge}>
+        <img 
+          src="./logo.png" 
+          alt="Visnly" 
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          onError={(e) => {
+            // Fallback to text if image not found
+            const target = e.currentTarget;
+            target.style.display = 'none';
+            if (target.parentElement) {
+              target.parentElement.textContent = 'V';
+            }
+          }}
+        />
+      </div>
+      <h1 style={styles.title}>Welcome to Visnly</h1>
+      <p style={styles.subtitle}>
         The invisible advantage.
       </p>
       <button
         onClick={handleNext}
-        className="start-session-button animate-fade-in-up"
-        style={{ width: '100%', marginBottom: '24px', animationDelay: '300ms' }}
+        className="start-session-button"
+        style={{ width: '100%', marginBottom: '24px' }}
       >
         Sign up →
       </button>
-      <p style={{ ...styles.legalText, animationDelay: '400ms' }} className="animate-fade-in-up">
+      <p style={styles.legalText}>
         By signing up, you agree to our{" "}
         <a href="#" style={styles.legalLink}>Terms of Service</a>
         {" "}and{" "}
@@ -136,20 +150,19 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   );
 
   const renderSlide1Visual = () => (
-    <div style={styles.floatingApp} className="animate-float">
-      <div style={styles.appWindow}>
-        <div style={styles.appHeader}>
-          <div style={styles.appDots}>
-            <div style={styles.dotRed}></div>
-            <div style={styles.dotYellow}></div>
-            <div style={styles.dotGreen}></div>
-          </div>
-        </div>
-        <div style={styles.appContent}>
-          <div style={styles.appIcon}>V</div>
-          <div style={styles.appText}>Visnly</div>
-        </div>
-      </div>
+    <div style={styles.animatedVisualContainer}>
+      {/* Subtle gradient orbs - minimal and refined */}
+      <div style={styles.gradientOrb1}></div>
+      <div style={styles.gradientOrb2}></div>
+      
+      {/* Elegant geometric shapes */}
+      <div style={styles.geometricShape1}></div>
+      <div style={styles.geometricShape2}></div>
+      <div style={styles.geometricShape3}></div>
+      
+      {/* Minimal light rays */}
+      <div style={styles.lightRay1}></div>
+      <div style={styles.lightRay2}></div>
     </div>
   );
 
@@ -209,10 +222,10 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
     <div style={styles.profileMock}>
       <div style={styles.profileCard}>
         <div style={styles.profileAvatar}>
-          <Icons.UserIcon size={48} color="#646cff" />
+          <Icons.UserIcon size={48} color="rgba(255,255,255,0.6)" />
         </div>
         <div style={styles.profileLoader}>
-          <Icons.LoaderIcon size={24} color="#646cff" />
+          <Icons.LoaderIcon size={24} color="rgba(255,255,255,0.6)" />
         </div>
         <div style={styles.profileName}>Loading profile...</div>
       </div>
@@ -378,7 +391,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         <div style={styles.stealthWindow}>
           <div style={styles.stealthHeader}>Visnly Overlay</div>
           <div style={styles.stealthContent}>
-            <Icons.IncognitoIcon size={48} color="#646cff" />
+            <Icons.IncognitoIcon size={48} color="rgba(255,255,255,0.6)" />
             <div style={styles.stealthText}>
               {stealthVisible ? 'Visible' : 'Hidden'}
             </div>
@@ -393,8 +406,6 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
     <>
       <h1 style={styles.pricingTitle}>Unlock all features with Visnly Pro</h1>
 
-      <h1 style={styles.pricingTitle}>Unlock all features with Visnly Pro</h1>
-
       {/* Annual Toggle - Positioned on the right */}
       <div style={styles.pricingHeaderRow}>
         <div style={{ flex: 1 }}></div>
@@ -403,7 +414,7 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div
             style={{
               ...styles.toggleSwitch,
-              background: billingAnnual ? '#646cff' : 'rgba(255,255,255,0.2)'
+              background: billingAnnual ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.2)'
             }}
             onClick={() => setBillingAnnual(!billingAnnual)}
           >
@@ -501,7 +512,15 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      {/* Trust Indicators Removed */}
+      {/* Trust Indicators */}
+      <div style={styles.trustIndicators}>
+        <div style={styles.starsContainer}>
+          {'★★★★★'.split('').map((star, i) => (
+            <span key={i} style={styles.star}>{star}</span>
+          ))}
+        </div>
+        <p style={styles.trustedByText}>Trusted by 10k users</p>
+      </div>
 
       <button
         onClick={onComplete}
@@ -579,31 +598,6 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   return (
     <div style={styles.container}>
-      <style>
-        {`
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-          }
-          .animate-fade-in-up {
-            animation: fadeInUp 0.6s ease-out forwards;
-          }
-          .animate-float {
-            animation: float 6s ease-in-out infinite;
-          }
-          .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 24px;
-          }
-        `}
-      </style>
       {/* LEFT PANEL */}
       <div style={styles.leftPanel}>
         {step > 0 && (
@@ -742,15 +736,19 @@ const styles: Record<string, React.CSSProperties> = {
 
   // Typography
   title: {
-    fontSize: '56px',
-    fontWeight: 700,
-    marginBottom: '16px',
-    letterSpacing: '-1px',
-    lineHeight: '1.2',
+    fontSize: '64px',
+    fontWeight: 800,
+    marginBottom: '24px',
+    letterSpacing: '-2px',
+    lineHeight: '1.1',
     textAlign: 'center',
-    color: '#fff',
+    background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.6) 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    width: '100%'
+    width: '100%',
+    textShadow: '0 0 40px rgba(255,255,255,0.2)'
   },
 
   heading: {
@@ -766,14 +764,17 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   subtitle: {
-    fontSize: '18px',
-    color: '#888',
-    lineHeight: '1.5',
-    marginBottom: '40px',
+    fontSize: '20px',
+    color: '#aaa',
+    lineHeight: '1.6',
+    marginBottom: '48px',
     textAlign: 'center',
     fontWeight: 400,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    width: '100%'
+    width: '100%',
+    maxWidth: '500px',
+    marginLeft: 'auto',
+    marginRight: 'auto'
   },
 
   text: {
@@ -810,64 +811,100 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 1
   },
 
-  // Slide 1 Visual - Floating App
-  floatingApp: {
+  // Slide 1 Visual - Minimal, sophisticated abstract animation
+  animatedVisualContainer: {
     position: 'relative',
-    animation: 'float 3s ease-in-out infinite'
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    background: 'transparent'
   },
 
-  appWindow: {
-    width: '300px',
+  gradientOrb1: {
+    position: 'absolute',
+    width: '600px',
+    height: '600px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)',
+    top: '20%',
+    left: '10%',
+    filter: 'blur(100px)',
+    animation: 'subtleFloat1 20s ease-in-out infinite',
+    opacity: 0.6
+  },
+
+  gradientOrb2: {
+    position: 'absolute',
+    width: '500px',
+    height: '500px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)',
+    bottom: '15%',
+    right: '15%',
+    filter: 'blur(100px)',
+    animation: 'subtleFloat2 25s ease-in-out infinite',
+    opacity: 0.5
+  },
+
+  geometricShape1: {
+    position: 'absolute',
+    width: '200px',
     height: '200px',
-    background: 'rgba(20,20,20,0.9)',
-    borderRadius: '12px',
+    top: '25%',
+    left: '20%',
+    border: '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '2px',
+    transform: 'rotate(45deg)',
+    animation: 'geometricRotate1 30s linear infinite',
+    opacity: 0.4
+  },
+
+  geometricShape2: {
+    position: 'absolute',
+    width: '150px',
+    height: '150px',
+    bottom: '30%',
+    right: '25%',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: '50%',
+    animation: 'geometricRotate2 40s linear infinite reverse',
+    opacity: 0.3
+  },
+
+  geometricShape3: {
+    position: 'absolute',
+    width: '120px',
+    height: '120px',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%) rotate(45deg)',
     border: '1px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-    overflow: 'hidden'
+    borderRadius: '8px',
+    animation: 'geometricRotate3 50s linear infinite',
+    opacity: 0.25
   },
 
-  appHeader: {
-    padding: '12px',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-    display: 'flex',
-    alignItems: 'center'
+  lightRay1: {
+    position: 'absolute',
+    width: '1px',
+    height: '100%',
+    left: '30%',
+    background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.08), transparent)',
+    animation: 'rayPulse1 8s ease-in-out infinite',
+    opacity: 0.3
   },
 
-  appDots: {
-    display: 'flex',
-    gap: '6px'
-  },
-
-  dotRed: { width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f56' },
-  dotYellow: { width: '10px', height: '10px', borderRadius: '50%', background: '#ffbd2e' },
-  dotGreen: { width: '10px', height: '10px', borderRadius: '50%', background: '#27c93f' },
-
-  appContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 'calc(100% - 50px)',
-    gap: '12px'
-  },
-
-  appIcon: {
-    width: '64px',
-    height: '64px',
-    background: '#646cff',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 900,
-    fontSize: '24px',
-    color: '#fff'
-  },
-
-  appText: {
-    fontSize: '18px',
-    fontWeight: 600,
-    color: '#fff'
+  lightRay2: {
+    position: 'absolute',
+    width: '1px',
+    height: '100%',
+    right: '35%',
+    background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.06), transparent)',
+    animation: 'rayPulse2 10s ease-in-out infinite',
+    opacity: 0.25
   },
 
   // Slide 2 Visual - Profile Mock
@@ -893,11 +930,11 @@ const styles: Record<string, React.CSSProperties> = {
     width: '80px',
     height: '80px',
     borderRadius: '50%',
-    background: 'rgba(100,108,255,0.2)',
+    background: 'rgba(255,255,255,0.15)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '2px solid #646cff'
+    border: '2px solid rgba(255,255,255,0.3)'
   },
 
   profileLoader: {
@@ -965,7 +1002,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   chatQuestion: {
     padding: '16px',
-    background: 'rgba(100,108,255,0.1)',
+    background: 'rgba(255,255,255,0.08)',
     borderRadius: '12px',
     marginBottom: '16px',
     fontSize: '15px',
@@ -1002,8 +1039,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '32px',
     background: 'rgba(20,20,20,0.95)',
     borderRadius: '16px',
-    border: '2px solid #646cff',
-    boxShadow: '0 20px 50px rgba(100,108,255,0.3)',
+    border: '2px solid rgba(255,255,255,0.3)',
+    boxShadow: '0 20px 50px rgba(255,255,255,0.15)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -1013,7 +1050,7 @@ const styles: Record<string, React.CSSProperties> = {
   stealthHeader: {
     fontSize: '14px',
     fontWeight: 700,
-    color: '#646cff',
+    color: 'rgba(255,255,255,0.7)',
     textTransform: 'uppercase',
     letterSpacing: '1px'
   },
@@ -1040,9 +1077,9 @@ const styles: Record<string, React.CSSProperties> = {
 
   hotkeyBox: {
     padding: '20px 32px',
-    background: 'rgba(100,108,255,0.1)',
+    background: 'rgba(255,255,255,0.08)',
     borderRadius: '12px',
-    border: '1px solid rgba(100,108,255,0.3)',
+    border: '1px solid rgba(255,255,255,0.2)',
     fontSize: '18px',
     fontWeight: 600,
     display: 'flex',
@@ -1080,7 +1117,7 @@ const styles: Record<string, React.CSSProperties> = {
   glowEffect: {
     width: '100%',
     height: '100%',
-    background: 'radial-gradient(circle, rgba(100,108,255,0.4) 0%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
     borderRadius: '20px',
     filter: 'blur(40px)'
   },
@@ -1129,10 +1166,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   educationChipActive: {
-    background: 'rgba(100,108,255,0.25)',
-    border: '1px solid #646cff',
+    background: 'rgba(255,255,255,0.15)',
+    border: '1px solid rgba(255,255,255,0.3)',
     color: '#fff',
-    boxShadow: '0 2px 8px rgba(100,108,255,0.3)',
+    boxShadow: '0 2px 8px rgba(255,255,255,0.15)',
     transform: 'translateY(-1px)'
   },
 
@@ -1163,10 +1200,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   referralChipActive: {
-    background: 'rgba(100,108,255,0.25)',
-    border: '1px solid #646cff',
+    background: 'rgba(255,255,255,0.15)',
+    border: '1px solid rgba(255,255,255,0.3)',
     color: '#fff',
-    boxShadow: '0 2px 8px rgba(100,108,255,0.3)',
+    boxShadow: '0 2px 8px rgba(255,255,255,0.15)',
     transform: 'translateY(-1px)'
   },
 
@@ -1183,23 +1220,6 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.5px'
   },
 
-  trustLogosRow: {
-    display: 'flex',
-    gap: '24px',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: '32px',
-    flexWrap: 'wrap',
-    width: '100%'
-  },
-
-  trustLogo: {
-    fontSize: '13px',
-    fontWeight: 500,
-    color: '#999',
-    opacity: 0.6,
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-  },
 
   pricingHeaderRow: {
     display: 'flex',
@@ -1261,9 +1281,9 @@ const styles: Record<string, React.CSSProperties> = {
 
   proCard: {
     padding: '32px',
-    background: 'linear-gradient(135deg, rgba(100,108,255,0.2) 0%, rgba(100,108,255,0.1) 100%)',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)',
     borderRadius: '20px',
-    border: '2px solid #646cff',
+    border: '2px solid rgba(255,255,255,0.3)',
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
@@ -1277,8 +1297,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   proCardRight: {
-    background: 'linear-gradient(135deg, rgba(100,108,255,0.15) 0%, rgba(100,108,255,0.08) 100%)',
-    border: '2px solid rgba(100,108,255,0.3)'
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+    border: '2px solid rgba(255,255,255,0.2)'
   },
 
   proCardHeader: {
@@ -1299,8 +1319,8 @@ const styles: Record<string, React.CSSProperties> = {
   popularBadge: {
     fontSize: '12px',
     fontWeight: 600,
-    color: '#646cff',
-    background: 'rgba(100,108,255,0.2)',
+    color: 'rgba(255,255,255,0.7)',
+    background: 'rgba(255,255,255,0.15)',
     padding: '4px 12px',
     borderRadius: '12px',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
@@ -1344,7 +1364,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   infinityIcon: {
     fontSize: '20px',
-    color: '#646cff',
+    color: 'rgba(255,255,255,0.7)',
     fontWeight: 600,
     display: 'flex',
     alignItems: 'center',
@@ -1405,9 +1425,9 @@ const styles: Record<string, React.CSSProperties> = {
   videoCallScreen: {
     width: '80%',
     height: '60%',
-    background: 'rgba(100,108,255,0.1)',
+    background: 'rgba(255,255,255,0.08)',
     borderRadius: '8px',
-    border: '1px solid rgba(100,108,255,0.2)'
+    border: '1px solid rgba(255,255,255,0.15)'
   },
 
   crossedEyeIcon: {
@@ -1424,7 +1444,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     width: '40px',
     height: '2px',
-    background: '#646cff',
+    background: 'rgba(255,255,255,0.3)',
     transform: 'rotate(45deg)',
     top: '50%',
     left: '50%',
@@ -1463,18 +1483,22 @@ const styles: Record<string, React.CSSProperties> = {
 
   // Welcome page specific styles
   logoBadge: {
-    width: '48px',
-    height: '48px',
-    background: '#fff',
-    color: '#000',
-    borderRadius: '10px',
+    width: '64px',
+    height: '64px',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)',
+    color: '#fff',
+    borderRadius: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 900,
-    fontSize: '20px',
-    marginBottom: '32px',
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    fontSize: '28px',
+    marginBottom: '40px',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    boxShadow: '0 10px 40px rgba(255,255,255,0.15), inset 0 0 20px rgba(255,255,255,0.1)',
+    animation: 'logoGlow 3s ease-in-out infinite',
+    position: 'relative',
+    zIndex: 1
   },
 
 
@@ -1491,31 +1515,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   legalLink: {
-    color: '#646cff',
+    color: 'rgba(255,255,255,0.7)',
     textDecoration: 'none',
     cursor: 'pointer',
     fontWeight: 500,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
 
-  partners: {
-    marginTop: 'auto',
-    paddingTop: '48px',
-    width: '100%'
-  },
-
-  partnerLogos: {
-    display: 'flex',
-    gap: '24px',
-    color: '#999',
-    fontSize: '13px',
-    fontWeight: 500,
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    opacity: 0.6,
-    lineHeight: '1.5',
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-  }
 };
 
 // Add CSS animations
@@ -1533,7 +1539,73 @@ styleSheet.textContent = `
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes orbFloat1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -30px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+  }
+  @keyframes orbFloat2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-40px, 40px) scale(1.15); }
+  }
+  @keyframes orbPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.6; }
+  }
+  @keyframes subtleFloat1 {
+    0%, 100% { 
+      transform: translate(0, 0) scale(1);
+      opacity: 0.6;
+    }
+    50% { 
+      transform: translate(40px, -30px) scale(1.1);
+      opacity: 0.4;
+    }
+  }
+  @keyframes subtleFloat2 {
+    0%, 100% { 
+      transform: translate(0, 0) scale(1);
+      opacity: 0.5;
+    }
+    50% { 
+      transform: translate(-30px, 40px) scale(0.9);
+      opacity: 0.3;
+    }
+  }
+  @keyframes geometricRotate1 {
+    from { transform: rotate(45deg); }
+    to { transform: rotate(405deg); }
+  }
+  @keyframes geometricRotate2 {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes geometricRotate3 {
+    from { transform: translate(-50%, -50%) rotate(45deg); }
+    to { transform: translate(-50%, -50%) rotate(405deg); }
+  }
+  @keyframes rayPulse1 {
+    0%, 100% { 
+      opacity: 0.2;
+    }
+    50% { 
+      opacity: 0.4;
+    }
+  }
+  @keyframes rayPulse2 {
+    0%, 100% { 
+      opacity: 0.15;
+    }
+    50% { 
+      opacity: 0.35;
+    }
+  }
+  @keyframes logoGlow {
+    0%, 100% { box-shadow: 0 10px 40px rgba(255,255,255,0.15), inset 0 0 20px rgba(255,255,255,0.1); }
+    50% { box-shadow: 0 10px 60px rgba(255,255,255,0.25), inset 0 0 30px rgba(255,255,255,0.2); }
+  }
 `;
 document.head.appendChild(styleSheet);
 
 export default OnboardingFlow;
+
