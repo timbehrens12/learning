@@ -56,8 +56,8 @@ export const LandingPage = () => {
               className="btn" 
               tabIndex={0} 
               onClick={() => {
-                // Direct download - update this URL when you have the installer built
-                const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || 'https://github.com/timbehrens12/learning/releases/latest/download/StudyLayer-Setup.exe';
+                // Production download URL - can be overridden with VITE_DOWNLOAD_URL env var
+                const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
                 window.open(downloadUrl, '_blank');
               }}
             >
@@ -166,7 +166,7 @@ export const LandingPage = () => {
                     onMouseUp={() => setIsDownloading(false)}
                     onMouseLeave={() => setIsDownloading(false)}
                     onClick={() => {
-                      const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || 'https://github.com/timbehrens12/learning/releases/latest/download/StudyLayer-Setup.exe';
+                      const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
                       window.open(downloadUrl, '_blank');
                     }}
                   >
