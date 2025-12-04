@@ -3,7 +3,7 @@ import { Navbar } from '../components/Navbar';
 import { LiquidBackground } from '../components/LiquidBackground';
 import { GlassCard } from '../components/GlassCard';
 import { SEO } from '../components/SEO';
-import { Download, Monitor, Brain, ArrowRight, Zap, Target, BookOpen } from 'lucide-react';
+import { Download, Brain, Zap, Target, BookOpen } from 'lucide-react';
 
 const steps = [
   {
