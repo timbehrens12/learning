@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase';
 import OnboardingFlow from './OnboardingFlow';
 import Dashboard from './Dashboard';
 import Overlay from './Overlay';
+import { LoadingScreen } from './components/LoadingScreen';
 import './i18n/config'; // Initialize i18n
 import { testEnvironmentVariables } from './test-env';
 
@@ -377,18 +378,7 @@ const MainFlow = () => {
 
   // Show loading state while checking session
   if (loading) {
-    return (
-      <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        background: '#050505',
-        color: '#fff'
-      }}>
-        Loading...
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // If onboarding is complete, show Dashboard

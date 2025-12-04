@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import LiquidBackground from './components/LiquidBackground';
 import * as Icons from './components/Icons';
@@ -132,14 +133,6 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         {" "}and{" "}
         <a href="#" style={styles.legalLink}>Privacy Policy</a>.
       </p>
-      <div style={styles.partners}>
-        <div style={styles.partnerLogos}>
-          <span>Business Insider</span>
-          <span>Forbes</span>
-          <span>The New York Times</span>
-          <span>TechCrunch</span>
-        </div>
-      </div>
     </>
   );
 
@@ -401,13 +394,6 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
     <>
       <h1 style={styles.pricingTitle}>Unlock all features with Visnly Pro</h1>
       
-      {/* Trust Logos */}
-      <div style={styles.trustLogosRow}>
-        <span style={styles.trustLogo}>Forbes</span>
-        <span style={styles.trustLogo}>The New York Times</span>
-        <span style={styles.trustLogo}>TechCrunch</span>
-        <span style={styles.trustLogo}>BUSINESS INSIDER</span>
-      </div>
 
       {/* Annual Toggle - Positioned on the right */}
       <div style={styles.pricingHeaderRow}>
@@ -588,12 +574,26 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         <LiquidBackground />
         <div style={styles.gridOverlay}></div>
         {step > 0 && (
-          <button onClick={handleBack} style={styles.backBtnFullScreen}>
+          <motion.button
+            onClick={handleBack}
+            style={styles.backBtnFullScreen}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
             ← Back
-          </button>
+          </motion.button>
         )}
         <div style={styles.fullScreenContent}>
-          {renderLeftContent()}
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.4, 0.55, 1.4] }}
+          >
+            {renderLeftContent()}
+          </motion.div>
         </div>
       </div>
     );
@@ -604,12 +604,28 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       {/* LEFT PANEL */}
       <div style={styles.leftPanel}>
         {step > 0 && (
-          <button onClick={handleBack} style={styles.backBtn}>
+          <motion.button
+            onClick={handleBack}
+            style={styles.backBtn}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
             ← Back
-          </button>
+          </motion.button>
         )}
         <div style={styles.contentWrapper}>
-          {renderLeftContent()}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.5, ease: [0.25, 0.4, 0.55, 1.4] }}
+            >
+              {renderLeftContent()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 
@@ -618,7 +634,17 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
         <LiquidBackground />
         <div style={styles.gridOverlay}></div>
         <div style={styles.visualContent}>
-          {renderRightVisual()}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 0.6, ease: [0.25, 0.4, 0.55, 1.4] }}
+            >
+              {renderRightVisual()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
