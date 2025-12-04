@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import GlassCard from './GlassCard';
 import { supabase } from '../lib/supabase';
-import { UserIcon, CreditCardIcon, SettingsIcon, KeyboardIcon, HelpCircleIcon, ScaleIcon, BookIcon, BugIcon, ZapIcon, MessageCircleIcon, ShieldIcon, ExternalLinkIcon, CheckIcon, ChevronDownIcon, MailIcon } from './Icons';
+import { UserIcon, CreditCardIcon, SettingsIcon, KeyboardIcon, HelpCircleIcon, ScaleIcon, BookIcon, BugIcon, ZapIcon, MessageCircleIcon, ShieldIcon, ExternalLinkIcon, CheckIcon, ChevronDownIcon, MailIcon, EyeIcon, EyeOffIcon, MonitorIcon, TargetIcon, BrainIcon } from './Icons';
 
 interface SettingsProps {
   onClose: () => void;
@@ -41,7 +42,7 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
   };
   
   // --- STATE ---
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('system');
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [language, setLanguage] = useState(getInitialLanguage());
@@ -49,6 +50,14 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
   const [hotkey, setHotkey] = useState("Ctrl + Shift + Space");
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+
+  // System Settings
+  const [learningStyle, setLearningStyle] = useState(() => localStorage.getItem('visnly_learning_style') || 'default');
+  const [showCheatMode, setShowCheatMode] = useState(() => localStorage.getItem('show_cheat_mode') !== 'false');
+  const [ocrMode, setOcrMode] = useState(() => localStorage.getItem('ocr_mode') || 'snapshot');
+  const [autoAnalyze, setAutoAnalyze] = useState(() => localStorage.getItem('auto_analyze') === 'true');
+  const [transcriptTags, setTranscriptTags] = useState(() => localStorage.getItem('transcript_tags') !== 'false');
+
   const languageDropdownRef = useRef<HTMLDivElement>(null);
 
   // Load user data from Supabase
@@ -145,6 +154,23 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
     setTimeout(() => setShowSuccessToast(false), 3000); // Hide after 3 seconds
   };
 
+  // 4. SYSTEM SETTINGS ACTIONS
+  const handleSaveSystemSettings = () => {
+    localStorage.setItem('visnly_learning_style', learningStyle);
+    localStorage.setItem('show_cheat_mode', showCheatMode.toString());
+    localStorage.setItem('ocr_mode', ocrMode);
+    localStorage.setItem('auto_analyze', autoAnalyze.toString());
+    localStorage.setItem('transcript_tags', transcriptTags.toString());
+
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('systemSettingsChanged', {
+      detail: { learningStyle, showCheatMode, ocrMode, autoAnalyze, transcriptTags }
+    }));
+
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 3000);
+  };
+
   const handleDeleteAccount = () => {
     const confirmText = prompt("Type 'DELETE' to permanently erase your account.");
     if (confirmText === 'DELETE') {
@@ -200,7 +226,155 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
 
   const renderContent = () => {
     switch (activeTab) {
-      
+
+      // --- SYSTEM TAB ---
+      case 'system':
+        return (
+          <div style={styles.animateFade}>
+            <h2 style={styles.heading}>System Settings</h2>
+
+            {/* Learning Style */}
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Learning Style</label>
+              <div style={styles.microHint}>How Visnly explains concepts to you</div>
+              <div style={styles.learningStyleGrid}>
+                {[
+                  { key: 'default', label: 'Default', desc: 'Balanced explanations' },
+                  { key: 'simple', label: 'Simple', desc: 'Easy to understand' },
+                  { key: 'visual', label: 'Visual', desc: 'With diagrams & examples' },
+                  { key: 'analogies', label: 'Analogies', desc: 'Using metaphors' },
+                  { key: 'step_by_step', label: 'Step-by-Step', desc: 'Detailed breakdowns' }
+                ].map((style) => (
+                  <button
+                    key={style.key}
+                    onClick={() => setLearningStyle(style.key)}
+                    style={{
+                      ...styles.learningStyleButton,
+                      backgroundColor: learningStyle === style.key ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.05)',
+                      borderColor: learningStyle === style.key ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.1)'
+                    }}
+                  >
+                    <div style={styles.learningStyleIcon}>
+                      {learningStyle === style.key && <CheckIcon size={12} color="#646cff" />}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '13px', color: '#fff' }}>{style.label}</div>
+                      <div style={{ fontSize: '11px', color: '#888' }}>{style.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={styles.divider}></div>
+
+            {/* OCR Settings */}
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Screen Capture Mode</label>
+              <div style={styles.microHint}>How Visnly reads your screen</div>
+              <div style={styles.toggleGrid}>
+                <button
+                  onClick={() => setOcrMode('snapshot')}
+                  style={{
+                    ...styles.toggleOption,
+                    backgroundColor: ocrMode === 'snapshot' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.05)',
+                    borderColor: ocrMode === 'snapshot' ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.1)'
+                  }}
+                >
+                  <MonitorIcon size={16} color={ocrMode === 'snapshot' ? '#646cff' : '#888'} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '13px', color: '#fff' }}>Snapshot</div>
+                    <div style={{ fontSize: '11px', color: '#888' }}>Capture on command</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setOcrMode('continuous')}
+                  style={{
+                    ...styles.toggleOption,
+                    backgroundColor: ocrMode === 'continuous' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255,255,255,0.05)',
+                    borderColor: ocrMode === 'continuous' ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.1)'
+                  }}
+                >
+                  <ZapIcon size={16} color={ocrMode === 'continuous' ? '#646cff' : '#888'} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '13px', color: '#fff' }}>Continuous</div>
+                    <div style={{ fontSize: '11px', color: '#888' }}>Always scanning</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div style={styles.divider}></div>
+
+            {/* Feature Toggles */}
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Features</label>
+              <div style={styles.featureToggles}>
+                <div style={styles.toggleRow}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '14px', color: '#fff', marginBottom: '4px' }}>Cheat Mode</div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>Show direct answer mode</div>
+                  </div>
+                  <button
+                    onClick={() => setShowCheatMode(!showCheatMode)}
+                    style={{
+                      ...styles.miniToggle,
+                      backgroundColor: showCheatMode ? '#646cff' : 'rgba(255,255,255,0.1)'
+                    }}
+                  >
+                    <div style={{
+                      ...styles.miniToggleThumb,
+                      transform: showCheatMode ? 'translateX(18px)' : 'translateX(2px)'
+                    }} />
+                  </button>
+                </div>
+
+                <div style={styles.toggleRow}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '14px', color: '#fff', marginBottom: '4px' }}>Auto-Analysis</div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>Automatically analyze new transcripts</div>
+                  </div>
+                  <button
+                    onClick={() => setAutoAnalyze(!autoAnalyze)}
+                    style={{
+                      ...styles.miniToggle,
+                      backgroundColor: autoAnalyze ? '#646cff' : 'rgba(255,255,255,0.1)'
+                    }}
+                  >
+                    <div style={{
+                      ...styles.miniToggleThumb,
+                      transform: autoAnalyze ? 'translateX(18px)' : 'translateX(2px)'
+                    }} />
+                  </button>
+                </div>
+
+                <div style={styles.toggleRow}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '14px', color: '#fff', marginBottom: '4px' }}>Transcript Tags</div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>Show topic markers and flags</div>
+                  </div>
+                  <button
+                    onClick={() => setTranscriptTags(!transcriptTags)}
+                    style={{
+                      ...styles.miniToggle,
+                      backgroundColor: transcriptTags ? '#646cff' : 'rgba(255,255,255,0.1)'
+                    }}
+                  >
+                    <div style={{
+                      ...styles.miniToggleThumb,
+                      transform: transcriptTags ? 'translateX(18px)' : 'translateX(2px)'
+                    }} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.actionRow}>
+              <button onClick={handleSaveSystemSettings} style={styles.primaryBtn}>Save Settings</button>
+            </div>
+          </div>
+        );
+
       // --- PROFILE TAB ---
       case 'profile':
         return (
@@ -640,6 +814,14 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
           <div style={styles.sidebarHeader}>{t('settings')}</div>
           
           <div style={styles.navGroup}>
+            <div style={styles.navLabel}>SYSTEM</div>
+            <button onClick={() => setActiveTab('system')} style={activeTab === 'system' ? styles.navBtnActive : styles.navBtn}>
+              <SettingsIcon size={16} color={activeTab === 'system' ? '#fff' : '#888'} />
+              <span>System</span>
+            </button>
+          </div>
+
+          <div style={styles.navGroup}>
             <div style={styles.navLabel}>USER</div>
             <button onClick={() => setActiveTab('profile')} style={activeTab === 'profile' ? styles.navBtnActive : styles.navBtn}>
               <UserIcon size={16} color={activeTab === 'profile' ? '#fff' : '#888'} />
@@ -839,6 +1021,81 @@ const styles: Record<string, React.CSSProperties> = {
   shortcutList: { display: 'flex', flexDirection: 'column', gap: '12px' },
   shortcutItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' },
   
+  // System Settings
+  learningStyleGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+    gap: '12px',
+    marginTop: '16px'
+  },
+  learningStyleButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px',
+    borderRadius: '12px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    textAlign: 'left'
+  },
+  learningStyleIcon: {
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  },
+  toggleGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    marginTop: '16px'
+  },
+  toggleOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px',
+    borderRadius: '12px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  },
+  featureToggles: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    marginTop: '16px'
+  },
+  toggleRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  miniToggle: {
+    width: '36px',
+    height: '20px',
+    borderRadius: '10px',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '2px',
+    transition: 'all 0.2s ease',
+    position: 'relative'
+  },
+  miniToggleThumb: {
+    width: '16px',
+    height: '16px',
+    borderRadius: '50%',
+    backgroundColor: '#fff',
+    transition: 'transform 0.2s ease'
+  },
+
   // Toast Notification
   toast: {
     position: 'fixed',
