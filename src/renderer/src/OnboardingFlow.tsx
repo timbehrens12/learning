@@ -16,6 +16,10 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [stealthVisible, setStealthVisible] = useState(true);
   const [billingAnnual, setBillingAnnual] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
 
   // Listen for auth state changes to auto-complete onboarding when signed in
   useEffect(() => {
@@ -49,6 +53,33 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
       setStep(prev => prev - 1);
     }
   }, [step]);
+
+  const handleEmailAuth = async () => {
+    if (!email || !password) {
+      setAuthError('Please enter both email and password');
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert("Check your email for the confirmation link!");
+        setIsSignUp(false);
+        setAuthLoading(false);
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        // Auth state change listener will handle completion
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Authentication failed');
+      setAuthLoading(false);
+    }
+  };
 
   const handleGoogleAuth = async () => {
     setAuthLoading(true);
@@ -242,10 +273,72 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
   // Slide 2: Auth - "Identify Yourself"
   const renderSlide2 = () => (
     <>
-      <h2 style={styles.heading}>Identify Yourself</h2>
-      <p style={styles.text}>
-        Sign in to sync your progress across devices.
+      <div style={styles.logoBadge}>
+        <img 
+          src="./logo.png" 
+          alt="Visnly" 
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          onError={(e) => {
+            // Fallback to text if image not found
+            const target = e.currentTarget;
+            target.style.display = 'none';
+            if (target.parentElement) {
+              target.parentElement.textContent = 'V';
+            }
+          }}
+        />
+      </div>
+      <h1 style={styles.title}>Identify Yourself</h1>
+      <p style={styles.subtitle}>
+        {isSignUp ? "Create an account" : "Sign in to sync your progress across devices."}
       </p>
+
+      {authError && (
+        <div style={styles.authError}>
+          {authError}
+        </div>
+      )}
+
+      {/* Email/Password Form */}
+      <div style={styles.authForm}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
+          style={styles.authInput}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
+          style={styles.authInput}
+        />
+        <button
+          onClick={handleEmailAuth}
+          disabled={authLoading || !email || !password}
+          className="start-session-button"
+          style={{
+            width: '100%',
+            maxWidth: '320px',
+            marginBottom: '16px',
+            opacity: (authLoading || !email || !password) ? 0.5 : 1,
+            cursor: (authLoading || !email || !password) ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {authLoading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Create Account" : "Sign In")}
+        </button>
+      </div>
+
+      <div style={styles.authDivider}>
+        <div style={styles.authDividerLine}></div>
+        <span style={styles.authDividerText}>Or continue with</span>
+        <div style={styles.authDividerLine}></div>
+      </div>
+
       <button
         onClick={handleGoogleAuth}
         disabled={authLoading}
@@ -273,34 +366,101 @@ const OnboardingFlow: React.FC<OnboardingProps> = ({ onComplete }) => {
           </>
         )}
       </button>
-      <button
-        onClick={handleNext}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: '#666',
-          cursor: 'pointer',
-          fontSize: '14px',
-          textDecoration: 'underline',
-          marginTop: '8px',
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        }}
-      >
-        Skip for now
-      </button>
+
+      <div style={styles.authToggle}>
+        {isSignUp ? (
+          <>
+            Already have an account?{" "}
+            <span onClick={() => setIsSignUp(false)} style={styles.authLink}>
+              Sign In
+            </span>
+          </>
+        ) : (
+          <>
+            Don't have an account?{" "}
+            <span onClick={() => setIsSignUp(true)} style={styles.authLink}>
+              Sign Up
+            </span>
+          </>
+        )}
+      </div>
     </>
   );
 
   const renderSlide2Visual = () => (
     <div style={styles.profileMock}>
-      <div style={styles.profileCard}>
-        <div style={styles.profileAvatar}>
-          <Icons.UserIcon size={48} color="rgba(135, 206, 250, 0.8)" />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes circleBorder {
+          0% { 
+            transform: rotate(0deg) translateY(-50px) rotate(0deg);
+          }
+          100% { 
+            transform: rotate(360deg) translateY(-50px) rotate(-360deg);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.5; }
+        }
+      `}} />
+      
+      {/* ID Card Container */}
+      <div style={styles.idCardContainer}>
+        {/* ID Card */}
+        <div style={styles.idCard}>
+          {/* ID Card Header */}
+          <div style={styles.idCardHeader}>
+            <div style={styles.idCardHeaderLine}></div>
+            <div style={styles.idCardHeaderLine}></div>
+          </div>
+          
+          {/* ID Card Content */}
+          <div style={styles.idCardContent}>
+            {/* Photo Area with Person Icon */}
+            <div style={styles.idCardPhoto}>
+              {/* Border with Circling Color Spot */}
+              <div style={styles.idCardPhotoBorder}>
+                <div style={styles.idCardPhotoBorderSpot}></div>
+              </div>
+              <div style={styles.idCardPhotoIcon}>
+                <Icons.UserIcon size={48} color="rgba(135, 206, 250, 0.7)" />
+              </div>
+            </div>
+            
+            {/* Details Section */}
+            <div style={styles.idCardDetails}>
+              {/* Name Line */}
+              <div style={styles.idCardDetailLine}>
+                <div style={styles.idCardLabel}>NAME</div>
+                <div style={{...styles.idCardValue, animationDelay: '0s'}}></div>
+              </div>
+              
+              {/* Email Line */}
+              <div style={styles.idCardDetailLine}>
+                <div style={styles.idCardLabel}>EMAIL</div>
+                <div style={{...styles.idCardValue, animationDelay: '0.2s'}}></div>
+              </div>
+              
+              {/* ID Line */}
+              <div style={styles.idCardDetailLine}>
+                <div style={styles.idCardLabel}>ID</div>
+                <div style={{...styles.idCardValue, animationDelay: '0.4s'}}></div>
+              </div>
+              
+              {/* Status Line */}
+              <div style={styles.idCardDetailLine}>
+                <div style={styles.idCardLabel}>STATUS</div>
+                <div style={{...styles.idCardValue, animationDelay: '0.6s'}}></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* ID Card Footer */}
+          <div style={styles.idCardFooter}>
+            <div style={styles.idCardFooterLine}></div>
+            <div style={styles.idCardFooterLine}></div>
+          </div>
         </div>
-        <div style={styles.profileLoader}>
-          <Icons.LoaderIcon size={24} color="rgba(135, 206, 250, 0.8)" />
-        </div>
-        <div style={styles.profileName}>Loading profile...</div>
       </div>
     </div>
   );
@@ -840,7 +1000,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '20px',
     color: '#aaa',
     lineHeight: '1.6',
-    marginBottom: '48px',
+    marginBottom: '32px',
     textAlign: 'center',
     fontWeight: 400,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -848,6 +1008,69 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '500px',
     marginLeft: 'auto',
     marginRight: 'auto'
+  },
+  authForm: {
+    width: '100%',
+    maxWidth: '320px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginBottom: '20px'
+  },
+  authInput: {
+    width: '100%',
+    padding: '12px 16px',
+    background: 'rgba(0,0,0,0.3)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '8px',
+    color: 'white',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  },
+  authError: {
+    width: '100%',
+    maxWidth: '320px',
+    padding: '10px 12px',
+    marginBottom: '16px',
+    background: 'rgba(255, 82, 82, 0.1)',
+    border: '1px solid rgba(255, 82, 82, 0.3)',
+    borderRadius: '8px',
+    color: '#ff5252',
+    fontSize: '13px',
+    textAlign: 'center'
+  },
+  authDivider: {
+    width: '100%',
+    maxWidth: '320px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '20px',
+    marginTop: '8px'
+  },
+  authDividerLine: {
+    flex: 1,
+    height: '1px',
+    background: 'rgba(255,255,255,0.1)'
+  },
+  authDividerText: {
+    fontSize: '12px',
+    color: '#666',
+    whiteSpace: 'nowrap'
+  },
+  authToggle: {
+    marginTop: '16px',
+    fontSize: '13px',
+    color: '#666',
+    textAlign: 'center'
+  },
+  authLink: {
+    color: 'rgba(135, 206, 250, 0.9)',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    fontWeight: 500
   },
 
   text: {
@@ -1162,40 +1385,376 @@ const styles: Record<string, React.CSSProperties> = {
   profileMock: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden'
+  },
+
+  idCardContainer: {
+    position: 'relative',
+    width: '380px',
+    height: '240px',
+    display: 'flex',
+    alignItems: 'center',
     justifyContent: 'center'
   },
 
-  profileCard: {
-    width: '280px',
-    padding: '32px',
-    background: 'rgba(20,20,20,0.9)',
+  idCard: {
+    position: 'relative',
+    width: '380px',
+    height: '240px',
+    background: 'rgba(20, 20, 20, 0.95)',
     borderRadius: '16px',
-    border: '1px solid rgba(255,255,255,0.1)',
+    border: '2px solid rgba(135, 206, 250, 0.2)',
+    padding: '20px',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    gap: '20px'
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 40px rgba(135, 206, 250, 0.1)',
+    overflow: 'hidden'
   },
 
-  profileAvatar: {
-    width: '80px',
-    height: '80px',
+  idCardHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    marginBottom: '16px',
+    paddingBottom: '12px',
+    borderBottom: '1px solid rgba(255,255,255,0.1)'
+  },
+
+  idCardHeaderLine: {
+    height: '8px',
+    background: 'rgba(255,255,255,0.08)',
+    borderRadius: '4px',
+    animation: 'pulse 2s ease-in-out infinite'
+  },
+
+  idCardContent: {
+    display: 'flex',
+    gap: '20px',
+    flex: 1
+  },
+
+  idCardPhoto: {
+    width: '100px',
+    height: '100px',
+    background: 'rgba(135, 206, 250, 0.08)',
     borderRadius: '50%',
-    background: 'rgba(255,255,255,0.15)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '2px solid rgba(255,255,255,0.3)'
+    position: 'relative',
+    flexShrink: 0,
+    overflow: 'visible',
+    marginBottom: '10px'
   },
 
-  profileLoader: {
-    animation: 'spin 1s linear infinite'
+  idCardPhotoBorder: {
+    position: 'absolute',
+    width: '100px',
+    height: '100px',
+    borderRadius: '50%',
+    border: '2px solid rgba(135, 206, 250, 0.2)',
+    top: 0,
+    left: 0,
+    zIndex: 0
+  },
+
+  idCardPhotoBorderSpot: {
+    position: 'absolute',
+    width: '24px',
+    height: '4px',
+    background: 'rgba(135, 206, 250, 0.9)',
+    borderRadius: '2px',
+    boxShadow: '0 0 12px rgba(135, 206, 250, 0.8)',
+    animation: 'circleBorder 3s linear infinite',
+    zIndex: 1,
+    top: '50%',
+    left: '50%',
+    transformOrigin: '0 0'
+  },
+
+  idCardPhotoIcon: {
+    position: 'relative',
+    zIndex: 1
+  },
+
+  idCardDetails: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    justifyContent: 'center'
+  },
+
+  idCardDetailLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+
+  idCardLabel: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: 'rgba(255,255,255,0.4)',
+    letterSpacing: '1px',
+    textTransform: 'uppercase',
+    minWidth: '50px',
+    fontFamily: 'monospace'
+  },
+
+  idCardValue: {
+    flex: 1,
+    height: '12px',
+    background: 'rgba(255,255,255,0.06)',
+    borderRadius: '3px',
+    animation: 'pulse 2s ease-in-out infinite',
+    animationDelay: '0.3s'
+  },
+
+  idCardFooter: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    marginTop: '12px',
+    paddingTop: '12px',
+    borderTop: '1px solid rgba(255,255,255,0.1)'
+  },
+
+  idCardFooterLine: {
+    height: '6px',
+    background: 'rgba(255,255,255,0.06)',
+    borderRadius: '3px',
+    animation: 'pulse 2s ease-in-out infinite',
+    animationDelay: '0.6s'
+  },
+
+  // Data Stream Particles
+  dataStream1: {
+    position: 'absolute',
+    width: '2px',
+    height: '60px',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.8), transparent)',
+    left: '20%',
+    top: '-60px',
+    animation: 'dataStream 3s ease-in-out infinite',
+    boxShadow: '0 0 10px rgba(135, 206, 250, 0.5)'
+  },
+  dataStream2: {
+    position: 'absolute',
+    width: '2px',
+    height: '60px',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.6), transparent)',
+    left: '35%',
+    top: '-60px',
+    animation: 'dataStream 3s ease-in-out infinite 0.5s',
+    boxShadow: '0 0 10px rgba(135, 206, 250, 0.4)'
+  },
+  dataStream3: {
+    position: 'absolute',
+    width: '2px',
+    height: '60px',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.7), transparent)',
+    left: '50%',
+    top: '-60px',
+    animation: 'dataStream 3s ease-in-out infinite 1s',
+    boxShadow: '0 0 10px rgba(135, 206, 250, 0.45)'
+  },
+  dataStream4: {
+    position: 'absolute',
+    width: '2px',
+    height: '60px',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.5), transparent)',
+    left: '65%',
+    top: '-60px',
+    animation: 'dataStream 3s ease-in-out infinite 1.5s',
+    boxShadow: '0 0 10px rgba(135, 206, 250, 0.35)'
+  },
+  dataStream5: {
+    position: 'absolute',
+    width: '2px',
+    height: '60px',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.6), transparent)',
+    left: '80%',
+    top: '-60px',
+    animation: 'dataStream 3s ease-in-out infinite 2s',
+    boxShadow: '0 0 10px rgba(135, 206, 250, 0.4)'
+  },
+
+  // Floating Data Particles
+  dataParticle1: {
+    position: 'absolute',
+    fontSize: '24px',
+    left: '15%',
+    top: '20%',
+    animation: 'particleFloat 4s ease-in-out infinite',
+    opacity: 0.6
+  },
+  dataParticle2: {
+    position: 'absolute',
+    fontSize: '20px',
+    left: '75%',
+    top: '30%',
+    animation: 'particleFloat 4s ease-in-out infinite 1s',
+    opacity: 0.5
+  },
+  dataParticle3: {
+    position: 'absolute',
+    fontSize: '22px',
+    left: '25%',
+    top: '70%',
+    animation: 'particleFloat 4s ease-in-out infinite 2s',
+    opacity: 0.6
+  },
+  dataParticle4: {
+    position: 'absolute',
+    fontSize: '18px',
+    left: '80%',
+    top: '75%',
+    animation: 'particleFloat 4s ease-in-out infinite 3s',
+    opacity: 0.5
+  },
+
+  profileCard: {
+    width: '320px',
+    padding: '40px',
+    background: 'rgba(20,20,20,0.95)',
+    borderRadius: '20px',
+    border: '1px solid rgba(135, 206, 250, 0.3)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '24px',
+    position: 'relative',
+    overflow: 'hidden',
+    animation: 'cardGlow 2s ease-in-out infinite',
+    boxShadow: '0 0 30px rgba(135, 206, 250, 0.3), 0 0 60px rgba(135, 206, 250, 0.2)'
+  },
+
+  hologramShimmer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'linear-gradient(90deg, transparent 0%, rgba(135, 206, 250, 0.1) 50%, transparent 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'hologramShimmer 3s ease-in-out infinite',
+    pointerEvents: 'none',
+    borderRadius: '20px'
+  },
+
+  profileScanBeam: {
+    position: 'absolute',
+    top: '-10%',
+    left: 0,
+    right: 0,
+    height: '3px',
+    background: 'linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.8), transparent)',
+    animation: 'profileScan 2s ease-in-out infinite',
+    boxShadow: '0 0 20px rgba(135, 206, 250, 0.6)',
+    borderRadius: '2px'
+  },
+
+  profileAvatar: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '50%',
+    background: 'rgba(135, 206, 250, 0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '2px solid rgba(135, 206, 250, 0.4)',
+    position: 'relative',
+    animation: 'profilePulse 2s ease-in-out infinite',
+    boxShadow: '0 0 30px rgba(135, 206, 250, 0.3), inset 0 0 20px rgba(135, 206, 250, 0.1)'
+  },
+
+  avatarInner: {
+    position: 'relative',
+    zIndex: 2
+  },
+
+  avatarRing: {
+    position: 'absolute',
+    top: '-4px',
+    left: '-4px',
+    right: '-4px',
+    bottom: '-4px',
+    borderRadius: '50%',
+    border: '2px solid rgba(135, 206, 250, 0.3)',
+    borderTopColor: 'rgba(135, 206, 250, 0.8)',
+    animation: 'spin 2s linear infinite',
+    zIndex: 1
+  },
+
+  profileLoaderContainer: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  loaderDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: 'rgba(135, 206, 250, 0.8)',
+    animation: 'bounce 1.4s ease-in-out infinite',
+    boxShadow: '0 0 10px rgba(135, 206, 250, 0.5)'
+  },
+
+  profileNameContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px'
   },
 
   profileName: {
-    fontSize: '16px',
-    color: '#888',
-    fontWeight: 500
+    fontSize: '18px',
+    color: '#fff',
+    fontWeight: 600,
+    letterSpacing: '0.5px'
+  },
+
+  profileSubtext: {
+    fontSize: '14px',
+    color: 'rgba(135, 206, 250, 0.7)',
+    fontWeight: 400
+  },
+
+  profileProgressBar: {
+    width: '100%',
+    height: '4px',
+    background: 'rgba(255,255,255,0.1)',
+    borderRadius: '2px',
+    overflow: 'hidden',
+    position: 'relative'
+  },
+
+  profileProgressFill: {
+    height: '100%',
+    width: '60%',
+    background: 'linear-gradient(90deg, rgba(135, 206, 250, 0.6), rgba(135, 206, 250, 0.9))',
+    borderRadius: '2px',
+    animation: 'profilePulse 2s ease-in-out infinite',
+    boxShadow: '0 0 10px rgba(135, 206, 250, 0.6)'
+  },
+
+  profileGlow: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '200%',
+    height: '200%',
+    background: 'radial-gradient(circle, rgba(135, 206, 250, 0.1) 0%, transparent 70%)',
+    animation: 'profilePulse 3s ease-in-out infinite',
+    pointerEvents: 'none',
+    zIndex: 0
   },
 
   // Slide 3 Visual - Persona Adapt

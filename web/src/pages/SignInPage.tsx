@@ -9,6 +9,10 @@ import { Loader2 } from 'lucide-react';
 
 export const SignInPage = () => {
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || 'account';
@@ -23,6 +27,38 @@ export const SignInPage = () => {
       });
     }
   }, [navigate, redirectTo]);
+
+  const handleEmailAuth = async () => {
+    if (!supabase) {
+      alert('Authentication not available');
+      return;
+    }
+
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert("Check your email for the confirmation link!");
+        setIsSignUp(false);
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        navigate(redirectTo === 'pricing' ? '/pricing' : '/account');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     if (!supabase) {
@@ -79,8 +115,57 @@ export const SignInPage = () => {
             Welcome to Visnly
           </h1>
           <p className="text-gray-400 mb-8">
-            Sign in to access your account and purchase credits
+            {isSignUp ? "Create an account" : "Sign in to access your account and purchase credits"}
           </p>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Email/Password Form */}
+          <div className="space-y-4 mb-6">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-sky-500/50 focus:bg-white/10 transition-all"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-sky-500/50 focus:bg-white/10 transition-all"
+            />
+            <button
+              onClick={handleEmailAuth}
+              disabled={loading || !email || !password}
+              className="w-full py-3 rounded-xl font-semibold text-base bg-sky-500/80 hover:bg-sky-500 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                  {isSignUp ? "Creating account..." : "Signing in..."}
+                </>
+              ) : (
+                isSignUp ? "Create Account" : "Sign In"
+              )}
+            </button>
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-black/40 text-gray-400">Or continue with</span>
+            </div>
+          </div>
 
           <button
             onClick={handleGoogleSignIn}
@@ -104,6 +189,24 @@ export const SignInPage = () => {
               </>
             )}
           </button>
+
+          <div className="mt-6 text-center text-sm text-gray-400">
+            {isSignUp ? (
+              <>
+                Already have an account?{" "}
+                <button onClick={() => setIsSignUp(false)} className="text-sky-400 hover:text-sky-300 underline">
+                  Sign In
+                </button>
+              </>
+            ) : (
+              <>
+                Don't have an account?{" "}
+                <button onClick={() => setIsSignUp(true)} className="text-sky-400 hover:text-sky-300 underline">
+                  Sign Up
+                </button>
+              </>
+            )}
+          </div>
 
           <p className="text-xs text-gray-500 mt-6">
             By signing in, you agree to our Terms of Service and Privacy Policy

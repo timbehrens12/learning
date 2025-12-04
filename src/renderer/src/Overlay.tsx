@@ -48,6 +48,19 @@ const Overlay: React.FC = () => {
   const [isAudioDetected, setIsAudioDetected] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [lastScanPreview, setLastScanPreview] = useState<string>("");
+  
+  // Auto-scan state
+  const [autoScanEnabled, setAutoScanEnabled] = useState(() => {
+    const saved = localStorage.getItem('auto_scan_enabled');
+    return saved !== null ? saved === 'true' : false;
+  });
+  const [autoScanInterval, setAutoScanInterval] = useState(() => {
+    const saved = localStorage.getItem('auto_scan_interval');
+    return saved ? parseInt(saved, 10) : 10;
+  });
+  const [lastScanHash, setLastScanHash] = useState<string>("");
+  const [lastScanTime, setLastScanTime] = useState<number>(0);
+  const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Notes tab state
   const [notesState, setNotesState] = useState<NotesState>({
@@ -319,7 +332,7 @@ const Overlay: React.FC = () => {
   };
 
   // Logic Helpers - Screen Capture and OCR
-  const scanScreen = useCallback(async (): Promise<string | null> => {
+  const scanScreen = useCallback(async (forceFresh: boolean = false): Promise<string | null> => {
     try {
       setIsScanning(true);
       setScanError(null);
@@ -359,14 +372,33 @@ const Overlay: React.FC = () => {
 
             stream.getTracks().forEach(track => track.stop());
 
+            // Calculate hash of canvas content for change detection
+            const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
+            let hash = '';
+            if (imageData) {
+              // Simple hash: sum of pixel values (fast approximation)
+              const data = imageData.data;
+              let sum = 0;
+              for (let i = 0; i < data.length; i += 4) {
+                sum += data[i] + data[i + 1] + data[i + 2]; // RGB only
+              }
+              hash = sum.toString();
+            }
+
             const { data: { text } } = await Tesseract.recognize(canvas, 'eng', { logger: () => { } });
             const cleanedText = text?.trim() || '';
 
             if (cleanedText.length > 0) {
-              setScannedText(cleanedText);
-              setLastScanned(new Date().toLocaleTimeString());
-              setLastScanPreview(cleanedText.substring(0, 100) + (cleanedText.length > 100 ? '...' : ''));
-              try { localStorage.setItem('last_session_context', cleanedText); } catch { }
+            // Only update if content actually changed (hash different) or forced scan
+            const contentChanged = hash !== lastScanHash || forceFresh;
+            if (contentChanged || !lastScanHash) {
+                setScannedText(cleanedText);
+                setLastScanHash(hash);
+                setLastScanTime(Date.now());
+                setLastScanned(new Date().toLocaleTimeString());
+                setLastScanPreview(cleanedText.substring(0, 100) + (cleanedText.length > 100 ? '...' : ''));
+                try { localStorage.setItem('last_session_context', cleanedText); } catch { }
+              }
               setIsScanning(false);
               resolve(cleanedText);
             } else {
@@ -391,7 +423,7 @@ const Overlay: React.FC = () => {
       setIsScanning(false);
       return null;
     }
-  }, []);
+  }, [lastScanHash]);
 
   const runAI = async (selectedMode: string, promptOverride?: string) => {
     const contextPrompt = promptOverride || inputText || (selectedMode === 'Cheat' ? 'Give me the answer' : '');
@@ -477,7 +509,8 @@ const Overlay: React.FC = () => {
     }
 
     setMessages(prev => [...prev, { sender: 'system', text: "📷 Capturing...", timestamp }]);
-    const screenText = await scanScreen();
+    // Force fresh scan for manual actions
+    const screenText = await scanScreen(true);
 
     setMessages(prev => prev.filter(m => m.text !== "📷 Capturing..."));
 
@@ -1008,7 +1041,8 @@ const Overlay: React.FC = () => {
   const handleManualScan = useCallback(async () => {
     if (isScanning) return;
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const screenText = await scanScreen();
+    // Force fresh scan for manual actions
+    const screenText = await scanScreen(true);
     if (screenText) {
       setMessages(prev => [...prev, { sender: 'system', text: `📷 Captured ${screenText.split(/\s+/).length} words.`, timestamp }]);
     }
@@ -1038,6 +1072,13 @@ const Overlay: React.FC = () => {
   }, [handleClose, handleQuickAnalysis, handleManualScan]);
 
   return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes pulse {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+      `}} />
       <div style={styles.container}>
         {/* Background Tint */}
         <div style={styles.tintOverlay}></div>
@@ -1126,9 +1167,22 @@ const Overlay: React.FC = () => {
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     style={styles.input}
                   />
-                  <button onClick={() => scanScreen()} style={styles.actionBtn} title="Scan Screen">
-                    <EyeIcon size={16} color={isScanning ? '#0ea5e9' : '#888'} />
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <button onClick={() => scanScreen(true)} style={styles.actionBtn} title="Scan Screen">
+                      <EyeIcon size={16} color={isScanning ? '#0ea5e9' : '#888'} />
+                    </button>
+                    {lastScanTime > 0 && (
+                      <div style={{ fontSize: '10px', color: '#666', whiteSpace: 'nowrap' }}>
+                        {Math.floor((Date.now() - lastScanTime) / 1000)}s ago
+                      </div>
+                    )}
+                    {autoScanEnabled && isListening && (
+                      <div style={{ fontSize: '9px', color: 'rgba(135, 206, 250, 0.6)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(135, 206, 250, 0.6)', animation: isScanning ? 'pulse 1s ease-in-out infinite' : 'none' }}></div>
+                        Auto
+                      </div>
+                    )}
+                  </div>
                   <button onClick={handleSend} style={styles.sendBtn}>
                     <SendIcon size={16} color="#fff" />
                   </button>
@@ -1165,27 +1219,355 @@ const Overlay: React.FC = () => {
           {activeTab === 'notes' && (
             <div style={styles.tabContent}>
               <div style={styles.notesGrid}>
-                <button onClick={handleGenerateNotes} style={styles.noteCard}>
+                <button 
+                  onClick={handleGenerateNotes} 
+                  style={{...styles.noteCard, opacity: notesState.isLoading.simplifiedNotes ? 0.6 : 1}}
+                  disabled={notesState.isLoading.simplifiedNotes}
+                >
                   <FileTextIcon size={24} color="rgba(135, 206, 250, 0.8)" />
                   <span>Simplify</span>
                 </button>
-                <button onClick={handleExtractKeyConcepts} style={styles.noteCard}>
+                <button 
+                  onClick={handleExtractKeyConcepts} 
+                  style={{...styles.noteCard, opacity: notesState.isLoading.keyConcepts ? 0.6 : 1}}
+                  disabled={notesState.isLoading.keyConcepts}
+                >
                   <LightbulbIcon size={24} color="#f59e0b" />
                   <span>Concepts</span>
                 </button>
-                <button onClick={handleGenerateStudyGuide} style={styles.noteCard}>
+                <button 
+                  onClick={handleExtractMainPoints} 
+                  style={{...styles.noteCard, opacity: notesState.isLoading.mainPoints ? 0.6 : 1}}
+                  disabled={notesState.isLoading.mainPoints}
+                >
+                  <TargetIcon size={24} color="#10b981" />
+                  <span>Main Points</span>
+                </button>
+                <button 
+                  onClick={handleGenerateRecap} 
+                  style={{...styles.noteCard, opacity: notesState.isLoading.recap ? 0.6 : 1}}
+                  disabled={notesState.isLoading.recap}
+                >
+                  <ClipboardIcon size={24} color="#8b5cf6" />
+                  <span>Recap</span>
+                </button>
+                <button 
+                  onClick={handleGenerateStudyGuide} 
+                  style={{...styles.noteCard, opacity: notesState.isLoading.studyGuide ? 0.6 : 1}}
+                  disabled={notesState.isLoading.studyGuide}
+                >
                   <BookIcon size={24} color="#ec4899" />
-                  <span>Guide</span>
+                  <span>Study Guide</span>
+                </button>
+                <button 
+                  onClick={handleExtractFormulas} 
+                  style={{...styles.noteCard, opacity: notesState.isLoading.formulas ? 0.6 : 1}}
+                  disabled={notesState.isLoading.formulas}
+                >
+                  <HashIcon size={24} color="#f97316" />
+                  <span>Formulas</span>
                 </button>
               </div>
+              
+              {/* Advanced Analysis Section */}
+              <div style={styles.notesSection}>
+                <div style={styles.sectionHeader}>Advanced Analysis</div>
+                <div style={styles.notesGrid}>
+                  <button 
+                    onClick={handleDetectTestWorthy} 
+                    style={{...styles.noteCard, opacity: notesState.isLoading.testWorthy ? 0.6 : 1}}
+                    disabled={notesState.isLoading.testWorthy}
+                  >
+                    <StarIcon size={24} color="#fbbf24" />
+                    <span>Test Topics</span>
+                  </button>
+                  <button 
+                    onClick={handleDetectConfusing} 
+                    style={{...styles.noteCard, opacity: notesState.isLoading.confusing ? 0.6 : 1}}
+                    disabled={notesState.isLoading.confusing}
+                  >
+                    <HelpCircleIcon size={24} color="#ef4444" />
+                    <span>Confusing</span>
+                  </button>
+                  <button 
+                    onClick={handleGenerateTimeline} 
+                    style={{...styles.noteCard, opacity: notesState.isLoading.timeline ? 0.6 : 1}}
+                    disabled={notesState.isLoading.timeline}
+                  >
+                    <ListIcon size={24} color="#06b6d4" />
+                    <span>Timeline</span>
+                  </button>
+                  <button 
+                    onClick={handleAnalyzeTranscript} 
+                    style={{...styles.noteCard, opacity: isAnalyzingTranscript ? 0.6 : 1}}
+                    disabled={isAnalyzingTranscript}
+                  >
+                    <ZapIcon size={24} color="#a855f7" />
+                    <span>Analyze</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Results Display */}
               <div style={styles.notesOutput}>
+                {/* Simplified Notes */}
                 {notesState.simplifiedNotes && (
                   <div style={styles.noteResult}>
-                    <div style={styles.noteHeader}>Simplified Notes</div>
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{notesState.simplifiedNotes}</div>
+                    <div style={styles.noteHeader}>
+                      Simplified Notes
+                      <button onClick={() => handleCopyNotesContent(notesState.simplifiedNotes)} style={styles.copyBtn}>
+                        <CopyIcon size={14} color="#888" />
+                      </button>
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', color: '#ccc' }}>{notesState.simplifiedNotes}</div>
                   </div>
                 )}
-                {/* Add other note results as needed */}
+
+                {/* Key Concepts */}
+                {notesState.keyConcepts.length > 0 && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Key Concepts</div>
+                    <div style={styles.conceptsList}>
+                      {notesState.keyConcepts.map((concept, i) => (
+                        <div key={i} style={styles.conceptItem}>{concept}</div>
+                      ))}
+                    </div>
+                    {notesState.definitions.length > 0 && (
+                      <div style={{ marginTop: '16px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#fff' }}>Definitions:</div>
+                        {notesState.definitions.map((def, i) => (
+                          <div key={i} style={styles.definitionItem}>
+                            <strong style={{ color: 'rgba(135, 206, 250, 0.9)' }}>{def.term}:</strong> {def.definition}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Main Points */}
+                {notesState.mainPoints.length > 0 && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Main Points</div>
+                    <ul style={styles.pointsList}>
+                      {notesState.mainPoints.map((point, i) => (
+                        <li key={i} style={styles.pointItem}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Recap */}
+                {notesState.recap && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Recap</div>
+                    <div style={{ marginBottom: '16px', color: '#ccc' }}>{notesState.recap.summary}</div>
+                    {notesState.recap.reviewTopics.length > 0 && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Review Topics:</div>
+                        <ul style={styles.pointsList}>
+                          {notesState.recap.reviewTopics.map((topic, i) => (
+                            <li key={i} style={styles.pointItem}>{topic}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {notesState.recap.nextSteps.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Next Steps:</div>
+                        <ul style={styles.pointsList}>
+                          {notesState.recap.nextSteps.map((step, i) => (
+                            <li key={i} style={styles.pointItem}>{step}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Study Guide */}
+                {notesState.studyGuide && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>{notesState.studyGuide.title}</div>
+                    {notesState.studyGuide.keyConcepts.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#fff' }}>Key Concepts:</div>
+                        <div style={styles.conceptsList}>
+                          {notesState.studyGuide.keyConcepts.map((concept, i) => (
+                            <div key={i} style={styles.conceptItem}>{concept}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {notesState.studyGuide.formulas.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#fff' }}>Formulas:</div>
+                        <ul style={styles.pointsList}>
+                          {notesState.studyGuide.formulas.map((formula, i) => (
+                            <li key={i} style={{...styles.pointItem, fontFamily: 'monospace' }}>{formula}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {notesState.studyGuide.mainTakeaways.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#fff' }}>Main Takeaways:</div>
+                        <ul style={styles.pointsList}>
+                          {notesState.studyGuide.mainTakeaways.map((takeaway, i) => (
+                            <li key={i} style={styles.pointItem}>{takeaway}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {notesState.studyGuide.testLikelyTopics.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#fbbf24' }}>Test-Likely Topics:</div>
+                        <ul style={styles.pointsList}>
+                          {notesState.studyGuide.testLikelyTopics.map((topic, i) => (
+                            <li key={i} style={styles.pointItem}>{topic}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {notesState.studyGuide.studyTips.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#10b981' }}>Study Tips:</div>
+                        <ul style={styles.pointsList}>
+                          {notesState.studyGuide.studyTips.map((tip, i) => (
+                            <li key={i} style={styles.pointItem}>{tip}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Formulas */}
+                {extractedFormulas.length > 0 && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Extracted Formulas</div>
+                    {extractedFormulas.map((formula, i) => (
+                      <div key={i} style={styles.formulaItem}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 600, color: '#fff', marginBottom: '4px' }}>
+                          {formula.formula}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#999' }}>{formula.explanation}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Test-Worthy Sections */}
+                {testWorthySections && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Test-Worthy Sections</div>
+                    <div style={{ marginBottom: '12px', color: '#ccc', fontSize: '13px' }}>{testWorthySections.summary}</div>
+                    {testWorthySections.sections.map((section, i) => (
+                      <div key={i} style={styles.sectionItem}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ 
+                            fontSize: '10px', 
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            backgroundColor: section.confidence === 'certain' ? 'rgba(239, 68, 68, 0.2)' : 
+                                           section.confidence === 'very_likely' ? 'rgba(251, 191, 36, 0.2)' : 
+                                           'rgba(135, 206, 250, 0.2)',
+                            color: section.confidence === 'certain' ? '#ef4444' : 
+                                   section.confidence === 'very_likely' ? '#fbbf24' : 
+                                   'rgba(135, 206, 250, 0.9)'
+                          }}>
+                            {section.confidence.toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ color: '#ccc', marginBottom: '4px' }}>{section.text}</div>
+                        <div style={{ fontSize: '12px', color: '#888' }}>{section.reason}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Confusing Sections */}
+                {confusingSections && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Confusing Sections</div>
+                    <div style={{ marginBottom: '12px', color: '#ccc', fontSize: '13px' }}>{confusingSections.overallClarity}</div>
+                    {confusingSections.sections.map((section, i) => (
+                      <div key={i} style={styles.sectionItem}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ 
+                            fontSize: '10px', 
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            backgroundColor: section.severity === 'significant' ? 'rgba(239, 68, 68, 0.2)' : 
+                                           section.severity === 'moderate' ? 'rgba(251, 191, 36, 0.2)' : 
+                                           'rgba(135, 206, 250, 0.2)',
+                            color: section.severity === 'significant' ? '#ef4444' : 
+                                   section.severity === 'moderate' ? '#fbbf24' : 
+                                   'rgba(135, 206, 250, 0.9)'
+                          }}>
+                            {section.severity.toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ color: '#ccc', marginBottom: '4px' }}>{section.text}</div>
+                        <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>{section.reason}</div>
+                        <div style={{ fontSize: '12px', color: '#10b981' }}>💡 {section.suggestion}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Topic Timeline */}
+                {topicTimeline && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Topic Timeline ({topicTimeline.totalTopics} topics)</div>
+                    <div style={styles.timelineContainer}>
+                      {topicTimeline.timeline.map((item, i) => (
+                        <div key={i} style={styles.timelineItem}>
+                          <div style={styles.timelineTime}>{item.time}</div>
+                          <div style={styles.timelineContent}>
+                            <div style={{ fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{item.topic}</div>
+                            <div style={{ fontSize: '11px', color: '#888' }}>{item.type}{item.duration ? ` • ${item.duration}` : ''}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Segment Analysis */}
+                {segmentAnalysis.length > 0 && (
+                  <div style={styles.noteResult}>
+                    <div style={styles.noteHeader}>Transcript Analysis</div>
+                    <div style={{ marginBottom: '12px', fontSize: '12px', color: '#888' }}>
+                      {segmentAnalysis.filter(a => a.isTestWorthy).length} test-worthy, {segmentAnalysis.filter(a => a.isConfusing).length} confusing sections
+                    </div>
+                    {segmentAnalysis.map((analysis, i) => (
+                      <div key={i} style={styles.analysisItem}>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                          {analysis.isTestWorthy && (
+                            <span style={styles.tagBadge} style={{ backgroundColor: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24' }}>
+                              Test-Worthy
+                            </span>
+                          )}
+                          {analysis.isConfusing && (
+                            <span style={styles.tagBadge} style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }}>
+                              Confusing
+                            </span>
+                          )}
+                          {analysis.importance && (
+                            <span style={styles.tagBadge} style={{ backgroundColor: 'rgba(135, 206, 250, 0.2)', color: 'rgba(135, 206, 250, 0.9)' }}>
+                              {analysis.importance}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ color: '#ccc', fontSize: '13px' }}>{analysis.text}</div>
+                        {analysis.explanation && (
+                          <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>{analysis.explanation}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1205,8 +1587,9 @@ const Overlay: React.FC = () => {
           </button>
         </div>
       </div>
-    );
-  };
+    </>
+  );
+};
 
   const styles: Record<string, React.CSSProperties> = {
     container: {
@@ -1314,11 +1697,109 @@ const Overlay: React.FC = () => {
     noteCard: {
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
       padding: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
-      borderRadius: '12px', cursor: 'pointer', color: '#ccc', fontSize: '12px'
+      borderRadius: '12px', cursor: 'pointer', color: '#ccc', fontSize: '12px',
+      transition: 'all 0.2s', border: 'none'
     },
-    notesOutput: { flex: 1, overflowY: 'auto', padding: '16px' },
-    noteResult: { background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', fontSize: '13px', lineHeight: '1.6', color: '#ccc' },
-    noteHeader: { fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#fff' }
+    notesSection: { marginTop: '24px', padding: '0 16px' },
+    sectionHeader: { fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' },
+    notesOutput: { flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' },
+    noteResult: { 
+      background: 'rgba(255,255,255,0.03)', 
+      padding: '16px', 
+      borderRadius: '12px', 
+      fontSize: '13px', 
+      lineHeight: '1.6', 
+      color: '#ccc',
+      border: '1px solid rgba(255,255,255,0.05)'
+    },
+    noteHeader: { 
+      fontSize: '14px', 
+      fontWeight: 600, 
+      marginBottom: '12px', 
+      color: '#fff',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    },
+    copyBtn: {
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '4px',
+      borderRadius: '4px',
+      display: 'flex',
+      alignItems: 'center',
+      opacity: 0.6,
+      transition: 'opacity 0.2s'
+    },
+    conceptsList: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
+    conceptItem: {
+      padding: '6px 12px',
+      background: 'rgba(135, 206, 250, 0.1)',
+      border: '1px solid rgba(135, 206, 250, 0.2)',
+      borderRadius: '6px',
+      fontSize: '12px',
+      color: 'rgba(135, 206, 250, 0.9)'
+    },
+    definitionItem: {
+      padding: '8px',
+      marginBottom: '6px',
+      background: 'rgba(255,255,255,0.02)',
+      borderRadius: '6px',
+      fontSize: '12px',
+      lineHeight: '1.5'
+    },
+    pointsList: { listStyle: 'none', padding: 0, margin: 0 },
+    pointItem: {
+      padding: '8px 0',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      fontSize: '13px',
+      lineHeight: '1.6'
+    },
+    formulaItem: {
+      padding: '12px',
+      marginBottom: '12px',
+      background: 'rgba(255,255,255,0.02)',
+      borderRadius: '8px',
+      border: '1px solid rgba(135, 206, 250, 0.1)'
+    },
+    sectionItem: {
+      padding: '12px',
+      marginBottom: '12px',
+      background: 'rgba(255,255,255,0.02)',
+      borderRadius: '8px',
+      border: '1px solid rgba(255,255,255,0.05)'
+    },
+    timelineContainer: { display: 'flex', flexDirection: 'column', gap: '12px' },
+    timelineItem: {
+      display: 'flex',
+      gap: '12px',
+      padding: '12px',
+      background: 'rgba(255,255,255,0.02)',
+      borderRadius: '8px',
+      borderLeft: '3px solid rgba(135, 206, 250, 0.3)'
+    },
+    timelineTime: {
+      fontSize: '11px',
+      color: '#888',
+      fontWeight: 600,
+      minWidth: '60px',
+      fontFamily: 'monospace'
+    },
+    timelineContent: { flex: 1 },
+    analysisItem: {
+      padding: '12px',
+      marginBottom: '12px',
+      background: 'rgba(255,255,255,0.02)',
+      borderRadius: '8px',
+      border: '1px solid rgba(255,255,255,0.05)'
+    },
+    tagBadge: {
+      fontSize: '10px',
+      padding: '3px 8px',
+      borderRadius: '4px',
+      fontWeight: 600
+    }
   };
 
   export default Overlay;

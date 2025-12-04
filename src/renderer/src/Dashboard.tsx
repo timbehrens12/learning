@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import GlassCard from './components/GlassCard';
 import LiquidBackground from './components/LiquidBackground';
 import SettingsModal from './components/SettingsModal';
 import { supabase, userCredits as userCreditsService } from './lib/supabase';
-import { UserIcon, UserPlusIcon, CreditCardIcon, HelpCircleIcon, SettingsIcon, InstagramIcon, XLogoIcon, DiscordIcon } from './components/Icons';
+import { UserIcon, UserPlusIcon, CreditCardIcon, SettingsIcon, InstagramIcon, XLogoIcon, DiscordIcon } from './components/Icons';
 
 // --- Types ---
 
@@ -19,40 +17,32 @@ interface Session {
 const INITIAL_SESSIONS: Session[] = [
   { id: 1, title: "Calc 2 Homework", mode: "Solve", duration: "18m", time: "3:11 PM" },
   { id: 2, title: "Biology Lecture", mode: "Study", duration: "42m", time: "1:05 PM" },
-  { id: 99, title: "OSPF Lab Quiz", mode: "Cheat", duration: "5m", time: "10:30 AM" }
+  { id: 99, title: "OSPF Lab Quiz", mode: "Cheat", duration: "5m", time: "10:30 AM" },
 ];
 
 const Dashboard: React.FC = () => {
-  const { t } = useTranslation();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [selectedMode] = useState("Study"); // Keep for session creation, but no UI
+  const [selectedMode] = useState("Study");
   const [isDetectable, setIsDetectable] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [userCredits, setUserCredits] = useState<{ credits: number; plan: string } | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-
 
   // Session State
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [sessions, setSessions] = useState<Session[]>(() => {
-    // Load sessions from localStorage or use initial (only for pro users)
     const saved = localStorage.getItem('user_sessions');
     const isPro = userCredits?.plan === 'pro' || userCredits?.plan === 'unlimited';
     if (saved) {
       return JSON.parse(saved);
     }
-    // Free users start with empty sessions, pro users get initial mock data
     return isPro ? INITIAL_SESSIONS : [];
   });
-  // Check if user is pro
-  const isProUser = userCredits?.plan === 'pro' || userCredits?.plan === 'unlimited';
-
-  // Check if user has credits available
+  
   const hasCredits = userCredits && (userCredits.plan === 'unlimited' || userCredits.credits > 0);
 
   // Close dropdowns when clicking outside
@@ -75,34 +65,28 @@ const Dashboard: React.FC = () => {
   // Load Cheat mode visibility setting
   const [showCheatMode, setShowCheatMode] = useState(() => {
     const saved = localStorage.getItem('show_cheat_mode');
-    return saved !== null ? saved === 'true' : true; // Default to showing
+    return saved !== null ? saved === 'true' : true;
   });
 
-  // Update Cheat mode visibility when setting changes
   useEffect(() => {
     const handleStorageChange = () => {
       const saved = localStorage.getItem('show_cheat_mode');
       const newValue = saved !== null ? saved === 'true' : true;
       setShowCheatMode(newValue);
-      // If Cheat was selected and now hidden, switch to Study
-      // If Cheat mode is hidden, selectedMode will default to 'Study' on next session
     };
 
     const handleCustomEvent = (e: CustomEvent) => {
       const newValue = e.detail;
       setShowCheatMode(newValue);
-      // If Cheat mode is hidden, selectedMode will default to 'Study' on next session
     };
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('cheatModeSettingChanged', handleCustomEvent as EventListener);
 
-    // Also check on mount/update
     const saved = localStorage.getItem('show_cheat_mode');
     const newValue = saved !== null ? saved === 'true' : true;
     if (showCheatMode !== newValue) {
       setShowCheatMode(newValue);
-      // If Cheat mode is hidden, selectedMode will default to 'Study' on next session
     }
 
     return () => {
@@ -112,13 +96,6 @@ const Dashboard: React.FC = () => {
   }, [showCheatMode]);
 
   // Mode Colors Helper
-  const getModeColor = (mode: string) => {
-    if (mode === 'Study') return 'rgba(135, 206, 250, 0.8)'; // Sky blue
-    if (mode === 'Solve') return '#0ea5e9'; // Cyan
-    if (mode === 'Cheat') return '#ff5252'; // Red
-    return 'rgba(135, 206, 250, 0.8)'; // Default to Study color
-  };
-
 
   // Timer Logic
   useEffect(() => {
@@ -130,17 +107,14 @@ const Dashboard: React.FC = () => {
   }, [isSessionActive]);
 
   const handleStartSession = () => {
-    // Check if user has credits
-    if (!hasCredits) {
-      // User has no credits, could show a message or redirect to pricing
-      return;
-    }
-
+    if (!hasCredits) return;
     setIsSessionActive(true);
     setSessionStartTime(new Date());
     setElapsedSeconds(0);
-    // Send signal to Main process
-    (window as any).electron.ipcRenderer.send('open-overlay');
+    
+    if ((window as any).electron?.ipcRenderer) {
+       (window as any).electron.ipcRenderer.send('open-overlay');
+    }
   };
 
   const handleEndSession = () => {
@@ -157,60 +131,29 @@ const Dashboard: React.FC = () => {
             };
             return modeLabels[selectedMode] || 'Session';
           }
-
-          // Clean and extract meaningful title
           const lines = raw.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-
-          // Try to find a meaningful title (skip very short lines, URLs, etc.)
           let title = '';
           for (const line of lines) {
-            // Skip lines that are too short, URLs, or look like code/errors
-            if (line.length < 10 ||
-              line.startsWith('http') ||
-              line.includes('Error:') ||
-              line.match(/^[^a-zA-Z]*$/)) {
+            if (line.length < 10 || line.startsWith('http') || line.includes('Error:') || line.match(/^[^a-zA-Z]*$/)) {
               continue;
             }
-
-            // Take first meaningful line, but limit length
             title = line;
             break;
           }
-
-          // If no good title found, use first line anyway
-          if (!title && lines.length > 0) {
-            title = lines[0];
-          }
-
-          // Clean up the title
-          title = title
-            .replace(/\s+/g, ' ') // Multiple spaces to single
-            .replace(/[^\w\s\-.,:()]/g, '') // Remove special chars except common punctuation
-            .trim();
-
-          // Truncate if too long
-          if (title.length > 60) {
-            title = title.slice(0, 57) + '...';
-          }
-
-          // If still empty or too short, use mode-based default
+          if (!title && lines.length > 0) title = lines[0];
+          title = title.replace(/\s+/g, ' ').replace(/[^\w\s\-.,:()]/g, '').trim();
+          if (title.length > 60) title = title.slice(0, 57) + '...';
           if (!title || title.length < 3) {
-            const modeLabels: Record<string, string> = {
+             const modeLabels: Record<string, string> = {
               'Study': 'Study Session',
               'Solve': 'Problem Solving Session',
               'Cheat': 'Quick Answer Session'
             };
             return modeLabels[selectedMode] || 'Session';
           }
-
           return title;
         } catch {
-          const modeLabels: Record<string, string> = {
-            'Study': 'Study Session',
-            'Solve': 'Problem Solving Session',
-            'Cheat': 'Quick Answer Session'
-          };
-          return modeLabels[selectedMode] || 'Session';
+          return 'Session';
         }
       };
 
@@ -223,14 +166,12 @@ const Dashboard: React.FC = () => {
       };
       setSessions(prev => {
         const updated = [newSession, ...prev];
-        // Save to localStorage
         localStorage.setItem('user_sessions', JSON.stringify(updated));
         return updated;
       });
     }
   };
 
-  // Load sessions from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('user_sessions');
     if (saved) {
@@ -243,38 +184,20 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  // Load user data from Supabase
   const loadUserData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setUserId(user.id);
-      setUserEmail(user.email || "");
-      // Try to get display name from profiles table
       try {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116' && profileError.code !== '404') {
-          console.error('Profile fetch error:', profileError);
-        }
-
+        const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
         setUserName(profile?.display_name || user.email?.split('@')[0] || "");
-      } catch (error: any) {
-        if (error?.code !== 'PGRST116' && error?.status !== 404) {
-          console.error('Error loading profile:', error);
-        }
+      } catch (error) {
         setUserName(user.email?.split('@')[0] || "");
       }
-
-      // Load user credits
       try {
         const credits = await userCreditsService.getCredits(user.id);
         setUserCredits(credits);
       } catch (error) {
-        console.error('Failed to load credits:', error);
         setUserCredits({ credits: 25, plan: 'free' });
       }
     }
@@ -282,12 +205,9 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadUserData();
-
-    // Refresh credits periodically
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       loadUserData();
     });
-
     const creditsInterval = setInterval(() => {
       if (userId) {
         userCreditsService.getCredits(userId).then(credits => {
@@ -295,14 +215,12 @@ const Dashboard: React.FC = () => {
         }).catch(err => console.error('Failed to refresh credits:', err));
       }
     }, 5000);
-
     return () => {
       subscription.unsubscribe();
       clearInterval(creditsInterval);
     };
   }, [userId]);
 
-  // Helpers
   const formatDuration = (totalSeconds: number) => {
     const m = Math.floor(totalSeconds / 60);
     const s = totalSeconds % 60;
@@ -316,783 +234,1073 @@ const Dashboard: React.FC = () => {
     return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // HANDLE STEALTH MODE TOGGLE FROM DASHBOARD
   const toggleDetectability = () => {
     const newState = !isDetectable;
     setIsDetectable(newState);
-
-    // Send signal to Main Process
-    (window as any).electron?.ipcRenderer?.send('set-detectable', newState);
+    if ((window as any).electron?.ipcRenderer) {
+      (window as any).electron.ipcRenderer.send('set-detectable', newState);
+    }
   };
 
   return (
     <div style={styles.container}>
-      {/* Liquid Background like Overlay */}
       <LiquidBackground />
 
-      {/* Background Gradient Blob for visual flair */}
-      <div style={styles.backgroundBlob}></div>
-
-      {/* --- Top Bar --- */}
-      <header style={styles.topBar}>
-        <div style={styles.logo}>
-          <span style={{ color: '#fff' }}>Visnly</span>
+      {/* --- Sidebar Navigation --- */}
+      <aside style={styles.sidebar}>
+        {/* Brand */}
+        <div style={styles.brand}>
+          <div style={styles.brandLogo}>
+            <img src="./logo.png" alt="Visnly" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
+          </div>
+          <span style={styles.brandText}>Visnly</span>
         </div>
 
-        <div style={styles.controls}>
-
-          {/* Credit Display */}
-          {userCredits && (
-            <div style={{
-              ...styles.creditBadge,
-              background: userCredits.plan === 'unlimited'
-                ? 'linear-gradient(135deg, #10b981, #059669)'
-                : 'rgba(255,255,255,0.1)',
-              color: '#fff'
-            }}>
-              {userCredits.plan === 'unlimited' ? 'PRO' : `${userCredits.credits} credits`}
+        {/* Navigation Items */}
+        <nav style={styles.nav}>
+          <button style={styles.navButtonActive}>
+            <div style={styles.navIconActive}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </div>
-          )}
-
-          <button
-            onClick={toggleDetectability}
-            style={styles.dropdownButton}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.8)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(20, 20, 25, 0.65)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-          >
-            <div style={styles.toggleContainer}>
-              <div
-                style={{
-                  ...styles.toggleSwitch,
-                  backgroundColor: isDetectable ? '#d32f2f' : '#4caf50',
-                  transform: isDetectable ? 'translateX(0)' : 'translateX(18px)',
-                  boxShadow: isDetectable
-                    ? '0 0 8px rgba(211, 47, 47, 0.5)'
-                    : '0 0 8px rgba(76, 175, 80, 0.5)'
-                }}
-              />
-            </div>
-            <span>{isDetectable ? "Detectable" : "Undetectable"}</span>
+            <span style={styles.navText}>Dashboard</span>
           </button>
 
-          <div style={styles.profileContainer} ref={profileRef}>
-            <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              style={{
-                ...styles.profile,
-                backgroundColor: isProfileOpen ? 'rgba(255, 255, 255, 0.1)' : 'rgba(42, 42, 47, 0.6)'
-              }}
-              title="Profile"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.transform = 'scale(1.1)';
-                const icon = e.currentTarget.querySelector('svg');
-                if (icon) {
-                  icon.style.color = '#fff';
-                  icon.style.filter = 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isProfileOpen) {
-                  e.currentTarget.style.backgroundColor = 'rgba(42, 42, 47, 0.6)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                  const icon = e.currentTarget.querySelector('svg');
-                  if (icon) {
-                    icon.style.color = '#aaa';
-                    icon.style.filter = 'none';
-                  }
-                }
-              }}
-            >
-              <UserIcon size={18} color={isProfileOpen ? "#fff" : "#aaa"} />
-            </button>
+          <button style={styles.navButton}>
+            <div style={styles.navIcon}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <span style={styles.navText}>Activity</span>
+          </button>
 
+          <button 
+            onClick={() => setShowSettingsModal(true)}
+            style={styles.navButton}
+          >
+            <div style={styles.navIcon}>
+              <SettingsIcon size={20} />
+            </div>
+            <span style={styles.navText}>Settings</span>
+          </button>
+        </nav>
+
+        {/* User Mini Profile (Bottom Sidebar) */}
+        <div style={styles.sidebarFooter}>
+          <div 
+            ref={profileRef}
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            style={styles.profileButton}
+          >
+            <div style={styles.profileAvatar}>
+              <UserIcon size={18} color="#fff" />
+            </div>
+            <div style={styles.profileInfo}>
+              <div style={styles.profileName}>{userName || "Student"}</div>
+              <div style={styles.profilePlan}>{userCredits?.plan === 'unlimited' ? 'Pro Plan' : 'Free Plan'}</div>
+            </div>
+            
+            {/* Popover Menu */}
             {isProfileOpen && (
-              <GlassCard style={styles.profileMenu}>
-                {/* User Info Section */}
-                <div style={styles.profileHeader}>
-                  <div style={styles.profileName}>{userName || "User"}</div>
-                  <div style={styles.profileEmail}>{userEmail || ""}</div>
-                </div>
-                <div style={styles.profileDivider}></div>
-
-                {/* Menu Items */}
-                <div style={styles.profileMenuItem}
+              <div style={styles.profileMenu}>
+                <button style={styles.profileMenuItem}>
+                  <UserPlusIcon size={16} color="rgba(255,255,255,0.6)" /> Invite Friends
+                </button>
+                <button style={styles.profileMenuItem}>
+                  <CreditCardIcon size={16} color="rgba(255,255,255,0.6)" /> Billing
+                </button>
+                <div style={styles.profileDivider} />
+                <button 
                   onClick={() => {
-                    // Handle invite friends
-                    setIsProfileOpen(false);
+                    window.location.reload(); 
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
+                  style={styles.profileMenuItemLogout}
                 >
-                  <UserPlusIcon size={16} color="#aaa" />
-                  <span>Invite Friends</span>
-                </div>
-
-                <div style={styles.profileMenuItem}
-                  onClick={() => {
-                    // Handle billing
-                    setIsProfileOpen(false);
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  <CreditCardIcon size={16} color="#aaa" />
-                  <span>Billing</span>
-                </div>
-
-                <div style={styles.profileMenuItem}
-                  onClick={() => {
-                    // Handle get help
-                    setIsProfileOpen(false);
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  <HelpCircleIcon size={16} color="#aaa" />
-                  <span>Get help</span>
-                </div>
-
-                <div style={styles.profileMenuItem}
-                  onClick={() => {
-                    setShowSettingsModal(true);
-                    setIsProfileOpen(false);
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  <SettingsIcon size={16} color="#aaa" />
-                  <span>Settings</span>
-                </div>
-              </GlassCard>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                  Log Out
+                </button>
+              </div>
             )}
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* --- Main Area --- */}
+      {/* --- Main Dashboard Content --- */}
       <main style={styles.main}>
-        {(
-          <>
-            {/* Active / Start Section */}
-            <div style={styles.heroSection}>
-              {!isSessionActive ? (
-                <GlassCard style={styles.startCard}>
-                  <h2 style={styles.heroTitle}>{t('ready_to_learn')}</h2>
-                  <p style={styles.heroSub}>{t('ai_assistant_standby')}</p>
+        
+        {/* Header Bar */}
+        <header style={styles.header}>
+          <div style={styles.headerLeft}>
+            <h1 style={styles.headerTitle}>Overview</h1>
+            <span style={styles.headerVersion}>v2.4.0-stable</span>
+          </div>
 
-                  {!hasCredits && (
-                    <div style={styles.sessionLimit}>
-                      <span style={styles.limitReached}>No credits remaining. Please purchase more credits to continue.</span>
-                    </div>
-                  )}
+          <div style={styles.headerRight}>
+            {/* Credits Widget */}
+            {userCredits && (
+              <div style={styles.creditsWidget}>
+                <div style={{
+                  ...styles.creditsDot,
+                  backgroundColor: userCredits.credits > 0 ? '#10b981' : '#ef4444',
+                  boxShadow: userCredits.credits > 0 ? '0 0 8px rgba(16,185,129,0.5)' : 'none'
+                }}></div>
+                <span style={styles.creditsText}>
+                  <span style={styles.creditsAmount}>{userCredits.plan === 'unlimited' ? '∞' : userCredits.credits}</span> CR
+                </span>
+              </div>
+            )}
+          </div>
+        </header>
 
+        {/* Dashboard Grid */}
+        <div style={styles.dashboardGrid}>
+          
+          {/* Left Column: Stats & History */}
+          <div style={styles.leftColumn}>
+            
+            {/* Status / Stealth Card */}
+            <div style={styles.statusCard}>
+              <div style={styles.statusHeader}>
+                <span style={styles.statusLabel}>System Status</span>
+                <div style={{
+                  ...styles.statusIndicatorDot,
+                  backgroundColor: isDetectable ? '#ef4444' : '#10b981'
+                }} />
+              </div>
+              
+              <div style={styles.statusContent}>
+                <div style={styles.statusRow}>
+                  <span style={styles.statusText}>Stealth Protocol</span>
                   <button
-                    onClick={handleStartSession}
-                    className="start-session-button"
-                    disabled={!hasCredits}
+                    onClick={toggleDetectability}
                     style={{
-                      marginBottom: '12px',
-                      opacity: !hasCredits ? 0.5 : 1,
-                      cursor: !hasCredits ? 'not-allowed' : 'pointer'
+                      ...styles.toggleButton,
+                      backgroundColor: isDetectable ? 'rgba(255,255,255,0.1)' : 'rgba(16,185,129,0.2)',
+                      borderColor: isDetectable ? 'rgba(255,255,255,0.1)' : 'rgba(16,185,129,0.5)'
                     }}
                   >
-                    {t('button_start')}
+                    <div style={{
+                      ...styles.toggleSwitch,
+                      transform: isDetectable ? 'translateX(0)' : 'translateX(24px)',
+                      backgroundColor: isDetectable ? '#9ca3af' : '#4ade80',
+                      boxShadow: isDetectable ? 'none' : '0 0 10px rgba(74,222,128,0.6)'
+                    }} />
                   </button>
-
-                  {/* Test Onboarding Button - Remove in production */}
-                  <button
-                    onClick={async () => {
-                      localStorage.removeItem('onboarding_complete');
-                      try {
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (session?.user) {
-                          await supabase
-                            .from('profiles')
-                            .update({ onboarding_complete: false })
-                            .eq('id', session.user.id);
-                        }
-                      } catch (error) {
-                        console.log('Onboarding reset (Supabase update skipped):', error);
-                      }
-                      window.location.reload();
-                    }}
-                    style={{
-                      ...styles.secondaryBtn,
-                      marginBottom: '12px',
-                      fontSize: '12px',
-                      padding: '8px 16px',
-                      background: 'rgba(100, 108, 255, 0.2)',
-                      border: '1px solid rgba(100, 108, 255, 0.4)',
-                      color: 'rgba(135, 206, 250, 0.9)'
-                    }}
-                    title="Test Onboarding Flow"
-                  >
-                    🧪 Test Onboarding
-                  </button>
-
-                  <p style={styles.hotkeyHint}>
-                    Press <kbd style={styles.kbd}>Ctrl</kbd> + <kbd style={styles.kbd}>Shift</kbd> + <kbd style={styles.kbd}>Space</kbd>
-                  </p>
-                </GlassCard>
-              ) : (
-                <GlassCard style={styles.activeCard}>
-                  <div style={styles.activeSessionContent}>
-                    <div style={styles.sessionStatusRow}>
-                      <div style={styles.statusIndicator}>
-                        <div style={styles.statusDot}></div>
-                        <span style={styles.statusLabel}>{t('session_in_progress')}</span>
-                      </div>
-                      <span style={styles.timer}>{formatTimerDisplay(elapsedSeconds)}</span>
-                    </div>
-                    <button
-                      onClick={handleEndSession}
-                      style={styles.endBtn}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(211, 47, 47, 0.15)';
-                        e.currentTarget.style.borderColor = 'rgba(211, 47, 47, 0.6)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.borderColor = 'rgba(211, 47, 47, 0.4)';
-                      }}
-                    >
-                      {t('button_end')}
-                    </button>
-                  </div>
-                </GlassCard>
-              )}
-            </div>
-
-            {/* --- History List (simpler, Cluely-style) --- */}
-            <div style={styles.historySection}>
-              <h3 style={styles.sectionHeader}>{t('recent_activity')}</h3>
-              <div style={styles.listContainer}>
-                {sessions.length === 0 && (
-                  <div style={styles.emptyHistory}>
-                    <span style={styles.emptyHistoryTitle}>No sessions yet</span>
-                    <span style={styles.emptyHistorySub}>Your recent sessions will appear here.</span>
-                  </div>
-                )}
-                {sessions.map(session => (
-                  <div key={session.id} style={styles.row}>
-                    <div style={styles.rowLeft}>
-                      <div style={styles.rowTextBlock}>
-                        <div style={styles.rowTitle}>{session.title}</div>
-                        <div style={styles.rowMeta}>
-                          <span style={styles.modePill}>
-                            <span
-                              style={{
-                                ...styles.modeDot,
-                                backgroundColor: getModeColor(session.mode)
-                              }}
-                            />
-                            <span>{session.mode}</span>
-                          </span>
-                          <span style={styles.rowDividerDot}>•</span>
-                          <span style={styles.rowSub}>{session.time}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={styles.rowRight}>
-                      <div style={styles.rowTime}>{session.duration}</div>
-                    </div>
-                  </div>
-                ))}
+                </div>
+                <p style={styles.statusDescription}>
+                  {isDetectable ? "Application is currently visible to detection scripts." : "Stealth mode active. Overlay is hidden from screen capture APIs."}
+                </p>
               </div>
             </div>
-          </>
-        )}
 
-        {/* Settings Modal */}
-        {showSettingsModal && (
-          <SettingsModal
-            onClose={() => setShowSettingsModal(false)}
-            onLogout={() => {
-              // Reset onboarding or clear tokens here
-              setShowSettingsModal(false);
-              window.location.reload(); // Quick way to reset app state for V1
-            }}
-          />
-        )}
+            {/* History Feed */}
+            <div style={styles.historyCard}>
+              <div style={styles.historyHeader}>
+                <h3 style={styles.historyTitle}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(135, 206, 250, 0.9)' }}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                  Recent Sessions
+                </h3>
+                <button style={styles.historyViewAll}>View All</button>
+              </div>
+              
+              <div style={styles.historyList}>
+                {sessions.length === 0 ? (
+                  <div style={styles.emptyHistory}>
+                    <div style={styles.emptyHistoryIcon}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <p style={styles.emptyHistoryText}>No recent activity found.</p>
+                  </div>
+                ) : (
+                  sessions.map((session) => (
+                    <div key={session.id} style={styles.historyItem}>
+                      <div style={styles.historyItemLeft}>
+                        <span style={styles.historyItemTitle}>{session.title}</span>
+                        <div style={styles.historyItemMeta}>
+                          <span>{session.time}</span>
+                          <span style={styles.historyItemDot}>•</span>
+                          <span style={session.mode === 'Cheat' ? { color: '#f87171' } : { color: 'rgba(255,255,255,0.5)' }}>{session.mode}</span>
+                        </div>
+                      </div>
+                      <span style={styles.historyItemDuration}>{session.duration}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Main Interaction Area */}
+          <div style={styles.rightColumn}>
+            <div style={styles.mainCard}>
+              {/* Background Gradients */}
+              <div style={styles.cardGradient1} />
+              <div style={styles.cardGradient2} />
+              
+              {/* Decorative Grid */}
+              <div style={styles.cardGrid} />
+
+              <div style={styles.mainCardContent}>
+                
+                {!isSessionActive ? (
+                  <div style={styles.startSection}>
+                    <div style={styles.startText}>
+                      <h2 style={styles.startTitle}>
+                        Ready to <span style={styles.startTitleAccent}>Focus?</span>
+                      </h2>
+                      <p style={styles.startSubtitle}>
+                        Initialize your workspace. The AI overlay is currently in standby mode.
+                      </p>
+                    </div>
+                    
+                    <div style={styles.startButtonWrapper}>
+                      <div style={styles.startButtonGlow} />
+                      <button
+                        onClick={handleStartSession}
+                        disabled={!hasCredits}
+                        style={{
+                          ...styles.startButton,
+                          opacity: !hasCredits ? 0.5 : 1,
+                          cursor: !hasCredits ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        <div style={styles.startButtonIcon}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        </div>
+                        <div style={styles.startButtonText}>
+                          <span style={styles.startButtonLabel}>Command</span>
+                          <span style={styles.startButtonAction}>START SESSION</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div style={styles.hotkeyHint}>
+                      <span>Hotkey:</span>
+                      <kbd style={styles.kbd}>Ctrl</kbd>
+                      <span>+</span>
+                      <kbd style={styles.kbd}>Shift</kbd>
+                      <span>+</span>
+                      <kbd style={styles.kbd}>Space</kbd>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={styles.activeSection}>
+                    {/* Active Pulse Animation */}
+                    <div style={styles.activePulse}>
+                      <div style={styles.activePulseGlow} />
+                      <div style={styles.activeContent}>
+                        <div style={styles.activeLabel}>Session Active</div>
+                        <div style={styles.activeTimer}>{formatTimerDisplay(elapsedSeconds)}</div>
+                      </div>
+                    </div>
+
+                    <div style={styles.activeProgress}>
+                      <div style={styles.activeProgressBar} />
+                    </div>
+
+                    <button
+                      onClick={handleEndSession}
+                      style={styles.endButton}
+                    >
+                      Terminate
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Info inside card */}
+              <div style={styles.cardFooter}>
+                <div style={styles.footerLeft}>
+                  <div style={{
+                    ...styles.footerDot,
+                    backgroundColor: userCredits?.plan === 'unlimited' ? '#fbbf24' : '#6b7280'
+                  }}></div>
+                  <span>{userCredits?.plan === 'unlimited' ? 'Premium Connection' : 'Standard Connection'}</span>
+                </div>
+                <div style={styles.footerRight}>
+                  LATENCY: 12ms
+                </div>
+              </div>
+            </div>
+
+            {/* Socials Row */}
+            <div style={styles.socialsRow}>
+              {[
+                { icon: InstagramIcon, href: '#', label: 'Instagram' },
+                { icon: XLogoIcon, href: '#', label: 'X' },
+                { icon: DiscordIcon, href: '#', label: 'Discord' }
+              ].map((social, idx) => (
+                <a
+                  key={idx}
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={styles.socialButton}
+                >
+                  <social.icon size={16} color="rgba(255,255,255,0.5)" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
       </main>
 
-      {/* Social links – bottom right */}
-      <div style={styles.socialBar}>
-        <button
-          type="button"
-          style={styles.socialIconButton}
-          onClick={() => window.open('https://instagram.com/yourhandle', '_blank')}
-          title="Instagram"
-        >
-          <InstagramIcon size={16} color="#c9c9ff" />
-        </button>
-        <button
-          type="button"
-          style={styles.socialIconButton}
-          onClick={() => window.open('https://x.com/yourhandle', '_blank')}
-          title="X"
-        >
-          <XLogoIcon size={16} color="#c9c9ff" />
-        </button>
-        <button
-          type="button"
-          style={styles.socialIconButton}
-          onClick={() => window.open('https://discord.gg/yourserver', '_blank')}
-          title="Discord"
-        >
-          <DiscordIcon size={16} color="#c9c9ff" />
-        </button>
-      </div>
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <SettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          onLogout={() => {
+            setShowSettingsModal(false);
+            window.location.reload(); 
+          }}
+        />
+      )}
     </div>
   );
 };
 
-
-// --- Styles (CSS-in-JS for V1 speed) ---
+// --- Styles ---
 const styles: Record<string, React.CSSProperties> = {
   container: {
+    display: 'flex',
     height: '100vh',
-    backgroundColor: '#050509', // Match overlay vibe: deep neutral
-    backgroundImage: 'radial-gradient(circle at top, rgba(135, 206, 250, 0.15) 0, transparent 55%)',
-    color: '#e0e0e0',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    width: '100%',
+    backgroundColor: '#050509',
+    color: '#e5e7eb',
+    overflow: 'hidden',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  },
+
+  // Sidebar
+  sidebar: {
+    position: 'relative',
+    zIndex: 20,
+    width: '64px',
     display: 'flex',
     flexDirection: 'column',
-    position: 'relative',
-    overflow: 'hidden'
-  },
-  backgroundBlob: {
-    position: 'absolute',
-    top: '-50%',
-    left: '20%',
-    width: '60%',
-    height: '60%',
-    background: 'radial-gradient(circle, rgba(100, 108, 255, 0.08) 0%, rgba(0,0,0,0) 70%)',
-    zIndex: 0,
-    pointerEvents: 'none'
-  },
-  topBar: {
-    height: '70px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 40px',
-    zIndex: 10,
-    borderBottom: '1px solid rgba(255,255,255,0.05)'
-  },
-  logo: { fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' },
-  controls: { display: 'flex', alignItems: 'center', gap: '20px' },
-  controlGroup: { display: 'flex', alignItems: 'center', gap: '10px' },
-  label: { fontSize: '12px', color: '#666', fontWeight: 600, textTransform: 'uppercase' },
-  dropdownButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 14px',
-    borderRadius: '8px',
-    backgroundColor: 'rgba(20, 20, 25, 0.65)',
+    borderRight: '1px solid rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    color: 'white',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    outline: 'none',
-    fontSize: '13px',
-    fontWeight: 500,
-    transition: 'all 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    cursor: 'pointer',
-    boxSizing: 'border-box' as const,
-    height: '36px',
-    minHeight: '36px'
+    WebkitBackdropFilter: 'blur(24px)'
   },
-  creditBadge: {
-    padding: '6px 12px',
-    borderRadius: '20px',
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#fff',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)'
-  },
-  toggleContainer: {
-    position: 'relative',
-    width: '36px',
-    height: '18px',
-    borderRadius: '9px',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    transition: 'all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1)',
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center'
-  },
-  toggleSwitch: {
-    position: 'absolute',
-    top: '1px',
-    left: '1px',
-    width: '14px',
-    height: '14px',
-    borderRadius: '50%',
-    backgroundColor: '#4caf50',
-    transition: 'all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1)',
-    boxShadow: '0 0 8px rgba(76, 175, 80, 0.5)'
-  },
-  profileContainer: {
-    position: 'relative',
-    zIndex: 100
-  },
-  profile: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    backgroundColor: 'rgba(42, 42, 47, 0.6)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
+  brand: {
+    height: '64px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    cursor: 'pointer',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    transition: 'all 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)',
-    padding: 0,
-    outline: 'none'
+    padding: '0 24px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)'
   },
-  profileMenu: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: '8px',
-    minWidth: '240px',
-    padding: '12px 0',
-    zIndex: 1000,
+  brandLogo: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: 'rgba(135, 206, 250, 0.2)',
     display: 'flex',
-    flexDirection: 'column'
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    fontWeight: 'bold',
+    boxShadow: '0 0 20px rgba(135, 206, 250, 0.2)'
   },
-  profileHeader: {
-    padding: '12px 16px',
+  brandText: {
+    display: 'none',
+    marginLeft: '12px',
+    fontWeight: 'bold',
+    fontSize: '18px',
+    letterSpacing: '-0.5px',
+    color: '#fff'
+  },
+  nav: {
+    flex: 1,
+    padding: '24px 12px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px'
+    gap: '8px'
   },
-  profileName: {
-    fontSize: '15px',
-    fontWeight: 600,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-  },
-  profileEmail: {
-    fontSize: '13px',
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-  },
-  profileDivider: {
-    height: '1px',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    margin: '8px 0'
-  },
-  profileMenuItem: {
+  navButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    padding: '10px 16px',
-    fontSize: '13px',
-    color: 'rgba(255, 255, 255, 0.9)',
+    padding: '12px',
+    borderRadius: '12px',
+    backgroundColor: 'transparent',
+    border: '1px solid transparent',
+    color: 'rgba(255,255,255,0.4)',
     cursor: 'pointer',
-    transition: 'all 0.15s ease-out',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    transition: 'all 0.2s',
+    fontSize: '14px',
     fontWeight: 500
   },
-
-  main: { flex: 1, padding: '40px', overflowY: 'auto', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' },
-
-  heroSection: { width: '100%', maxWidth: '500px', marginBottom: '50px', marginTop: '20px' },
-  heroTitle: { fontSize: '32px', fontWeight: 700, margin: '0 0 10px 0', textAlign: 'center' as const },
-  heroSub: { fontSize: '16px', color: '#888', margin: '0 0 30px 0', textAlign: 'center' as const },
-
-  startCard: {
+  navButtonActive: {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
-    padding: '50px 40px',
-    textAlign: 'center' as const
-  },
-  startBtn: {
-    padding: '18px 60px',
-    fontSize: '16px',
-    fontWeight: 700,
-    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.3) 0%, rgba(135, 206, 250, 0.15) 100%)',
-    color: 'white',
-    border: 'none',
+    gap: '12px',
+    padding: '12px',
     borderRadius: '12px',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.05)',
+    color: '#fff',
     cursor: 'pointer',
-    boxShadow: '0 10px 30px rgba(100, 108, 255, 0.3)',
-    transition: 'all 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)',
-    letterSpacing: '0.5px',
-    marginTop: '10px'
-  },
-  hotkeyHint: { marginTop: '20px', color: '#666', fontSize: '16px', fontWeight: 500 },
-  kbd: { backgroundColor: '#222', padding: '4px 8px', borderRadius: '4px', border: '1px solid #333', fontFamily: 'monospace', color: '#ccc', fontSize: '14px', fontWeight: 600 },
-  sessionLimit: {
+    transition: 'all 0.2s',
     fontSize: '14px',
-    color: '#888',
-    marginBottom: '16px',
     fontWeight: 500,
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
   },
-  limitReached: {
-    color: '#ff8a80',
-    fontWeight: 600,
-    marginLeft: '8px'
+  navIcon: {
+    padding: '6px',
+    borderRadius: '8px',
+    color: 'rgba(255,255,255,0.5)',
+    transition: 'color 0.2s'
   },
-  limitOptionsCard: {
-    marginTop: '20px',
+  navIconActive: {
+    padding: '6px',
+    borderRadius: '8px',
+    backgroundColor: 'rgba(135, 206, 250, 0.2)',
+    color: 'rgba(135, 206, 250, 0.9)',
+    transition: 'all 0.2s'
+  },
+  navText: {
+    display: 'none',
+    fontSize: '14px',
+    fontWeight: 500
+  },
+  sidebarFooter: {
+    padding: '16px',
+    borderTop: '1px solid rgba(255,255,255,0.05)'
+  },
+  profileButton: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px',
+    borderRadius: '12px',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s'
+  },
+  profileAvatar: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #4b5563, #374151)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    border: '1px solid rgba(255,255,255,0.1)',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)'
+  },
+  profileInfo: {
+    display: 'none',
+    overflow: 'hidden'
+  },
+  profileName: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#fff',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    overflow: 'hidden'
+  },
+  profilePlan: {
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.5)',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    overflow: 'hidden'
+  },
+  profileMenu: {
+    position: 'absolute',
+    bottom: '100%',
+    left: 0,
+    marginBottom: '8px',
+    width: '224px',
+    padding: '6px',
+    borderRadius: '12px',
+    backgroundColor: '#111115',
+    border: '1px solid rgba(255,255,255,0.1)',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
+    zIndex: 1000
+  },
+  profileMenuItem: {
     width: '100%',
-    padding: '14px 16px',
-    borderRadius: '14px',
-    backgroundColor: 'rgba(15, 15, 20, 0.95)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 14px 35px rgba(0, 0, 0, 0.55)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px 12px',
+    fontSize: '14px',
+    color: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    textAlign: 'left' as const
+  },
+  profileMenuItemLogout: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px 12px',
+    fontSize: '14px',
+    color: '#f87171',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    textAlign: 'left' as const
+  },
+  profileDivider: {
+    height: '1px',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    margin: '4px 0'
+  },
+
+  // Main Content
+  main: {
+    flex: 1,
+    position: 'relative',
+    zIndex: 10,
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px'
+    minWidth: 0,
+    overflow: 'hidden'
   },
-  limitOptionsHeader: {
+  header: {
+    height: '64px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 32px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)'
+  },
+  headerLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center'
+  },
+  headerTitle: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'rgba(255,255,255,0.4)',
+    margin: 0
+  },
+  headerVersion: {
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.3)',
+    fontFamily: 'monospace'
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px'
+  },
+  creditsWidget: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '6px 16px',
+    borderRadius: '999px',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+  },
+  creditsDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%'
+  },
+  creditsText: {
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    color: 'rgba(255,255,255,0.3)'
+  },
+  creditsAmount: {
+    color: '#fff',
+    fontWeight: 'bold'
+  },
+  dashboardGrid: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '16px',
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '24px',
+    maxWidth: '1400px',
+    margin: '0 auto',
+    width: '100%'
+  },
+  leftColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+    height: '100%'
+  },
+  statusCard: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: '16px',
+    border: '1px solid rgba(255,255,255,0.05)',
+    backgroundColor: '#0a0a0f',
+    padding: '20px',
+    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)'
+  },
+  statusHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '16px'
+  },
+  statusLabel: {
+    fontSize: '12px',
+    fontWeight: 'bold',
+    color: 'rgba(255,255,255,0.5)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em'
+  },
+  statusIndicatorDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+  },
+  statusContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  statusRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  statusText: {
+    fontSize: '14px',
+    color: 'rgba(255,255,255,0.3)'
+  },
+  toggleButton: {
+    position: 'relative',
+    width: '48px',
+    height: '24px',
+    borderRadius: '999px',
+    border: '1px solid',
+    transition: 'all 0.3s',
+    cursor: 'pointer',
+    outline: 'none'
+  },
+  toggleSwitch: {
+    position: 'absolute',
+    top: '2px',
+    left: '2px',
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    transition: 'all 0.3s'
+  },
+  statusDescription: {
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.3)',
+    lineHeight: 1.5
+  },
+  historyCard: {
+    flex: 1,
+    minHeight: '300px',
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: '16px',
+    border: '1px solid rgba(255,255,255,0.05)',
+    backgroundColor: '#0a0a0f',
+    overflow: 'hidden',
+    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)'
+  },
+  historyHeader: {
+    padding: '20px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.01)'
+  },
+  historyTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: 'rgba(255,255,255,0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    margin: 0
+  },
+  historyViewAll: {
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'color 0.2s'
+  },
+  historyList: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '8px',
     display: 'flex',
     flexDirection: 'column',
     gap: '4px'
   },
-  limitOptionsTitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'rgba(255, 255, 255, 0.92)'
-  },
-  limitOptionsSub: {
-    fontSize: '12px',
-    color: 'rgba(255, 255, 255, 0.6)',
-    lineHeight: 1.5
-  },
-  limitOptionsButtons: {
+  emptyHistory: {
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
-    marginTop: '4px'
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'rgba(255,255,255,0.3)',
+    padding: '32px',
+    textAlign: 'center' as const
   },
-  limitPrimaryButton: {
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: 'none',
-    background: 'linear-gradient(135deg, rgba(135, 206, 250, 0.3), rgba(135, 206, 250, 0.15))',
-    color: '#fff',
-    fontSize: '13px',
-    fontWeight: 600,
-    cursor: 'pointer',
+  emptyHistoryIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
-    boxShadow: '0 10px 25px rgba(100, 108, 255, 0.45)',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    marginBottom: '12px',
+    color: 'rgba(255,255,255,0.2)'
   },
-  limitSecondaryButton: {
-    padding: '9px 14px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255, 255, 255, 0.16)',
-    backgroundColor: 'rgba(25, 25, 30, 0.9)',
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  emptyHistoryText: {
+    fontSize: '14px'
   },
-  secondaryBtn: {
-    padding: '8px 16px',
-    fontSize: '13px',
-    fontWeight: 500,
-    background: 'transparent',
-    color: '#888',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
-  },
-
-  activeCard: {
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    gap: '16px'
-  },
-  activeSessionContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px'
-  },
-  sessionStatusRow: {
+  historyItem: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '16px'
+    padding: '12px',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    border: '1px solid transparent',
+    transition: 'all 0.15s',
+    cursor: 'pointer'
   },
-  statusIndicator: {
+  historyItemLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    minWidth: 0
+  },
+  historyItemTitle: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'rgba(255,255,255,0.3)',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    overflow: 'hidden',
+    transition: 'color 0.15s'
+  },
+  historyItemMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '10px',
+    color: 'rgba(255,255,255,0.5)'
+  },
+  historyItemDot: {
+    width: '2px',
+    height: '2px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.2)'
+  },
+  historyItemDuration: {
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    color: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: '4px 8px',
+    borderRadius: '4px'
+  },
+  rightColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%'
+  },
+  mainCard: {
+    position: 'relative',
+    flex: 1,
+    borderRadius: '24px',
+    overflow: 'hidden',
+    border: '1px solid rgba(255,255,255,0.1)',
+    backgroundColor: '#08080c',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  cardGradient1: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '500px',
+    height: '500px',
+    backgroundColor: 'rgba(135, 206, 250, 0.05)',
+    borderRadius: '50%',
+    filter: 'blur(100px)',
+    pointerEvents: 'none'
+  },
+  cardGradient2: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: '400px',
+    height: '400px',
+    backgroundColor: 'rgba(135, 206, 250, 0.05)',
+    borderRadius: '50%',
+    filter: 'blur(100px)',
+    pointerEvents: 'none'
+  },
+  cardGrid: {
+    position: 'absolute',
+    inset: 0,
+    backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
+    backgroundSize: '40px 40px',
+    maskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, #000 70%, transparent 100%)',
+    pointerEvents: 'none'
+  },
+  mainCardContent: {
+    position: 'relative',
+    zIndex: 10,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '32px 48px',
+    textAlign: 'center' as const
+  },
+  startSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '32px',
+    animation: 'fadeIn 0.5s ease-in'
+  },
+  startText: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    maxWidth: '448px'
+  },
+  startTitle: {
+    fontSize: '36px',
+    fontWeight: 'bold',
+    color: '#fff',
+    lineHeight: 1.1,
+    letterSpacing: '-0.5px',
+    margin: 0
+  },
+  startTitleAccent: {
+    background: 'linear-gradient(to right, rgba(135, 206, 250, 0.9), rgba(135, 206, 250, 0.6))',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text'
+  },
+  startSubtitle: {
+    fontSize: '14px',
+    color: 'rgba(255,255,255,0.4)',
+    lineHeight: 1.5
+  },
+  startButtonWrapper: {
+    position: 'relative'
+  },
+  startButtonGlow: {
+    position: 'absolute',
+    inset: '-4px',
+    background: 'linear-gradient(to right, rgba(135, 206, 250, 0.5), rgba(135, 206, 250, 0.3))',
+    borderRadius: '16px',
+    opacity: 0.2,
+    filter: 'blur(8px)',
+    transition: 'opacity 0.5s'
+  },
+  startButton: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '20px 40px',
+    backgroundColor: '#000',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '12px',
+    transition: 'all 0.2s',
+    cursor: 'pointer'
+  },
+  startButtonIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(135, 206, 250, 0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    boxShadow: '0 0 20px rgba(135, 206, 250, 0.3)'
+  },
+  startButtonText: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start'
+  },
+  startButtonLabel: {
+    fontSize: '10px',
+    fontWeight: 500,
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em'
+  },
+  startButtonAction: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: '0.05em'
+  },
+  hotkeyHint: {
+    marginTop: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.05)',
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    color: 'rgba(255,255,255,0.5)'
+  },
+  kbd: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    color: 'rgba(255,255,255,0.3)'
+  },
+  activeSection: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '48px'
+  },
+  activePulse: {
+    position: 'relative'
+  },
+  activePulseGlow: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(135, 206, 250, 0.2)',
+    filter: 'blur(60px)',
+    borderRadius: '50%',
+    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+  },
+  activeContent: {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  activeLabel: {
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    color: 'rgba(135, 206, 250, 0.9)',
+    marginBottom: '8px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+  },
+  activeTimer: {
+    fontSize: '96px',
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: '-0.05em',
+    fontVariantNumeric: 'tabular-nums',
+    textShadow: '0 0 40px rgba(0,0,0,0.5)'
+  },
+  activeProgress: {
+    width: '100%',
+    maxWidth: '320px',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: '999px',
+    height: '4px',
+    overflow: 'hidden'
+  },
+  activeProgressBar: {
+    height: '100%',
+    backgroundColor: 'rgba(135, 206, 250, 0.5)',
+    borderRadius: '999px',
+    width: '33%',
+    animation: 'width 2s ease-in-out infinite'
+  },
+  endButton: {
+    padding: '12px 32px',
+    borderRadius: '12px',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
+    color: '#f87171',
+    backgroundColor: 'transparent',
+    fontSize: '14px',
+    fontWeight: 500,
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  cardFooter: {
+    position: 'relative',
+    zIndex: 10,
+    padding: '16px 24px',
+    borderTop: '1px solid rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.5)'
+  },
+  footerLeft: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
-  statusDot: {
+  footerDot: {
     width: '8px',
     height: '8px',
-    borderRadius: '50%',
-    backgroundColor: 'rgba(135, 206, 250, 0.3)',
-    animation: 'pulse-status 2s ease-in-out infinite'
+    borderRadius: '50%'
   },
-  statusLabel: {
-    fontSize: '13px',
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontWeight: 500,
-    letterSpacing: '0.5px',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  footerRight: {
+    fontFamily: 'monospace',
+    opacity: 0.5
   },
-  timer: {
-    fontSize: '24px',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace',
-    fontWeight: 600,
-    color: 'rgba(255, 255, 255, 0.95)',
-    letterSpacing: '0.5px'
+  socialsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    marginTop: '16px'
   },
-  endBtn: {
-    padding: '10px 24px',
-    backgroundColor: 'transparent',
-    color: '#ff8a80',
-    border: '1px solid rgba(211, 47, 47, 0.4)',
+  socialButton: {
+    padding: '8px',
     borderRadius: '8px',
+    backgroundColor: '#0a0a0f',
+    border: '1px solid rgba(255,255,255,0.05)',
+    color: 'rgba(255,255,255,0.5)',
     cursor: 'pointer',
-    fontWeight: 500,
-    fontSize: '13px',
-    transition: 'all 0.2s ease',
-    alignSelf: 'flex-start',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-  },
-
-  historySection: { width: '100%', maxWidth: '600px' },
-  sectionHeader: { fontSize: '13px', color: '#777', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' },
-  listContainer: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  emptyHistory: {
-    padding: '14px 16px',
-    borderRadius: '10px',
-    border: '1px dashed rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(15,15,18,0.9)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px'
-  },
-  emptyHistoryTitle: {
-    fontSize: '13px',
-    fontWeight: 600,
-    color: 'rgba(255,255,255,0.8)'
-  },
-  emptyHistorySub: {
-    fontSize: '12px',
-    color: 'rgba(255,255,255,0.45)'
-  },
-  row: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px 14px',
-    backgroundColor: 'rgba(15,15,18,0.9)',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.03)',
-    transition: 'background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease'
-  },
-  rowLeft: { display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 },
-  rowTextBlock: { display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 },
-  rowTitle: { fontWeight: 500, fontSize: '14px', color: '#f5f5f5', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis', overflow: 'hidden' },
-  rowMeta: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.5)' },
-  modePill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '2px 8px',
-    borderRadius: '999px',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.06)'
-  },
-  modeDot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '999px'
-  },
-  rowDividerDot: {
-    opacity: 0.4
-  },
-  rowSub: { fontSize: '12px', color: 'rgba(255,255,255,0.5)' },
-  rowRight: { textAlign: 'right' as const, marginLeft: '12px', flexShrink: 0 },
-  rowTime: { fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontWeight: 500 },
-  socialBar: {
-    position: 'fixed',
-    right: 24,
-    bottom: 18,
-    display: 'flex',
-    gap: 8,
-    zIndex: 20
-  },
-  socialIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    border: '1px solid rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(15,15,20,0.9)',
+    transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    cursor: 'pointer',
-    padding: 0,
-    transition: 'background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease'
-  } as React.CSSProperties,
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-    padding: '20px'
+    textDecoration: 'none'
   }
 };
-
 
 export default Dashboard;

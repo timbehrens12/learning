@@ -86,6 +86,16 @@ const filesToCopy = [
     rename: 'icon.png',
     optional: false // Required for Electron build
   },
+  // Electron Windows icon (ICO file)
+  // Note: If icon.ico doesn't exist, electron-builder will auto-convert from icon.png
+  // But it's better to provide a proper ICO file for best quality
+  { 
+    src: 'icon.ico', 
+    altSrc: [],
+    dest: logoDir, 
+    rename: 'icon.ico',
+    optional: true // Optional - electron-builder can convert PNG to ICO
+  },
 ];
 
 console.log('📋 Copying logo files...\n');

@@ -83,6 +83,9 @@ export const LandingPage = () => {
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
               </span>
             </button>
+            <Link to="/signin" className="px-8 py-4 rounded-full font-semibold text-white bg-sky-500/80 hover:bg-sky-500 border border-sky-500/50 transition-all">
+              Sign In / Sign Up
+            </Link>
             <Link to="/how-it-works" className="px-8 py-4 rounded-full font-medium text-gray-300 hover:text-sky-200 hover:bg-sky-500/10 border border-transparent hover:border-sky-500/20 transition-all">
               See how it works
             </Link>

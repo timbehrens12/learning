@@ -47,7 +47,9 @@
     },
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "logo/icon.png",
+      "logo/icon.ico"
     ],
     "win": {
       "target": [
@@ -58,6 +60,7 @@
           ]
         }
       ],
+      "icon": "logo/icon.png",
       "sign": null,
       "signingHashAlgorithms": []
     },

@@ -70,12 +70,20 @@ export const Navbar = () => {
               Account
             </Link>
           ) : (
-            <Link
-              to="/signin"
-              className="text-xs font-semibold bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-colors"
-            >
-              Sign In
-            </Link>
+            <>
+              <Link
+                to="/signin"
+                className="text-xs font-semibold text-gray-300 hover:text-white px-3 py-2 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signin"
+                className="text-xs font-semibold bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-colors"
+              >
+                Sign Up
+              </Link>
+            </>
           )}
         </div>
 
@@ -133,13 +141,22 @@ export const Navbar = () => {
                   Account
                 </Link>
               ) : (
-                <Link
-                  to="/signin"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full text-center text-sm font-semibold bg-white text-black px-4 py-3 rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                  Sign In
-                </Link>
+                <>
+                  <Link
+                    to="/signin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center text-sm font-semibold text-gray-300 hover:text-white px-4 py-3 rounded-xl border border-white/10 hover:border-white/20 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center text-sm font-semibold bg-white text-black px-4 py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </>
               )}
             </div>
           </motion.div>

@@ -50,6 +50,16 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-scan settings
+  const [autoScanEnabled, setAutoScanEnabled] = useState(() => {
+    const saved = localStorage.getItem('auto_scan_enabled');
+    return saved !== null ? saved === 'true' : false; // Default: off
+  });
+  const [autoScanInterval, setAutoScanInterval] = useState(() => {
+    const saved = localStorage.getItem('auto_scan_interval');
+    return saved ? parseInt(saved, 10) : 10; // Default: 10 seconds
+  });
 
   // Load user data from Supabase
   useEffect(() => {
@@ -336,39 +346,61 @@ const SettingsModal: React.FC<SettingsProps> = ({ onClose, onLogout }) => {
               </div>
             </div>
 
-
+            {/* Auto-Scan Settings */}
             <div style={styles.divider}></div>
-
-            {/* Reset Onboarding */}
+            
             <div style={styles.row}>
               <div>
-                <div style={styles.label}>Reset Onboarding</div>
-                <div style={styles.microHint}>Show the onboarding flow again (useful for testing)</div>
+                <div style={styles.label}>Auto-Scan During Sessions</div>
+                <div style={styles.microHint}>Automatically scan screen at intervals when a session is active</div>
               </div>
-              <button 
-                onClick={async () => {
-                  localStorage.removeItem('onboarding_complete');
-                  // Also clear from Supabase if logged in
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session?.user) {
-                      await supabase
-                        .from('profiles')
-                        .update({ onboarding_complete: false })
-                        .eq('id', session.user.id);
-                    }
-                  } catch (error) {
-                    // Ignore errors if column doesn't exist
-                    console.log('Onboarding reset (Supabase update skipped):', error);
-                  }
-                  alert('Onboarding reset! The app will reload to show the onboarding flow.');
-                  window.location.reload();
+              <button
+                onClick={() => {
+                  const newValue = !autoScanEnabled;
+                  setAutoScanEnabled(newValue);
+                  localStorage.setItem('auto_scan_enabled', String(newValue));
+                  // Broadcast change to overlay
+                  window.dispatchEvent(new CustomEvent('autoScanSettingChanged', { detail: newValue }));
                 }}
-                style={styles.secondaryBtn}
+                style={{
+                  ...styles.toggleButton,
+                  backgroundColor: autoScanEnabled ? 'rgba(135, 206, 250, 0.2)' : 'rgba(255,255,255,0.1)',
+                  borderColor: autoScanEnabled ? 'rgba(135, 206, 250, 0.5)' : 'rgba(255,255,255,0.1)'
+                }}
               >
-                Reset Onboarding
+                <div style={{
+                  ...styles.toggleHandle,
+                  transform: autoScanEnabled ? 'translateX(18px)' : 'translateX(0)',
+                  backgroundColor: autoScanEnabled ? 'rgba(135, 206, 250, 0.9)' : '#9ca3af',
+                  boxShadow: autoScanEnabled ? '0 0 10px rgba(135, 206, 250, 0.6)' : 'none'
+                }} />
               </button>
             </div>
+
+            {autoScanEnabled && (
+              <div style={styles.row}>
+                <div>
+                  <div style={styles.label}>Scan Interval</div>
+                  <div style={styles.microHint}>How often to scan (seconds)</div>
+                </div>
+                <select
+                  value={autoScanInterval}
+                  onChange={(e) => {
+                    const newInterval = parseInt(e.target.value, 10);
+                    setAutoScanInterval(newInterval);
+                    localStorage.setItem('auto_scan_interval', String(newInterval));
+                    window.dispatchEvent(new CustomEvent('autoScanIntervalChanged', { detail: newInterval }));
+                  }}
+                  style={styles.select}
+                >
+                  <option value={5}>5 seconds</option>
+                  <option value={10}>10 seconds</option>
+                  <option value={15}>15 seconds</option>
+                  <option value={30}>30 seconds</option>
+                  <option value={60}>60 seconds</option>
+                </select>
+              </div>
+            )}
 
             <div style={styles.divider}></div>
 
@@ -818,6 +850,26 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#fff',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
     transition: 'all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1)'
+  },
+  toggleHandle: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    backgroundColor: '#9ca3af',
+    transition: 'transform 0.2s, background-color 0.2s',
+    transform: 'translateX(0)'
+  },
+  select: {
+    padding: '8px 12px',
+    background: 'rgba(0,0,0,0.3)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '6px',
+    color: '#fff',
+    fontSize: '13px',
+    cursor: 'pointer',
+    outline: 'none',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    minWidth: '120px'
   },
   dangerBox: { border: '1px solid rgba(255,82,82,0.3)', borderRadius: '8px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,82,82,0.05)', marginBottom: '20px' },
   actionRow: { marginTop: '40px', display: 'flex', justifyContent: 'flex-end' },
