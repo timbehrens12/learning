@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X as XIcon, User } from 'lucide-react';
+import { Menu, X as XIcon, User, Download } from 'lucide-react';
 import { Logo } from './Logo';
 import { supabase } from '../lib/supabase';
 
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (supabase) {
@@ -23,12 +24,24 @@ export const Navbar = () => {
     }
   }, []);
 
+  const handleDownload = () => {
+    setIsDownloading(true);
+    const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Visnly-Setup.exe';
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = 'Visnly-Setup.exe';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => setIsDownloading(false), 2000);
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 md:pt-6 px-4">
       <div className="flex items-center justify-between w-full max-w-6xl gap-4 md:gap-6 px-4 md:px-6 py-3 rounded-full backdrop-blur-xl bg-black/40 border border-white/10 shadow-2xl">
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
           <Logo size={24} showText={false} />
-          <span className="font-bold text-lg tracking-tight">Visnly</span>
+          <span className="font-bold text-lg tracking-tight text-white">Visnly</span>
         </Link>
         
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300 flex-shrink-0">
@@ -38,19 +51,27 @@ export const Navbar = () => {
           <Link to="/faq" className="hover:text-white transition-colors whitespace-nowrap">FAQ</Link>
         </div>
         
-        <div className="hidden md:flex items-center gap-4 flex-shrink-0">
+        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/5 text-white text-xs font-semibold transition-all"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {isDownloading ? 'Downloading...' : 'Download'}
+          </button>
+          
           {user ? (
             <Link
               to="/account"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-black hover:bg-gray-200 text-xs font-semibold transition-all"
             >
-              <User className="w-4 h-4" />
+              <User className="w-3.5 h-3.5" />
               Account
             </Link>
           ) : (
             <Link
               to="/signin"
-              className="text-xs font-semibold bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-colors cta-pill"
+              className="text-xs font-semibold bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-colors"
             >
               Sign In
             </Link>
@@ -92,11 +113,20 @@ export const Navbar = () => {
               <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">How It Works</Link>
               <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2 border-b border-white/5">Pricing</Link>
               <Link to="/faq" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium text-gray-300 hover:text-white transition-colors py-2">FAQ</Link>
+              
+              <button
+                onClick={handleDownload}
+                className="mt-2 w-full flex items-center justify-center gap-2 text-sm font-semibold bg-white/10 border border-white/10 text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download App
+              </button>
+              
               {user ? (
                 <Link
                   to="/account"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="mt-2 w-full text-center text-sm font-semibold bg-white text-black px-4 py-3 rounded-xl hover:bg-gray-200 transition-colors cta-pill"
+                  className="w-full text-center text-sm font-semibold bg-white text-black px-4 py-3 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   Account
                 </Link>
@@ -104,7 +134,7 @@ export const Navbar = () => {
                 <Link
                   to="/signin"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="mt-2 w-full text-center text-sm font-semibold bg-white text-black px-4 py-3 rounded-xl hover:bg-gray-200 transition-colors cta-pill"
+                  className="w-full text-center text-sm font-semibold bg-white text-black px-4 py-3 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   Sign In
                 </Link>

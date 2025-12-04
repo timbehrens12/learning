@@ -3,76 +3,83 @@ import { Navbar } from '../components/Navbar';
 import { LiquidBackground } from '../components/LiquidBackground';
 import { GlassCard } from '../components/GlassCard';
 import { SEO } from '../components/SEO';
-import { Ghost, Cpu, MousePointer2, EyeOff, ArrowRight } from 'lucide-react';
+import { Brain, MousePointer2, AlertCircle, ArrowRight, Zap, BookOpen, Target, Layers, HelpCircle, FileText, Ghost } from 'lucide-react';
 
-const features = [
+const newFeatures = [
   {
-    title: "Ghost Mode",
-    desc: "Completely undetectable by Proctorio, Honorlock, and other screen monitoring tools. The overlay draws directly to the GPU buffer, bypassing standard capture methods.",
-    icon: <Ghost className="w-6 h-6" />,
-    colSpan: "md:col-span-2",
-    bg: "bg-gradient-to-br from-indigo-900/20 to-black/40",
-    border: "border-indigo-500/20"
+    category: "Phase 1: Intelligence",
+    icon: <Brain className="w-5 h-5 text-indigo-400" />,
+    items: [
+      {
+        title: "Key Concepts Extraction",
+        desc: "Automatically pulls out the most important topics and definitions from lectures.",
+        icon: <Zap className="w-5 h-5" />
+      },
+      {
+        title: "One-Click Study Guide",
+        desc: "Turns an entire lecture into a comprehensive study guide with formulas and takeaways.",
+        icon: <BookOpen className="w-5 h-5" />
+      },
+      {
+        title: "End-of-Lecture Recap",
+        desc: "Instantly summarizes what was covered and suggests what to review next.",
+        icon: <FileText className="w-5 h-5" />
+      }
+    ]
   },
   {
-    title: "Auto-Capture",
-    desc: "No need to type. Visnly OCRs your screen 60 times per second to keep context fresh.",
-    icon: <Cpu className="w-6 h-6" />,
-    colSpan: "md:col-span-1",
-    bg: "bg-black/20",
-    border: "border-white/5"
+    category: "Phase 2: Interaction",
+    icon: <MousePointer2 className="w-5 h-5 text-purple-400" />,
+    items: [
+      {
+        title: "Tap-to-Explain",
+        desc: "Click any line in the transcript to get an instant, focused explanation.",
+        icon: <MousePointer2 className="w-5 h-5" />
+      },
+      {
+        title: "Context Tools",
+        desc: "Ask \"What does the teacher mean here?\" or \"Give me context from before.\"",
+        icon: <HelpCircle className="w-5 h-5" />
+      },
+      {
+        title: "Adaptive Learning Styles",
+        desc: "Rewrite notes in simpler terms, analogies, or step-by-step instructions.",
+        icon: <Layers className="w-5 h-5" />
+      }
+    ]
   },
   {
-    title: "Click-Through Overlay",
-    desc: "Interact with windows behind the overlay seamlessly. It's there when you need it, invisible when you don't.",
-    icon: <MousePointer2 className="w-6 h-6" />,
-    colSpan: "md:col-span-1",
-    bg: "bg-black/20",
-    border: "border-white/5"
-  },
-  {
-    title: "Stealth Browser",
-    desc: "Built-in isolated browser for verifying answers without triggering 'tab switch' flags or leaving your exam environment.",
-    icon: <EyeOff className="w-6 h-6" />,
-    colSpan: "md:col-span-2",
-    bg: "bg-gradient-to-br from-blue-900/20 to-black/40",
-    border: "border-blue-500/20"
-  },
-];
-
-const featureHighlights = [
-  {
-    title: "AI that answers questions, real-time",
-    desc: "Visnly uses the screen, text, and visual context to answer questions for you, live. No typing required.",
-    icon: <ArrowRight size={24} className="-rotate-45" />,
-    color: "blue"
-  },
-  {
-    title: "Undetectable Overlay",
-    desc: "Completely invisible to screen sharing and proctoring software. It draws directly to the GPU buffer.",
-    color: "purple"
-  },
-  {
-    title: "Instant Explanations",
-    desc: "Don't just get the answer—understand the 'why'. Detailed breakdowns for every solution.",
-    color: "green"
-  },
-  {
-    title: "Automated Note Taking",
-    desc: "Save every question and answer automatically. Build a study guide while you work.",
-    color: "pink"
-  },
+    category: "Phase 3: Detection",
+    icon: <AlertCircle className="w-5 h-5 text-red-400" />,
+    items: [
+      {
+        title: "Test-Worthy Detection",
+        desc: "Flags content when the professor says \"this will be on the exam.\"",
+        icon: <Target className="w-5 h-5" />
+      },
+      {
+        title: "Confusion Alerts",
+        desc: "Identifies complex sections where the professor struggled or repeated themselves.",
+        icon: <AlertCircle className="w-5 h-5" />
+      },
+      {
+        title: "Auto-Timestamps",
+        desc: "Automatically marks new topics, examples, and definitions in the timeline.",
+        icon: <Layers className="w-5 h-5" />
+      }
+    ]
+  }
 ];
 
 export const FeaturesPage = () => {
   return (
     <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
       <SEO
-        title="Features - Visnly | Undetectable AI Study Assistant"
-        description="Discover Visnly's powerful features: Ghost Mode for undetectability, Auto-Capture OCR, Click-Through Overlay, and Stealth Browser. Built for students who need an invisible advantage."
-        keywords="visnly features, undetectable study assistant, ghost mode, anti-proctor technology, screen overlay, stealth browser"
+        title="Features - Visnly | Intelligent AI Study Companion"
+        description="Explore Visnly's advanced features: Real-time lecture analysis, Tap-to-Explain interaction, and smart Test-Worthy detection. The ultimate study advantage."
+        keywords="ai study features, lecture analysis, tap to explain, study guide generator, undetectable overlay"
       />
-      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%)' }} />
       <LiquidBackground />
       <Navbar />
       
@@ -84,74 +91,84 @@ export const FeaturesPage = () => {
           transition={{ duration: 0.8 }}
           className="max-w-4xl mx-auto"
         >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+            <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">Visnly 2.0 Features</span>
+          </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 md:mb-8 leading-[1.1]">
-            Unfair Advantage. <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Engineered for Stealth.</span>
+            Intelligence. Interaction. <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Detection.</span>
           </h1>
-          <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
-            The only study assistant built with proprietary "Anti-Proctor" technology at its core. 
-            We don't just help you answer questions; we ensure you're never flagged while doing it.
+          <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed font-light">
+            Visnly isn't just an answer bot. It's a complete intelligent layer that sits on top of your education,
+            turning passive lectures into active knowledge.
           </p>
         </motion.div>
       </section>
 
-      {/* Feature Highlights */}
-      <section className="py-24 bg-black/20 border-y border-white/5">
+      {/* Core Stealth Features (Legacy but important) */}
+      <section className="py-24 border-y border-white/5 bg-black/20">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Four ways we make you <br/> <span className="text-indigo-400">unstoppable</span>.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Core Foundation</h2>
+            <p className="text-gray-400">Built on our proprietary undetectable technology.</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            {featureHighlights.map((feature, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="flex flex-col gap-4 p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
-              >
-                <div className={`h-12 w-12 rounded-full flex items-center justify-center mb-2 ${
-                  feature.color === 'blue' ? 'bg-blue-500/20 text-blue-400' :
-                  feature.color === 'purple' ? 'bg-purple-500/20 text-purple-400' :
-                  feature.color === 'green' ? 'bg-green-500/20 text-green-400' :
-                  'bg-pink-500/20 text-pink-400'
-                }`}>
-                  {feature.icon || <div className="w-6 h-6" />}
-                </div>
-                <h3 className="text-2xl font-bold">{feature.title}</h3>
-                <p className="text-gray-400 text-lg leading-relaxed">{feature.desc}</p>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-8 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-colors">
+              <div className="h-12 w-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
+                <Ghost size={24} />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Ghost Mode Overlay</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Draws directly to the GPU buffer, making it completely invisible to screen sharing and proctoring software.
+              </p>
+            </div>
+            <div className="p-8 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-colors">
+              <div className="h-12 w-12 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
+                <ArrowRight size={24} className="-rotate-45" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Real-Time OCR</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Reads your screen 60 times per second. No need to type questions manually—Visnly sees what you see.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Detailed Features Grid */}
-      <section className="py-24 md:py-32 px-4 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {features.map((feature, i) => (
-              <GlassCard 
-                key={i} 
-                className={`${feature.colSpan} ${feature.bg} p-8 group hover:border-white/20 transition-all duration-500 overflow-hidden relative border ${feature.border || 'border-white/5'}`}
-              >
-                <div className="relative z-10 h-full flex flex-col justify-between min-h-[200px]">
-                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-500 shadow-lg">
-                    {feature.icon}
-                  </div>
-                  
-                  <div className="mt-8">
-                    <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                    <p className="text-gray-400 leading-relaxed text-sm md:text-base">{feature.desc}</p>
-                  </div>
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-6xl mx-auto space-y-24">
+          {newFeatures.map((section, i) => (
+            <motion.div 
+              key={i}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                  {section.icon}
                 </div>
-                
-                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-indigo-500/10 blur-[100px] group-hover:opacity-100 opacity-0 transition-opacity duration-500" />
-              </GlassCard>
-            ))}
-          </div>
+                <h2 className="text-2xl font-bold text-gray-200">{section.category}</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {section.items.map((feature, j) => (
+                  <GlassCard 
+                    key={j} 
+                    className="p-6 group hover:border-indigo-500/30 transition-all duration-300"
+                  >
+                    <div className="h-10 w-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 group-hover:text-indigo-400 group-hover:scale-110 transition-all mb-4">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">{feature.desc}</p>
+                  </GlassCard>
+                ))}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
     </div>

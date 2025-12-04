@@ -12,40 +12,32 @@ interface FAQItem {
 
 const faqData: FAQItem[] = [
   {
-    question: "How does Visnly work?",
-    answer: "Visnly is an invisible overlay that runs on your computer. It uses OCR (Optical Character Recognition) to read text from your screen and AI to provide instant answers. Press Ctrl+Shift+Space to summon or hide the overlay during any meeting or exam."
+    question: "How does the 'Undetectable' overlay work?",
+    answer: "Visnly's overlay is drawn directly to the GPU buffer rather than the standard operating system composition layer. This means screen capture software (like Zoom, Teams, Discord, OBS, and proctoring tools) literally cannot see it. To them, it's invisible."
   },
   {
-    question: "Is Visnly detectable by proctoring software?",
-    answer: "Visnly is designed to be undetectable by most screen-sharing and proctoring software. However, with the Pro + Undetectability plan, Visnly becomes completely invisible to screen share during meetings. We recommend using this feature for maximum security."
+    question: "Does it work with lockdown browsers?",
+    answer: "Yes. Visnly is a completely external overlay. Since it doesn't hook into the browser process or modify web pages, it remains undetected by browser-level checks. However, always use at your own discretion."
   },
   {
-    question: "What's the difference between Study, Solve, and Cheat modes?",
-    answer: "Study mode provides detailed explanations to help you learn. Solve mode gives step-by-step solutions to problems. Cheat mode provides quick, direct answers without explanations. You can switch between modes instantly based on your needs."
+    question: "What is 'Phase 3' Detection?",
+    answer: "Phase 3 features include Test-Worthy Detection (flags exam material), Confusion Alerts (identifies complex topics), and Auto-Timestamps. It uses advanced AI to analyze the professor's speech patterns and emphasis."
   },
   {
-    question: "Is there a free version?",
-    answer: "Yes! Visnly offers a free tier with basic features including limited transcription and 5 questions per day. Upgrade to Pro for unlimited usage, access to newest AI models, and priority support."
+    question: "How does the Real-Time OCR work?",
+    answer: "Visnly captures your screen content 60 times per second and uses lightweight local processing to extract text. This text is then sent to our AI models along with your audio transcript for context-aware answers."
   },
   {
-    question: "Can I use Visnly on Mac or Linux?",
-    answer: "Currently, Visnly is available for Windows. We're working on Mac and Linux versions and will announce them soon. Sign up for our newsletter to be notified when they're available."
+    question: "Can I use it on Mac?",
+    answer: "Visnly is currently Windows-only due to the specific GPU-level access required for the undetectable overlay. A Mac version is in development but does not have an ETA yet."
   },
   {
-    question: "How accurate is the OCR and AI?",
-    answer: "Visnly uses advanced OCR technology to read text from your screen with high accuracy. Combined with GPT-4o-mini (or GPT-4 if you prefer), it provides reliable answers. Accuracy depends on screen quality and text clarity."
+    question: "Is there a free trial?",
+    answer: "Yes! Every new account gets 25 free credits to test all features, including the premium AI models. No credit card required to start."
   },
   {
-    question: "Will my data be stored or shared?",
-    answer: "No. Visnly processes everything locally on your device. Your screen content and questions are sent directly to OpenAI's API (which you control with your own API key). We don't store, log, or share any of your data."
-  },
-  {
-    question: "Can I use Visnly during online exams?",
-    answer: "Visnly is designed to work during online meetings and exams. However, we recommend checking your institution's academic integrity policies. Visnly can be used as a study tool to help you learn, not just during exams."
-  },
-  {
-    question: "What happens if I exceed my free tier limits?",
-    answer: "If you reach your free tier limit (5 sessions), you'll need to upgrade to Pro for unlimited sessions. Your session history is saved, and you can continue where you left off after upgrading."
+    question: "What if the professor has a thick accent?",
+    answer: "Our transcription engine is powered by OpenAI's Whisper model, which is industry-leading for handling accents, fast speech, and technical jargon. It adapts remarkably well to various speaking styles."
   }
 ];
 
@@ -59,11 +51,11 @@ export const FAQPage = () => {
   return (
     <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
       <SEO
-        title="FAQ - Visnly | Frequently Asked Questions"
-        description="Get answers to common questions about Visnly: How it works, undetectability, pricing, compatibility, and more. Everything you need to know about the invisible study assistant."
-        keywords="visnly faq, visnly questions, study assistant help, undetectable overlay, proctoring software, exam help"
+        title="FAQ - Visnly | Common Questions"
+        description="Answers to your questions about Visnly's undetectable overlay, AI features, and compatibility."
+        keywords="visnly faq, undetectable overlay, proctoring software, exam help, ai tutor"
       />
-      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%)' }} />
       <LiquidBackground />
       <Navbar />
       
@@ -75,12 +67,15 @@ export const FAQPage = () => {
           transition={{ duration: 0.8 }}
           className="max-w-4xl mx-auto"
         >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+            <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">Support</span>
+          </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 md:mb-8 leading-[1.1]">
             Frequently Asked <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Questions</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Questions.</span>
           </h1>
-          <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Everything you need to know about Visnly and how it works.
+          <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed font-light">
+            Everything you need to know about how Visnly keeps you ahead.
           </p>
         </motion.div>
       </section>
@@ -88,35 +83,35 @@ export const FAQPage = () => {
       {/* FAQ Section */}
       <section className="py-16 md:py-24 px-4 relative z-10">
         <div className="max-w-3xl mx-auto">
-          <div className="space-y-px">
+          <div className="space-y-4">
             {faqData.map((faq, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
-                className="border-b border-white/5"
+                className="border border-white/10 rounded-2xl bg-white/[0.02] overflow-hidden hover:bg-white/[0.04] transition-colors"
               >
                 <button
                   onClick={() => toggleQuestion(index)}
-                  className="w-full text-left py-5 flex items-start justify-between gap-4 group"
+                  className="w-full text-left p-6 flex items-start justify-between gap-4 group"
                 >
-                  <h3 className="text-base font-medium text-white/90 group-hover:text-white transition-colors flex-1">
+                  <h3 className="text-base font-medium text-white/90 group-hover:text-white transition-colors flex-1 pr-4">
                     {faq.question}
                   </h3>
-                  <ChevronDown
-                    className={`w-4 h-4 text-white/40 flex-shrink-0 mt-1 transition-all duration-200 ${
-                      openIndex === index ? 'rotate-180 text-white/60' : ''
-                    }`}
-                  />
+                  <div className={`p-1 rounded-full bg-white/5 transition-transform duration-300 ${
+                    openIndex === index ? 'rotate-180 bg-indigo-500/20 text-indigo-400' : 'text-gray-400'
+                  }`}>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
                 </button>
                 <div
-                  className={`overflow-hidden transition-all duration-300 ease-out ${
-                    openIndex === index ? 'max-h-96 opacity-100 pb-5' : 'max-h-0 opacity-0'
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                   }`}
                 >
-                  <p className="text-sm text-white/60 leading-relaxed pr-8">
+                  <p className="text-sm text-gray-400 leading-relaxed px-6 pb-6 pt-0 border-t border-white/5 mt-2">
                     {faq.answer}
                   </p>
                 </div>
@@ -129,13 +124,15 @@ export const FAQPage = () => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-center mt-12"
+            className="text-center mt-16 p-8 rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10"
           >
+            <h3 className="text-xl font-bold mb-2">Still have questions?</h3>
+            <p className="text-gray-400 mb-6">We're here to help you get set up.</p>
             <a
               href="mailto:support@visnly.com"
-              className="text-sm text-white/60 hover:text-white transition-colors underline underline-offset-4"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white text-black font-semibold hover:bg-gray-200 transition-colors"
             >
-              Contact support
+              Contact Support
             </a>
           </motion.div>
         </div>

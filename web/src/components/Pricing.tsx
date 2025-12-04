@@ -87,7 +87,7 @@ export const Pricing = () => {
       badge: 'Most Popular',
       features: ['Semester coverage', 'Serious students', '44% savings'],
       cta: 'Buy 250 Credits',
-      ctaStyle: 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]',
+      ctaStyle: 'bg-white text-black hover:bg-gray-200 border border-transparent',
       popular: true,
     },
     {
@@ -99,7 +99,7 @@ export const Pricing = () => {
       features: ['Month of study help', 'Regular students', '15% savings'],
       cta: 'Buy 100 Credits',
       ctaStyle: 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/50 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]',
-      popular: true,
+      popular: false, // Changed to false to make Power Pack the highlight
     },
     {
       name: 'Student Pack',
@@ -136,11 +136,11 @@ export const Pricing = () => {
   return (
     <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
       <SEO
-        title="Pricing - Visnly | Credit-Based Plans, No Subscriptions"
-        description="Start with 25 free credits. Buy more when you need them. Pay only for what you use with Visnly's credit-based pricing. No monthly fees, no commitment."
-        keywords="visnly pricing, study assistant cost, credit-based pricing, no subscription, student pricing"
+        title="Pricing - Visnly | Pay As You Go"
+        description="Flexible credit-based pricing for students. Start with 25 free credits. No subscriptions, just pay for what you use."
+        keywords="visnly pricing, study credits, pay as you go, student discount"
       />
-      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />
+      <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%)' }} />
       <LiquidBackground />
       <Navbar />
       <section id="pricing" className="pt-36 md:pt-48 pb-24 md:pb-32 px-4 relative z-10">
@@ -152,12 +152,15 @@ export const Pricing = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+            <span className="text-xs font-medium text-gray-300 tracking-wide uppercase">Fair Pricing</span>
+          </div>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 tracking-tight">
             Pay only for what you use, <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">no subscriptions.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">no subscriptions.</span>
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Start with 25 free credits. Buy more when you need them. No monthly fees, no commitment.
+            Credits never expire. Top up whenever you need more help.
           </p>
         </motion.div>
 
@@ -169,12 +172,15 @@ export const Pricing = () => {
           transition={{ delay: 0.1 }}
           className="mb-12 max-w-2xl mx-auto"
         >
-          <div className="bg-gradient-to-r from-indigo-900/30 to-cyan-900/30 border border-indigo-500/20 rounded-2xl p-6 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5 text-indigo-400" />
-              <h3 className="text-xl font-bold text-white">Free to Start</h3>
-             </div>
-            <p className="text-gray-300">Every new account gets <span className="font-bold text-white">25 free credits</span> to try StudyLayer. No credit card required.</p>
+          <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-2xl p-1 relative overflow-hidden">
+            <div className="absolute inset-0 bg-white/5 animate-pulse" />
+            <div className="bg-[#0A0A0A] rounded-xl p-6 text-center relative z-10">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-xl font-bold text-white">Start for Free</h3>
+              </div>
+              <p className="text-gray-300">Create an account and get <span className="font-bold text-white">25 free credits</span> instantly. No credit card required.</p>
+            </div>
           </div>
         </motion.div>
 
@@ -187,12 +193,16 @@ export const Pricing = () => {
               whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
               transition={{ delay: 0.1 + index * 0.1 }}
-              className={`relative group ${pkg.popular ? 'lg:col-span-1' : ''}`}
+              className={`relative group ${pkg.popular ? 'lg:col-span-1 lg:-mt-4' : ''}`}
           >
             {/* Popular Badge */}
               {pkg.badge && (
                 <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
-                <div className="bg-indigo-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg shadow-indigo-500/30 border border-indigo-400">
+                <div className={`text-xs font-bold px-4 py-1 rounded-full shadow-lg border ${
+                  pkg.popular 
+                    ? 'bg-white text-black border-white shadow-white/20' 
+                    : 'bg-indigo-600 text-white border-indigo-400 shadow-indigo-500/30'
+                }`}>
                     {pkg.badge}
                   </div>
                 </div>
@@ -200,17 +210,17 @@ export const Pricing = () => {
 
               {/* Glow Effect for Popular */}
               {pkg.popular && (
-                <div className="absolute -inset-[1px] bg-gradient-to-b from-indigo-500 to-indigo-500/20 rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+                <div className="absolute -inset-[1px] bg-gradient-to-b from-indigo-500 to-purple-500 rounded-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
               )}
             
               <div className={`relative h-full p-6 rounded-2xl border backdrop-blur-xl flex flex-col transition-all duration-300 ${
                 pkg.popular 
-                  ? 'border-indigo-500/30 bg-[#0B0B15] hover:border-indigo-400/50' 
+                  ? 'border-transparent bg-[#0B0B15]' 
                   : 'border-white/10 bg-black/40 hover:border-white/20'
               }`}>
                 {/* Background Gradient for Popular */}
                 {pkg.popular && (
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 blur-[60px] rounded-full pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-b from-indigo-500/10 to-transparent opacity-50 pointer-events-none rounded-2xl" />
                 )}
               
                 <div className="mb-6 relative z-10">
@@ -220,17 +230,19 @@ export const Pricing = () => {
                     <span className="text-gray-400 text-sm">one-time</span>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl font-bold text-indigo-400">{pkg.credits}</span>
+                    <span className={`text-2xl font-bold ${pkg.popular ? 'text-white' : 'text-indigo-400'}`}>{pkg.credits}</span>
                     <span className="text-gray-400 text-sm">credits</span>
                 </div>
                   <p className="text-xs text-gray-400">${pkg.pricePerCredit.toFixed(2)} per credit</p>
               </div>
 
                 <div className="flex-grow mb-6 relative z-10">
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {pkg.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Check size={14} className={`mt-0.5 shrink-0 ${pkg.popular ? 'text-indigo-400' : 'text-gray-500'}`} />
+                      <li key={i} className="flex items-start gap-3">
+                        <div className={`p-0.5 rounded-full ${pkg.popular ? 'bg-white text-black' : 'bg-white/10 text-gray-400'}`}>
+                          <Check size={10} strokeWidth={3} />
+                        </div>
                         <span className={`text-sm ${pkg.popular ? 'text-white' : 'text-gray-300'}`}>{feature}</span>
                     </li>
                     ))}
@@ -240,7 +252,7 @@ export const Pricing = () => {
                 <button 
                   onClick={() => handleBuy(pkg.credits)}
                   disabled={loading !== null}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all relative z-10 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${pkg.ctaStyle}`}
+                  className={`w-full py-3 rounded-xl font-bold text-sm transition-all relative z-10 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${pkg.ctaStyle}`}
                 >
                   {loading === pkg.credits ? (
                     <span className="flex items-center justify-center gap-2">
