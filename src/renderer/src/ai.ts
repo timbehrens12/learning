@@ -368,3 +368,292 @@ ${scannedText || "(No screen content available)"}`;
     };
   }
 }
+
+// ============================================
+// PHASE 2: INTERACTIVE FEATURES
+// ============================================
+
+// Learning styles type
+export type LearningStyle = 'simple' | 'visual' | 'stepbystep' | 'analogies' | 'default';
+
+// Get learning style system prompt modifier
+function getLearningStylePrompt(style: LearningStyle): string {
+  switch (style) {
+    case 'simple':
+      return `
+IMPORTANT: Explain in the SIMPLEST terms possible.
+- Use everyday language, avoid jargon
+- Break complex ideas into tiny pieces
+- Use short sentences
+- Assume the reader has no background knowledge
+- Define any technical term you must use`;
+    case 'visual':
+      return `
+IMPORTANT: Create VISUAL explanations.
+- Use mental images and descriptions the reader can picture
+- Describe things as if painting a picture
+- Use spatial relationships (above, below, flows into, connects to)
+- Include diagrams described in words (e.g., "Imagine a flowchart where...")
+- Use color and shape metaphors when helpful`;
+    case 'stepbystep':
+      return `
+IMPORTANT: Explain in a STRUCTURED, step-by-step manner.
+- Number every step clearly (Step 1, Step 2, etc.)
+- Each step should be one clear action or concept
+- Show the logical progression from start to finish
+- Explain WHY each step leads to the next
+- Include checkpoints to verify understanding`;
+    case 'analogies':
+      return `
+IMPORTANT: Explain using REAL-WORLD ANALOGIES.
+- Compare every concept to something from everyday life
+- Use relatable examples (cooking, sports, social media, etc.)
+- Start with "Think of it like..." or "It's similar to..."
+- Make the unfamiliar feel familiar
+- Use multiple analogies if helpful`;
+    default:
+      return '';
+  }
+}
+
+// Tap-to-Explain: Explain a specific transcript segment
+export async function explainSegment(
+  segmentText: string, 
+  fullTranscript: string, 
+  scannedText: string, 
+  userId: string | null,
+  learningStyle: LearningStyle = 'default'
+): Promise<string> {
+  const stylePrompt = getLearningStylePrompt(learningStyle);
+  
+  const systemPrompt = `You are a patient tutor explaining a specific part of a lecture.
+
+The student has clicked on a specific segment they want explained. Focus ONLY on explaining that segment clearly.
+${stylePrompt}
+
+Rules:
+- Focus specifically on the selected text
+- Use context from the full transcript to give better explanations
+- Keep the explanation concise but thorough (2-4 paragraphs max)
+- If it's a term, define it clearly
+- If it's a concept, break it down
+- If it's a formula, explain each part
+- Use the screen content for additional context if relevant`;
+
+  const userPrompt = `SELECTED SEGMENT (explain THIS specifically):
+"${segmentText}"
+
+FULL TRANSCRIPT (for context):
+${fullTranscript || "(No transcript available)"}
+
+SCREEN CONTENT (additional context):
+${scannedText || "(No screen content)"}
+
+Please explain the selected segment clearly.`;
+
+  try {
+    return await callAISimple(systemPrompt, userPrompt, userId, 0.5);
+  } catch (error: any) {
+    console.error("Failed to explain segment:", error);
+    throw error;
+  }
+}
+
+// Context Tool: "What does the teacher mean here?"
+export async function explainTeacherMeaning(
+  selectedText: string,
+  fullTranscript: string,
+  scannedText: string,
+  userId: string | null,
+  learningStyle: LearningStyle = 'default'
+): Promise<string> {
+  const stylePrompt = getLearningStylePrompt(learningStyle);
+  
+  const systemPrompt = `You are an expert at interpreting what professors mean in lectures.
+
+The student is confused about what the teacher meant by something specific. Help them understand the teacher's intent and meaning.
+${stylePrompt}
+
+Rules:
+- Interpret the professor's words in context
+- Explain the underlying concept they're trying to teach
+- Clarify any implied knowledge or assumptions
+- Connect to broader course themes if apparent
+- If the meaning is ambiguous, present possible interpretations`;
+
+  const userPrompt = `WHAT THE STUDENT IS CONFUSED ABOUT:
+"${selectedText}"
+
+FULL LECTURE CONTEXT:
+${fullTranscript || "(No transcript available)"}
+
+VISUAL CONTEXT:
+${scannedText || "(No screen content)"}
+
+What does the teacher mean by this? Explain clearly.`;
+
+  try {
+    return await callAISimple(systemPrompt, userPrompt, userId, 0.5);
+  } catch (error: any) {
+    console.error("Failed to explain teacher meaning:", error);
+    throw error;
+  }
+}
+
+// Context Tool: "Give me context from before this point"
+export async function getContextBefore(
+  selectedText: string,
+  fullTranscript: string,
+  scannedText: string,
+  userId: string | null
+): Promise<string> {
+  const systemPrompt = `You are helping a student understand context in a lecture.
+
+The student wants to understand what came before a specific point in the lecture and how it connects.
+
+Rules:
+- Summarize what was discussed before this point
+- Explain how earlier content leads to this point
+- Identify key concepts that were introduced earlier that relate to this
+- Show the logical flow of the lecture
+- Keep it concise - focus on relevant context only`;
+
+  const userPrompt = `THE POINT IN QUESTION:
+"${selectedText}"
+
+FULL TRANSCRIPT:
+${fullTranscript || "(No transcript available)"}
+
+SCREEN CONTENT:
+${scannedText || "(No screen content)"}
+
+What context from earlier in the lecture helps understand this point? Summarize what came before.`;
+
+  try {
+    return await callAISimple(systemPrompt, userPrompt, userId, 0.4);
+  } catch (error: any) {
+    console.error("Failed to get context:", error);
+    throw error;
+  }
+}
+
+// Context Tool: Extract all formulas from lecture
+export async function extractFormulas(
+  transcript: string,
+  scannedText: string,
+  userId: string | null
+): Promise<{ formula: string; explanation: string }[]> {
+  const systemPrompt = `You are an expert at identifying and explaining mathematical formulas and equations.
+
+Extract ALL formulas, equations, and mathematical expressions from the lecture content.
+
+Your response MUST be in this exact JSON format (no markdown, just raw JSON):
+[
+  {"formula": "E = mc²", "explanation": "Energy equals mass times the speed of light squared"},
+  {"formula": "F = ma", "explanation": "Force equals mass times acceleration"}
+]
+
+Rules:
+- Include ALL formulas mentioned (written or spoken)
+- Include any equations shown on screen
+- Provide a brief explanation for each (1 sentence)
+- If no formulas exist, return an empty array []
+- Include variable definitions if mentioned`;
+
+  const userPrompt = `Extract all formulas and equations from this lecture:
+
+TRANSCRIPT:
+${transcript || "(No transcript available)"}
+
+SCREEN CONTENT:
+${scannedText || "(No screen content)"}`;
+
+  try {
+    const response = await callAISimple(systemPrompt, userPrompt, userId, 0.2);
+    const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (error) {
+    console.error("Failed to extract formulas:", error);
+    return [];
+  }
+}
+
+// Rewrite content in a specific learning style
+export async function rewriteInStyle(
+  content: string,
+  style: LearningStyle,
+  userId: string | null
+): Promise<string> {
+  const stylePrompt = getLearningStylePrompt(style);
+  
+  const styleNames: Record<LearningStyle, string> = {
+    simple: 'simple, easy-to-understand language',
+    visual: 'visual, descriptive language with mental images',
+    stepbystep: 'structured, step-by-step format',
+    analogies: 'real-world analogies and comparisons',
+    default: 'clear, educational language'
+  };
+  
+  const systemPrompt = `You are an expert at adapting educational content to different learning styles.
+
+Rewrite the following content using ${styleNames[style]}.
+${stylePrompt}
+
+Rules:
+- Keep ALL the information from the original
+- Transform the presentation style completely
+- Make it feel like it was written for someone who learns best this way
+- Don't add new information, just present it differently`;
+
+  const userPrompt = `Rewrite this content in a ${styleNames[style]} style:
+
+${content}`;
+
+  try {
+    return await callAISimple(systemPrompt, userPrompt, userId, 0.6);
+  } catch (error: any) {
+    console.error("Failed to rewrite content:", error);
+    throw error;
+  }
+}
+
+// Quick context question - general purpose
+export async function askContextQuestion(
+  question: string,
+  transcript: string,
+  scannedText: string,
+  userId: string | null,
+  learningStyle: LearningStyle = 'default'
+): Promise<string> {
+  const stylePrompt = getLearningStylePrompt(learningStyle);
+  
+  const systemPrompt = `You are a helpful tutor answering questions about lecture content.
+
+The student has a specific question about what was covered. Answer based on the lecture content provided.
+${stylePrompt}
+
+Rules:
+- Answer the specific question asked
+- Use information from the transcript and screen
+- Be concise but thorough
+- If the answer isn't in the content, say so
+- Connect to broader concepts when helpful`;
+
+  const userPrompt = `STUDENT'S QUESTION:
+${question}
+
+LECTURE TRANSCRIPT:
+${transcript || "(No transcript available)"}
+
+SCREEN CONTENT:
+${scannedText || "(No screen content)"}
+
+Answer the question based on the lecture content.`;
+
+  try {
+    return await callAISimple(systemPrompt, userPrompt, userId, 0.5);
+  } catch (error: any) {
+    console.error("Failed to answer context question:", error);
+    throw error;
+  }
+}

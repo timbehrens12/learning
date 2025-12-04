@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Tesseract from 'tesseract.js';
-import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide } from './ai';
+import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide, explainSegment, explainTeacherMeaning, getContextBefore, extractFormulas, rewriteInStyle, askContextQuestion, LearningStyle } from './ai';
 import { supabase } from './lib/supabase';
 import GlassCard from './components/GlassCard';
-import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon } from './components/Icons';
+import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon, HelpCircleIcon, HashIcon, ChevronRightIcon } from './components/Icons';
 
 declare global { interface Window { webkitSpeechRecognition: any; } }
 
@@ -60,6 +60,20 @@ const Overlay: React.FC = () => {
     isLoading: {},
     activeSection: null
   });
+  
+  // Phase 2: Interactive Features State
+  const [learningStyle, setLearningStyle] = useState<LearningStyle>(() => {
+    const saved = localStorage.getItem('visnly_learning_style');
+    return (saved as LearningStyle) || 'default';
+  });
+  const [selectedSegment, setSelectedSegment] = useState<{ index: number; text: string; time: string } | null>(null);
+  const [segmentExplanation, setSegmentExplanation] = useState<string>('');
+  const [isExplainingSegment, setIsExplainingSegment] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [extractedFormulas, setExtractedFormulas] = useState<{ formula: string; explanation: string }[]>([]);
+  const [showLearningStylePicker, setShowLearningStylePicker] = useState(false);
+  const [hoveredSegmentIndex, setHoveredSegmentIndex] = useState<number | null>(null);
   
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
@@ -647,6 +661,185 @@ const Overlay: React.FC = () => {
     });
   }, []);
 
+  // --- PHASE 2: INTERACTIVE FEATURES HANDLERS ---
+  
+  // Save learning style preference
+  useEffect(() => {
+    localStorage.setItem('visnly_learning_style', learningStyle);
+  }, [learningStyle]);
+
+  // Tap-to-Explain: Handle clicking on a transcript segment
+  const handleSegmentClick = useCallback(async (segment: { index: number; text: string; time: string }, event: React.MouseEvent) => {
+    event.preventDefault();
+    
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    
+    setSelectedSegment(segment);
+    setSegmentExplanation('');
+    setIsExplainingSegment(true);
+    
+    try {
+      const explanation = await explainSegment(
+        segment.text,
+        transcriptLog,
+        scannedText,
+        userId,
+        learningStyle
+      );
+      setSegmentExplanation(explanation);
+    } catch (error: any) {
+      console.error('Failed to explain segment:', error);
+      setSegmentExplanation(`Error: ${error.message || 'Failed to explain. Please try again.'}`);
+    } finally {
+      setIsExplainingSegment(false);
+    }
+  }, [userId, transcriptLog, scannedText, learningStyle]);
+
+  // Close segment explanation popup
+  const closeSegmentExplanation = useCallback(() => {
+    setSelectedSegment(null);
+    setSegmentExplanation('');
+  }, []);
+
+  // Context Tool: What does the teacher mean?
+  const handleWhatDoesThisMean = useCallback(async (text?: string) => {
+    const targetText = text || selectedSegment?.text || '';
+    if (!targetText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Select some text first."}]);
+      return;
+    }
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    
+    setActiveTab('chat');
+    setMessages(prev => [...prev, {sender: 'user', text: `What does the teacher mean by: "${targetText.substring(0, 100)}${targetText.length > 100 ? '...' : ''}"`}]);
+    setIsThinking(true);
+    
+    try {
+      const response = await explainTeacherMeaning(targetText, transcriptLog, scannedText, userId, learningStyle);
+      setMessages(prev => [...prev, {sender: 'ai', text: response}]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to explain'}`}]);
+    } finally {
+      setIsThinking(false);
+      setShowContextMenu(false);
+    }
+  }, [selectedSegment, userId, transcriptLog, scannedText, learningStyle]);
+
+  // Context Tool: Give me context from before
+  const handleGetContextBefore = useCallback(async (text?: string) => {
+    const targetText = text || selectedSegment?.text || '';
+    if (!targetText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Select some text first."}]);
+      return;
+    }
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    
+    setActiveTab('chat');
+    setMessages(prev => [...prev, {sender: 'user', text: `Give me context for: "${targetText.substring(0, 100)}${targetText.length > 100 ? '...' : ''}"`}]);
+    setIsThinking(true);
+    
+    try {
+      const response = await getContextBefore(targetText, transcriptLog, scannedText, userId);
+      setMessages(prev => [...prev, {sender: 'ai', text: response}]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to get context'}`}]);
+    } finally {
+      setIsThinking(false);
+      setShowContextMenu(false);
+    }
+  }, [selectedSegment, userId, transcriptLog, scannedText]);
+
+  // Context Tool: Extract all formulas
+  const handleExtractFormulas = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, formulas: true } }));
+    
+    try {
+      const formulas = await extractFormulas(transcriptLog, scannedText, userId);
+      setExtractedFormulas(formulas);
+      if (formulas.length === 0) {
+        setMessages(prev => [...prev, {sender: 'system', text: "ℹ️ No formulas found in the lecture content."}]);
+      }
+    } catch (error: any) {
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to extract formulas'}`}]);
+    } finally {
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, formulas: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  // Rewrite content in selected learning style
+  const handleRewriteInStyle = useCallback(async (content: string, style: LearningStyle) => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return '';
+    }
+    
+    try {
+      const rewritten = await rewriteInStyle(content, style, userId);
+      return rewritten;
+    } catch (error: any) {
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to rewrite'}`}]);
+      return '';
+    }
+  }, [userId]);
+
+  // Ask a context question
+  const handleContextQuestion = useCallback(async (question: string) => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    
+    setActiveTab('chat');
+    setMessages(prev => [...prev, {sender: 'user', text: question}]);
+    setIsThinking(true);
+    
+    try {
+      const response = await askContextQuestion(question, transcriptLog, scannedText, userId, learningStyle);
+      setMessages(prev => [...prev, {sender: 'ai', text: response}]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to answer'}`}]);
+    } finally {
+      setIsThinking(false);
+    }
+  }, [userId, transcriptLog, scannedText, learningStyle]);
+
+  // Right-click context menu for transcript segments
+  const handleSegmentRightClick = useCallback((segment: { index: number; text: string; time: string }, event: React.MouseEvent) => {
+    event.preventDefault();
+    setSelectedSegment(segment);
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+    setShowContextMenu(true);
+  }, []);
+
+  // Close context menu when clicking elsewhere
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (showContextMenu) {
+        setShowContextMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showContextMenu]);
+
   const handleQuickAnalysis = useCallback(async () => {
     if (isScanning || isThinking) return;
     await handleAnalyze();
@@ -1084,20 +1277,43 @@ const Overlay: React.FC = () => {
               </div>
             </div>
 
-            {/* Text Stream */}
+            {/* Text Stream - Now with Tap-to-Explain */}
             <div style={styles.transcriptContent}>
               {transcriptSegments.length === 0 && !isListening ? (
                 <div style={styles.transcriptEmpty}>
                   <div style={{marginBottom: '10px', fontSize: '20px'}}>🎙️</div>
                   <div>Microphone is ready.</div>
                   <div style={{fontSize: '11px', opacity: 0.5}}>Use the controls in the top bar to start recording.</div>
+                  <div style={{fontSize: '10px', opacity: 0.4, marginTop: '8px'}}>💡 Tip: Click any text to get an instant explanation</div>
                 </div>
               ) : (
                 <>
                   {transcriptSegments.map((seg, i) => (
-                    <div key={i} style={styles.transcriptRow}>
+                    <div 
+                      key={i} 
+                      style={{
+                        ...styles.transcriptRow,
+                        ...styles.transcriptRowClickable,
+                        backgroundColor: selectedSegment?.index === i 
+                          ? 'rgba(139,92,246,0.15)' 
+                          : hoveredSegmentIndex === i 
+                            ? 'rgba(139,92,246,0.08)' 
+                            : 'transparent'
+                      }}
+                      onClick={(e) => handleSegmentClick({ index: i, text: seg.text, time: seg.time }, e)}
+                      onContextMenu={(e) => handleSegmentRightClick({ index: i, text: seg.text, time: seg.time }, e)}
+                      onMouseEnter={() => setHoveredSegmentIndex(i)}
+                      onMouseLeave={() => setHoveredSegmentIndex(null)}
+                      title="Click to explain • Right-click for more options"
+                    >
                       <span style={styles.timestamp}>{seg.time}</span>
                       <span style={styles.transcriptLineText}>{seg.text}</span>
+                      <span style={{
+                        ...styles.tapToExplainHint,
+                        opacity: hoveredSegmentIndex === i ? 1 : 0
+                      }}>
+                        <LightbulbIcon size={12} color="rgba(139,92,246,0.7)" />
+                      </span>
                     </div>
                   ))}
                   {isListening && (
@@ -1109,25 +1325,186 @@ const Overlay: React.FC = () => {
               )}
               <div ref={transcriptEndRef} />
             </div>
+
+            {/* Segment Explanation Popup (Tap-to-Explain) */}
+            {selectedSegment && (
+              <div style={styles.segmentPopup}>
+                <div style={styles.segmentPopupHeader}>
+                  <div style={styles.segmentPopupTitle}>
+                    <LightbulbIcon size={16} color="#8b5cf6" />
+                    <span>Explain This</span>
+                  </div>
+                  <button onClick={closeSegmentExplanation} style={styles.segmentPopupClose}>
+                    <XIcon size={16} color="#888" />
+                  </button>
+                </div>
+                <div style={styles.segmentPopupSelected}>
+                  "{selectedSegment.text.substring(0, 150)}{selectedSegment.text.length > 150 ? '...' : ''}"
+                </div>
+                <div style={styles.segmentPopupContent}>
+                  {isExplainingSegment ? (
+                    <div style={styles.segmentPopupLoading}>
+                      <div style={styles.loadingSpinner}></div>
+                      <span>Analyzing...</span>
+                    </div>
+                  ) : segmentExplanation ? (
+                    <div style={styles.segmentPopupExplanation}>{segmentExplanation}</div>
+                  ) : null}
+                </div>
+                <div style={styles.segmentPopupActions}>
+                  <button 
+                    onClick={() => handleWhatDoesThisMean(selectedSegment.text)}
+                    style={styles.contextActionBtn}
+                  >
+                    <HelpCircleIcon size={14} color="currentColor" />
+                    What does this mean?
+                  </button>
+                  <button 
+                    onClick={() => handleGetContextBefore(selectedSegment.text)}
+                    style={styles.contextActionBtn}
+                  >
+                    <ChevronRightIcon size={14} color="currentColor" />
+                    Give me context
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (segmentExplanation) {
+                        navigator.clipboard.writeText(segmentExplanation);
+                        setMessages(prev => [...prev, {sender: 'system', text: '✅ Copied!'}]);
+                      }
+                    }}
+                    style={styles.contextActionBtn}
+                    disabled={!segmentExplanation}
+                  >
+                    <CopyIcon size={14} color="currentColor" />
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Right-Click Context Menu */}
+            {showContextMenu && selectedSegment && (
+              <div 
+                style={{
+                  ...styles.contextMenu,
+                  left: contextMenuPosition.x,
+                  top: contextMenuPosition.y
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  onClick={() => handleSegmentClick(selectedSegment, { preventDefault: () => {} } as React.MouseEvent)}
+                  style={styles.contextMenuItem}
+                >
+                  <LightbulbIcon size={14} color="#8b5cf6" />
+                  Explain this
+                </button>
+                <button 
+                  onClick={() => handleWhatDoesThisMean()}
+                  style={styles.contextMenuItem}
+                >
+                  <HelpCircleIcon size={14} color="#0ea5e9" />
+                  What does teacher mean?
+                </button>
+                <button 
+                  onClick={() => handleGetContextBefore()}
+                  style={styles.contextMenuItem}
+                >
+                  <ChevronRightIcon size={14} color="#22c55e" />
+                  Give me context before
+                </button>
+                <div style={styles.contextMenuDivider}></div>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedSegment.text);
+                    setMessages(prev => [...prev, {sender: 'system', text: '✅ Copied!'}]);
+                    setShowContextMenu(false);
+                  }}
+                  style={styles.contextMenuItem}
+                >
+                  <CopyIcon size={14} color="#888" />
+                  Copy text
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* --- NOTES TAB CONTENT --- */}
         {activeTab === 'notes' && (
           <div style={styles.notesView}>
-            {/* Quick Actions Bar */}
+            {/* Quick Actions Bar with Learning Style Selector */}
             <div style={styles.notesToolbar}>
               <span style={{fontSize: '11px', fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
                 Study Tools
               </span>
-              <button 
-                onClick={clearNotesState} 
-                style={styles.toolBtn} 
-                title="Clear all notes"
-              >
-                <ClearIcon size={14} color="currentColor" />
-                <span>Clear</span>
-              </button>
+              <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                {/* Learning Style Picker */}
+                <div style={{position: 'relative'}}>
+                  <button 
+                    onClick={() => setShowLearningStylePicker(!showLearningStylePicker)}
+                    style={{
+                      ...styles.toolBtn,
+                      background: learningStyle !== 'default' ? 'rgba(139,92,246,0.15)' : undefined,
+                      borderColor: learningStyle !== 'default' ? 'rgba(139,92,246,0.3)' : undefined
+                    }}
+                    title="Learning Style"
+                  >
+                    <span style={{fontSize: '12px'}}>
+                      {learningStyle === 'default' ? '🎓' : 
+                       learningStyle === 'simple' ? '📝' :
+                       learningStyle === 'visual' ? '🎨' :
+                       learningStyle === 'stepbystep' ? '📋' : '💡'}
+                    </span>
+                    <span style={{fontSize: '11px'}}>Style</span>
+                    <ChevronDownIcon size={12} color="currentColor" />
+                  </button>
+                  
+                  {showLearningStylePicker && (
+                    <div style={styles.learningStyleDropdown}>
+                      <div style={styles.learningStyleDropdownHeader}>Learning Style</div>
+                      {[
+                        { value: 'default', label: 'Default', icon: '🎓', desc: 'Clear, educational' },
+                        { value: 'simple', label: 'Simple', icon: '📝', desc: 'Easy language, no jargon' },
+                        { value: 'visual', label: 'Visual', icon: '🎨', desc: 'Mental images, diagrams' },
+                        { value: 'stepbystep', label: 'Step-by-Step', icon: '📋', desc: 'Numbered, structured' },
+                        { value: 'analogies', label: 'Analogies', icon: '💡', desc: 'Real-world comparisons' },
+                      ].map(style => (
+                        <button
+                          key={style.value}
+                          onClick={() => {
+                            setLearningStyle(style.value as LearningStyle);
+                            setShowLearningStylePicker(false);
+                          }}
+                          style={{
+                            ...styles.learningStyleOption,
+                            background: learningStyle === style.value ? 'rgba(139,92,246,0.15)' : 'transparent'
+                          }}
+                        >
+                          <span style={{fontSize: '16px'}}>{style.icon}</span>
+                          <div style={{flex: 1, textAlign: 'left'}}>
+                            <div style={{fontSize: '12px', fontWeight: 600, color: '#fff'}}>{style.label}</div>
+                            <div style={{fontSize: '10px', color: '#888'}}>{style.desc}</div>
+                          </div>
+                          {learningStyle === style.value && (
+                            <span style={{color: '#8b5cf6'}}>✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <button 
+                  onClick={clearNotesState} 
+                  style={styles.toolBtn} 
+                  title="Clear all notes"
+                >
+                  <ClearIcon size={14} color="currentColor" />
+                  <span>Clear</span>
+                </button>
+              </div>
             </div>
 
             {/* Action Buttons Grid */}
@@ -1198,6 +1575,75 @@ const Overlay: React.FC = () => {
                 {notesState.isLoading.studyGuide && <span style={styles.loadingDot}>...</span>}
               </button>
             </div>
+
+            {/* Context Tools Section */}
+            <div style={styles.contextToolsSection}>
+              <div style={styles.contextToolsHeader}>
+                <HelpCircleIcon size={14} color="#888" />
+                <span>Context Tools</span>
+              </div>
+              <div style={styles.contextToolsGrid}>
+                <button 
+                  onClick={() => handleContextQuestion("What are all the key terms and their definitions mentioned in this lecture?")}
+                  style={styles.contextToolBtn}
+                >
+                  📖 Define all terms
+                </button>
+                <button 
+                  onClick={handleExtractFormulas}
+                  disabled={notesState.isLoading.formulas}
+                  style={styles.contextToolBtn}
+                >
+                  🔢 Extract formulas {notesState.isLoading.formulas && '...'}
+                </button>
+                <button 
+                  onClick={() => handleContextQuestion("What examples did the teacher use to explain concepts?")}
+                  style={styles.contextToolBtn}
+                >
+                  📋 List examples
+                </button>
+                <button 
+                  onClick={() => handleContextQuestion("What are the most important things to remember from this lecture?")}
+                  style={styles.contextToolBtn}
+                >
+                  ⭐ Most important
+                </button>
+              </div>
+            </div>
+
+            {/* Extracted Formulas Display */}
+            {extractedFormulas.length > 0 && (
+              <div style={styles.formulasSection}>
+                <div style={styles.notesSectionHeader}>
+                  <HashIcon size={16} color="#22c55e" />
+                  <span>Extracted Formulas</span>
+                  <button 
+                    onClick={() => {
+                      const content = extractedFormulas.map(f => `${f.formula}\n  → ${f.explanation}`).join('\n\n');
+                      navigator.clipboard.writeText(content);
+                      setMessages(prev => [...prev, {sender: 'system', text: '✅ Copied formulas!'}]);
+                    }}
+                    style={styles.copySmallBtn}
+                  >
+                    <CopyIcon size={12} color="currentColor" />
+                  </button>
+                  <button 
+                    onClick={() => setExtractedFormulas([])}
+                    style={{...styles.copySmallBtn, marginLeft: '4px'}}
+                  >
+                    <XIcon size={12} color="currentColor" />
+                  </button>
+                </div>
+                <div style={styles.formulasList}>
+                  {extractedFormulas.map((f, i) => (
+                    <div key={i} style={styles.formulaItem}>
+                      <div style={styles.formulaText}>{f.formula}</div>
+                      <div style={styles.formulaExplanation}>{f.explanation}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Results Display Area */}
             <div style={styles.notesResultsArea}>
@@ -2238,6 +2684,255 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(255,255,255,0.03)',
     borderRadius: '6px',
     lineHeight: '1.5'
+  },
+  
+  // --- PHASE 2: INTERACTIVE FEATURES STYLES ---
+  
+  // Tap-to-Explain - Clickable transcript rows
+  transcriptRowClickable: {
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    borderRadius: '6px',
+    padding: '6px 8px',
+    margin: '2px 0',
+    position: 'relative'
+  },
+  tapToExplainHint: {
+    position: 'absolute',
+    right: '8px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    opacity: 0,
+    transition: 'opacity 0.15s ease'
+  },
+  
+  // Segment Explanation Popup
+  segmentPopup: {
+    position: 'absolute',
+    bottom: '60px',
+    left: '12px',
+    right: '12px',
+    background: 'rgba(20, 20, 25, 0.98)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '12px',
+    border: '1px solid rgba(139,92,246,0.3)',
+    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+    maxHeight: '300px',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    zIndex: 100
+  },
+  segmentPopupHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '10px 12px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)'
+  },
+  segmentPopupTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#fff'
+  },
+  segmentPopupClose: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px',
+    borderRadius: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  segmentPopupSelected: {
+    padding: '8px 12px',
+    fontSize: '11px',
+    color: '#888',
+    fontStyle: 'italic',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    background: 'rgba(139,92,246,0.05)'
+  },
+  segmentPopupContent: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '12px'
+  },
+  segmentPopupLoading: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    padding: '20px',
+    color: '#888',
+    fontSize: '13px'
+  },
+  segmentPopupExplanation: {
+    fontSize: '13px',
+    color: '#ccc',
+    lineHeight: '1.7',
+    whiteSpace: 'pre-wrap'
+  },
+  segmentPopupActions: {
+    display: 'flex',
+    gap: '6px',
+    padding: '10px 12px',
+    borderTop: '1px solid rgba(255,255,255,0.05)',
+    background: 'rgba(0,0,0,0.2)'
+  },
+  contextActionBtn: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    padding: '6px 8px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '6px',
+    color: '#aaa',
+    fontSize: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
+  },
+  
+  // Right-click Context Menu
+  contextMenu: {
+    position: 'fixed',
+    background: 'rgba(20, 20, 25, 0.98)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '8px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+    padding: '4px',
+    minWidth: '180px',
+    zIndex: 1000
+  },
+  contextMenuItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    width: '100%',
+    padding: '8px 10px',
+    background: 'none',
+    border: 'none',
+    borderRadius: '4px',
+    color: '#ccc',
+    fontSize: '12px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'background 0.15s ease'
+  },
+  contextMenuDivider: {
+    height: '1px',
+    background: 'rgba(255,255,255,0.1)',
+    margin: '4px 0'
+  },
+  
+  // Learning Style Dropdown
+  learningStyleDropdown: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    marginTop: '4px',
+    background: 'rgba(20, 20, 25, 0.98)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '10px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+    padding: '8px',
+    minWidth: '220px',
+    zIndex: 100
+  },
+  learningStyleDropdownHeader: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    padding: '6px 8px',
+    marginBottom: '4px'
+  },
+  learningStyleOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    width: '100%',
+    padding: '8px 10px',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'background 0.15s ease'
+  },
+  
+  // Context Tools Section
+  contextToolsSection: {
+    padding: '10px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)'
+  },
+  contextToolsHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginBottom: '8px'
+  },
+  contextToolsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '6px'
+  },
+  contextToolBtn: {
+    padding: '8px 10px',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '8px',
+    color: '#ccc',
+    fontSize: '11px',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    textAlign: 'center'
+  },
+  
+  // Formulas Section
+  formulasSection: {
+    margin: '0 14px 14px',
+    padding: '12px',
+    background: 'rgba(34,197,94,0.05)',
+    borderRadius: '10px',
+    border: '1px solid rgba(34,197,94,0.15)'
+  },
+  formulasList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  formulaItem: {
+    padding: '10px',
+    background: 'rgba(0,0,0,0.2)',
+    borderRadius: '6px',
+    borderLeft: '3px solid #22c55e'
+  },
+  formulaText: {
+    fontFamily: 'monospace',
+    fontSize: '14px',
+    color: '#22c55e',
+    fontWeight: 600,
+    marginBottom: '4px'
+  },
+  formulaExplanation: {
+    fontSize: '11px',
+    color: '#888',
+    lineHeight: '1.4'
   }
 };
 
