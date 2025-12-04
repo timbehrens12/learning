@@ -10,6 +10,7 @@ import { FAQPage } from './pages/FAQPage';
 import { SuccessPage } from './components/SuccessPage';
 import { Pricing } from './components/Pricing';
 import { LiquidBackground } from './components/LiquidBackground';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
 
 function App() {
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ function App() {
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/faq" element={<FAQPage />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/success" element={
         <div className="relative min-h-screen text-white font-sans" style={{ backgroundColor: '#050505' }}>
           <div className="fixed inset-0 -z-20" style={{ background: 'radial-gradient(ellipse at top, #13131f 0%, #050505 50%, #050505 100%)' }} />

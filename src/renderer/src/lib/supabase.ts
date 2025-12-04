@@ -5,10 +5,15 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY in your .env file');
+  console.error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY');
+  console.error('The app will not function properly without these variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create client with fallback to prevent crashes (but it won't work without real credentials)
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+);
 
 // Credit management service
 export const userCredits = {
@@ -65,20 +70,36 @@ export const userCredits = {
       const currentCredits = data?.credits_remaining ?? 25;
       const newCredits = Math.max(0, currentCredits - amount);
 
-      // Update credits using upsert to handle cases where record doesn't exist
-      const { error: updateError } = await supabase
+      // Try UPDATE first (works with RLS UPDATE policy)
+      const { data: updateData, error: updateError } = await supabase
         .from('user_credits')
-        .upsert({
-          user_id: userId,
+        .update({
           credits_remaining: newCredits,
           updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
+        })
+        .eq('user_id', userId)
+        .select();
 
-      if (updateError) throw updateError;
+      // If UPDATE fails because record doesn't exist, try INSERT
+      if (updateError || !updateData || updateData.length === 0) {
+        console.log('Update failed or no rows affected, trying INSERT...');
+        const { error: insertError } = await supabase
+          .from('user_credits')
+          .insert({
+            user_id: userId,
+            credits_remaining: newCredits,
+            subscription_plan: 'free',
+            updated_at: new Date().toISOString()
+          });
 
-      console.log(`Deducted ${amount} credits. Remaining: ${newCredits}`);
+        if (insertError) {
+          // If INSERT also fails, it might be RLS - log and throw
+          console.error('Both UPDATE and INSERT failed:', insertError);
+          throw insertError;
+        }
+      }
+
+      console.log(`✅ Deducted ${amount} credits. Remaining: ${newCredits}`);
 
     } catch (error) {
       console.error('Failed to deduct credits:', error);

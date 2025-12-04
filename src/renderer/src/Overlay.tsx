@@ -1,15 +1,35 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Tesseract from 'tesseract.js';
-import { askAI } from './ai';
+import { askAI, extractKeyConcepts, extractMainPoints, generateSimplifiedNotes, generateRecap, generateStudyGuide } from './ai';
 import { supabase } from './lib/supabase';
 import GlassCard from './components/GlassCard';
-import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon } from './components/Icons';
+import { EyeIcon, CommandIcon, MenuIcon, XIcon, CopyIcon, ChevronUpIcon, ChevronDownIcon, PauseIcon, StopIcon, PlayIcon, IncognitoIcon, HomeIcon, SendIcon, ZapIcon, ScreenIcon, RefreshIcon, ClearIcon, FileTextIcon, ListIcon, LightbulbIcon, TargetIcon, StarIcon, ClipboardIcon, BookIcon } from './components/Icons';
 
 declare global { interface Window { webkitSpeechRecognition: any; } }
 
+// Types for Notes tab
+interface NotesState {
+  keyConcepts: string[];
+  definitions: { term: string; definition: string }[];
+  mainPoints: string[];
+  simplifiedNotes: string;
+  recap: { summary: string; reviewTopics: string[]; nextSteps: string[] } | null;
+  studyGuide: {
+    title: string;
+    keyConcepts: string[];
+    definitions: { term: string; definition: string }[];
+    formulas: string[];
+    mainTakeaways: string[];
+    testLikelyTopics: string[];
+    studyTips: string[];
+  } | null;
+  isLoading: { [key: string]: boolean };
+  activeSection: 'overview' | 'concepts' | 'notes' | 'recap' | 'studyguide' | null;
+}
+
 const Overlay: React.FC = () => {
   // --- STATE ---
-  const [activeTab, setActiveTab] = useState<'chat' | 'transcript'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'transcript' | 'notes'>('chat');
   const [userId, setUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<{sender: 'user' | 'ai' | 'system', text: string, answer?: string, steps?: string, timestamp?: string}[]>([]);
   const [showStepsForMessage, setShowStepsForMessage] = useState<{[key: number]: boolean}>({});
@@ -17,7 +37,7 @@ const Overlay: React.FC = () => {
   const [scannedText, setScannedText] = useState<string>("");
   const [isScanning, setIsScanning] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [mode, setMode] = useState<"Explain" | "Solve">("Explain"); // Simplified modes
+  const [mode, setMode] = useState<"Study" | "Solve" | "Cheat">("Study");
   const [isListening, setIsListening] = useState(false);
   const [transcriptLog, setTranscriptLog] = useState("");
   const [isCardVisible, setIsCardVisible] = useState(true);
@@ -29,6 +49,18 @@ const Overlay: React.FC = () => {
   const [scanError, setScanError] = useState<string | null>(null);
   const [lastScanPreview, setLastScanPreview] = useState<string>("");
   
+  // Notes tab state
+  const [notesState, setNotesState] = useState<NotesState>({
+    keyConcepts: [],
+    definitions: [],
+    mainPoints: [],
+    simplifiedNotes: '',
+    recap: null,
+    studyGuide: null,
+    isLoading: {},
+    activeSection: null
+  });
+  
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,6 +68,43 @@ const Overlay: React.FC = () => {
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
+  // Load user ID from session on mount and listen for auth changes
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          console.log('Overlay: User ID loaded:', user.id);
+        } else {
+          console.log('Overlay: No user session found');
+          setUserId(null);
+        }
+      } catch (error) {
+        console.error('Overlay: Failed to load user ID:', error);
+        setUserId(null);
+      }
+    };
+    
+    // Load initially
+    loadUserId();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUserId(session.user.id);
+        console.log('Overlay: User signed in:', session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        setUserId(null);
+        console.log('Overlay: User signed out');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Load saved messages on mount
   useEffect(() => {
     try {
@@ -292,54 +361,79 @@ const Overlay: React.FC = () => {
     }
   }, []);
 
-  const runAI = async (selectedMode: string, screenContext: string, promptOverride?: string, userId?: string) => {
-    const contextPrompt = promptOverride || inputText || '';
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    if (!screenContext && !contextPrompt && !transcriptLog) { 
-      setMessages(prev => [...prev, {
-        sender: 'system', 
-        text: "⚠️ No context. Capture screen first.",
-        timestamp
-      }]); 
+  const runAI = async (selectedMode: string, promptOverride?: string) => {
+    const contextPrompt = promptOverride || inputText || (selectedMode === 'Cheat' ? 'Give me the answer' : '');
+    if (!scannedText && !contextPrompt && !transcriptLog) { 
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No context. Scan or speak."}]); 
       return; 
     }
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use AI features."}]);
+      return;
+    }
+    setMode(selectedMode as any); setIsThinking(true);
     
-    setMode(selectedMode as any);
-    setIsThinking(true);
-    
-    try {
-      const response = await askAI(selectedMode, screenContext, transcriptLog, contextPrompt, userId);
-      
-      if (response.startsWith('Error:')) {
-        setMessages(prev => [...prev, {sender: 'system', text: `❌ ${response}`, timestamp}]);
-        setIsThinking(false);
-        return;
+    // Save session context for better title generation
+    // Prioritize: user prompt > scanned text > transcript
+    const sessionContext = contextPrompt || scannedText || transcriptLog;
+    if (sessionContext) {
+      try {
+        // Save the most meaningful context (user prompt takes priority)
+        const contextToSave = contextPrompt || scannedText.substring(0, 200) || transcriptLog.substring(0, 200);
+        localStorage.setItem('last_session_context', contextToSave);
+      } catch (e) {
+        // Ignore storage errors
       }
-      
-      // Legacy "Cheat" handling logic (now "Solve" handles similar)
-      const answerMatch = response.match(/\*\*Answer:\*\*([\s\S]*?)(?=\n\*\*Steps:\*\*|$)/i);
-      const stepsMatch = response.match(/\*\*Steps:\*\*([\s\S]*?)$/i);
-        
-      if (answerMatch) {
-         // Structured response
-         const answer = answerMatch[1].trim();
-        const steps = stepsMatch ? stepsMatch[1].trim() : undefined;
-         setMessages(prev => [...prev, { sender: 'ai', text: answer, answer, steps, timestamp }]);
-      } else {
-         setMessages(prev => [...prev, {sender: 'ai', text: response, timestamp}]);
-      }
-
-    } catch (err: any) { 
-      setMessages(prev => [...prev, {
-        sender: 'system', 
-        text: `❌ Error: ${err?.message}`,
-        timestamp
-      }]); 
     }
     
+    try {
+      const response = await askAI(selectedMode, scannedText, transcriptLog, contextPrompt, userId);
+      
+      // For Cheat mode, parse the response to extract answer and steps
+      if (selectedMode === 'Cheat') {
+        const answerMatch = response.match(/---ANSWER---\s*([\s\S]*?)(?=\n---STEPS---|$)/);
+        const stepsMatch = response.match(/---STEPS---\s*([\s\S]*?)$/);
+        
+        const answer = answerMatch ? answerMatch[1].trim() : response;
+        const steps = stepsMatch ? stepsMatch[1].trim() : undefined;
+        
+        setMessages(prev => {
+          const newMessages = [...prev, {sender: 'ai' as const, text: answer, answer, steps}];
+          return newMessages;
+        });
+      } else {
+        // For Study and Solve modes, use the response as-is
+        setMessages(prev => [...prev, {sender: 'ai', text: response}]);
+      }
+    } catch (err) { setMessages(prev => [...prev, {sender: 'system', text: "❌ AI Error."}]); }
     setIsThinking(false); 
-    if (!promptOverride) setInputText("");
+    if (!promptOverride) {
+      setInputText(""); 
+    }
+  };
+  
+  const handleSend = () => { 
+    if (inputText.trim()) { 
+      setMessages(prev => [...prev, {sender: 'user', text: inputText}]); 
+      runAI(mode); 
+    } else {
+      // If no input text, automatically analyze with current context
+      // For Cheat mode, use "Give me the answer" prompt
+      const autoPrompt = mode === 'Cheat' ? 'Give me the answer' : '';
+      runAI(mode, autoPrompt);
+    }
+  };
+
+  // Helper functions for media button styles
+  const getMediaButtonBaseStyles = () => {
+    return {
+      background: 'transparent',
+      boxShadow: 'none',
+      textShadow: 'none',
+      transform: 'scale(1)',
+      color: 'rgba(255, 255, 255, 0.6)',
+      letterSpacing: '0.05em',
+    };
   };
   
   const handleAnalyze = useCallback(async () => {
@@ -366,7 +460,7 @@ const Overlay: React.FC = () => {
       else autoPrompt = 'Explain this concept';
     }
     
-    await runAI(mode, screenText || scannedText, autoPrompt, userId || undefined);
+    await runAI(mode, autoPrompt);
     setInputText("");
   }, [isScanning, isThinking, inputText, mode, scanScreen, transcriptLog, scannedText, scanError]);
 
@@ -377,8 +471,8 @@ const Overlay: React.FC = () => {
     }
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setMessages(prev => [...prev, {sender: 'user', text: inputText, timestamp}]);
-    runAI(mode, scannedText, inputText);
-  }, [inputText, mode, scannedText, handleAnalyze]);
+    runAI(mode, inputText);
+  }, [inputText, mode, scannedText, transcriptLog, userId, handleAnalyze]);
 
   const handleTranscriptAction = useCallback(async (action: 'copy' | 'summarize' | 'clear') => {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -399,9 +493,159 @@ const Overlay: React.FC = () => {
       if (transcriptLog.length < 50) return;
         setActiveTab('chat');
       setMessages(prev => [...prev, {sender: 'user', text: "Summarize transcript", timestamp}]);
-      await runAI("Explain", "", "Summarize the transcript so far.", userId || undefined);
+      await runAI("Study", "Summarize the transcript so far.");
     }
-  }, [transcriptLog]);
+  }, [transcriptLog, userId]);
+
+  // --- NOTES TAB HANDLERS ---
+  const handleExtractKeyConcepts = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze. Record audio or scan screen first."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, concepts: true }, activeSection: 'concepts' }));
+    
+    try {
+      const result = await extractKeyConcepts(transcriptLog, scannedText, userId);
+      setNotesState(prev => ({
+        ...prev,
+        keyConcepts: result.concepts,
+        definitions: result.definitions,
+        isLoading: { ...prev.isLoading, concepts: false }
+      }));
+    } catch (error: any) {
+      console.error('Failed to extract concepts:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to extract concepts'}`}]);
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, concepts: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  const handleExtractMainPoints = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze. Record audio or scan screen first."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, mainPoints: true }, activeSection: 'concepts' }));
+    
+    try {
+      const result = await extractMainPoints(transcriptLog, scannedText, userId);
+      setNotesState(prev => ({
+        ...prev,
+        mainPoints: result,
+        isLoading: { ...prev.isLoading, mainPoints: false }
+      }));
+    } catch (error: any) {
+      console.error('Failed to extract main points:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to extract main points'}`}]);
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, mainPoints: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  const handleGenerateNotes = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze. Record audio or scan screen first."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, notes: true }, activeSection: 'notes' }));
+    
+    try {
+      const result = await generateSimplifiedNotes(transcriptLog, scannedText, userId);
+      setNotesState(prev => ({
+        ...prev,
+        simplifiedNotes: result,
+        isLoading: { ...prev.isLoading, notes: false }
+      }));
+    } catch (error: any) {
+      console.error('Failed to generate notes:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to generate notes'}`}]);
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, notes: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  const handleGenerateRecap = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze. Record audio or scan screen first."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, recap: true }, activeSection: 'recap' }));
+    
+    try {
+      const result = await generateRecap(transcriptLog, scannedText, userId);
+      setNotesState(prev => ({
+        ...prev,
+        recap: result,
+        isLoading: { ...prev.isLoading, recap: false }
+      }));
+    } catch (error: any) {
+      console.error('Failed to generate recap:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to generate recap'}`}]);
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, recap: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  const handleGenerateStudyGuide = useCallback(async () => {
+    if (!userId) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ Please sign in to use this feature."}]);
+      return;
+    }
+    if (!transcriptLog && !scannedText) {
+      setMessages(prev => [...prev, {sender: 'system', text: "⚠️ No content to analyze. Record audio or scan screen first."}]);
+      return;
+    }
+    
+    setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, studyGuide: true }, activeSection: 'studyguide' }));
+    
+    try {
+      const result = await generateStudyGuide(transcriptLog, scannedText, userId);
+      setNotesState(prev => ({
+        ...prev,
+        studyGuide: result,
+        isLoading: { ...prev.isLoading, studyGuide: false }
+      }));
+    } catch (error: any) {
+      console.error('Failed to generate study guide:', error);
+      setMessages(prev => [...prev, {sender: 'system', text: `❌ ${error.message || 'Failed to generate study guide'}`}]);
+      setNotesState(prev => ({ ...prev, isLoading: { ...prev.isLoading, studyGuide: false } }));
+    }
+  }, [userId, transcriptLog, scannedText]);
+
+  const handleCopyNotesContent = useCallback(async (content: string) => {
+    await navigator.clipboard.writeText(content);
+    setMessages(prev => [...prev, {sender: 'system', text: "✅ Copied to clipboard!"}]);
+  }, []);
+
+  const clearNotesState = useCallback(() => {
+    setNotesState({
+      keyConcepts: [],
+      definitions: [],
+      mainPoints: [],
+      simplifiedNotes: '',
+      recap: null,
+      studyGuide: null,
+      isLoading: {},
+      activeSection: null
+    });
+  }, []);
 
   const handleQuickAnalysis = useCallback(async () => {
     if (isScanning || isThinking) return;
@@ -444,23 +688,6 @@ const Overlay: React.FC = () => {
       <div style={styles.tintOverlay}></div>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* --- FLOATING HEADER (Draggable) --- */}
-      {isCardVisible && (
-        <div style={styles.headerBar}>
-          <div style={styles.dragArea}>
-            <div style={styles.dragHandle}></div>
-          </div>
-          <div style={styles.headerControls}>
-             <button onClick={toggleStealth} style={styles.iconBtn} title={isDetectable ? "Visible to screen share" : "Invisible (Stealth Mode)"}>
-                <IncognitoIcon size={16} color={isDetectable ? "#aaa" : "#ff5252"} />
-             </button>
-             <button onClick={handleClose} style={styles.iconBtn} title="Close Overlay">
-                <XIcon size={16} color="#aaa" />
-             </button>
-          </div>
-        </div>
-      )}
-
       {/* --- MAIN CARD --- */}
       {isCardVisible && (
         <GlassCard style={styles.mainCard}>
@@ -477,6 +704,12 @@ const Overlay: React.FC = () => {
               style={activeTab === 'transcript' ? styles.tabActive : styles.tab}
           >
             Transcript
+            </button>
+            <button 
+            onClick={() => setActiveTab('notes')}
+              style={activeTab === 'notes' ? styles.tabActive : styles.tab}
+          >
+            Notes
             </button>
             {activeTab === 'transcript' && (
                <div style={styles.recIndicator}>
@@ -506,12 +739,29 @@ const Overlay: React.FC = () => {
                   const hasSteps = !!msg.steps;
                   const showSteps = showStepsForMessage[i];
                 
+                // Helper function to strip markdown formatting for cleaner display
+                const stripMarkdown = (text: string): string => {
+                  return text
+                    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold **text**
+                    .replace(/\*(.*?)\*/g, '$1') // Remove italic *text*
+                    .replace(/__(.*?)__/g, '$1') // Remove bold __text__
+                    .replace(/_(.*?)_/g, '$1') // Remove italic _text_
+                    .replace(/~~(.*?)~~/g, '$1') // Remove strikethrough ~~text~~
+                    .replace(/`(.*?)`/g, '$1') // Remove inline code `text`
+                    .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+                    .replace(/#{1,6}\s+/g, '') // Remove headers
+                    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links, keep text
+                    .trim();
+                };
+                
+                const displayText = isUser ? msg.text : stripMarkdown(msg.text);
+                
                 return (
                     <div key={i} style={{...styles.messageRow, justifyContent: isUser ? 'flex-end' : 'flex-start'}}>
                       {!isUser && !isSystem && <div style={styles.aiAvatar}>AI</div>}
                       <div style={{display:'flex', flexDirection:'column', alignItems: isUser ? 'flex-end' : 'flex-start', maxWidth: '85%'}}>
                         <div style={isUser ? styles.userBubble : (isSystem ? styles.systemBubble : styles.aiBubble)}>
-                      {msg.text}
+                      {displayText}
                     </div>
                         {hasSteps && (
                           <div style={styles.stepsContainer}>
@@ -575,64 +825,794 @@ const Overlay: React.FC = () => {
 
           {/* Footer Input */}
           {activeTab === 'chat' && (
-            <div style={styles.footer}>
-              {/* Context Pills */}
-              {(scannedText || transcriptLog) && (
-                <div style={styles.contextRow}>
-                  {scannedText && <span style={styles.contextPill} title={lastScanPreview}>📷 Screen</span>}
-                  {transcriptLog && <span style={styles.contextPill}>🎙️ Transcript</span>}
-                  <button onClick={() => { setScannedText(""); setLastScanPreview(""); }} style={styles.clearContextBtn}>Clear Context</button>
-                    </div>
-                  )}
+            <>
+              <div style={styles.footer}>
+                {/* Context Pills */}
+                {(scannedText || transcriptLog) && (
+                  <div style={styles.contextRow}>
+                    {scannedText && <span style={styles.contextPill} title={lastScanPreview}>📷 Screen</span>}
+                    {transcriptLog && <span style={styles.contextPill}>🎙️ Transcript</span>}
+                    <button onClick={() => { setScannedText(""); setLastScanPreview(""); }} style={styles.clearContextBtn}>Clear Context</button>
+                  </div>
+                )}
+              </div>
               
-              <div style={styles.inputBar}>
-                {/* Mode Switcher */}
-                <div style={styles.modeSwitch}>
-          <button 
-                    onClick={() => setMode('Explain')}
-                    style={mode === 'Explain' ? styles.modeBtnActive : styles.modeBtn}
-          >
+              <div style={styles.footer}>
+              <div style={styles.presetsRow}>
+                {/* Study / Explain presets */}
+                {mode === 'Study' && (
+                  <>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Study');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Explain this concept in detail' }]);
+                        runAI('Study', 'Explain this concept in detail');
+                      }}
+                    >
+                      Explain concept
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Study');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'What are the key points and main takeaways?' }]);
+                        runAI('Study', 'What are the key points and main takeaways?');
+                      }}
+                    >
+                      Key points
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Study');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Give me study questions to test my understanding' }]);
+                        runAI('Study', 'Give me study questions to test my understanding');
+                      }}
+                    >
+                      Study questions
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Study');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Summarize this content in a clear and concise way' }]);
+                        runAI('Study', 'Summarize this content in a clear and concise way');
+                      }}
+                    >
+                      Summarize
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Study');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Break this down into simpler terms that are easy to understand' }]);
+                        runAI('Study', 'Break this down into simpler terms that are easy to understand');
+                      }}
+                    >
+                      Simplify
+                    </button>
+                  </>
+                )}
+
+                {/* Solve presets */}
+                {mode === 'Solve' && (
+                  <>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Solve');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Give me the full breakdown of this step by step' }]);
+                        runAI('Solve', 'Give me the full breakdown of this step by step');
+                      }}
+                    >
+                      Full breakdown
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Solve');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Show every step like you are solving a word problem' }]);
+                        runAI('Solve', 'Show every step like you are solving a word problem');
+                      }}
+                    >
+                      Word problem steps
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Solve');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Check my work and fix any mistakes' }]);
+                        runAI('Solve', 'Check my work and fix any mistakes');
+                      }}
+                    >
+                      Check my work
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Solve');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Explain why each step is correct' }]);
+                        runAI('Solve', 'Explain why each step is correct');
+                      }}
+                    >
+                      Explain each step
+                    </button>
+                  </>
+                )}
+
+                {/* Cheat presets */}
+                {mode === 'Cheat' && (
+                  <>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Cheat');
+                        setMessages(prev => [...prev, { sender: 'user', text: "What's the answer?" }]);
+                        runAI('Cheat', "What's the answer?");
+                      }}
+                    >
+                      What&apos;s the answer
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Cheat');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Give me just the final answer with no explanation' }]);
+                        runAI('Cheat', 'Give me just the final answer with no explanation');
+                      }}
+                    >
+                      Just the answer
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.presetChip}
+                      onClick={() => {
+                        setMode('Cheat');
+                        setMessages(prev => [...prev, { sender: 'user', text: 'Answer fast and keep it short' }]);
+                        runAI('Cheat', 'Answer fast and keep it short');
+                      }}
+                    >
+                      Answer fast
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div style={styles.inputWrapper}>
+                <div style={styles.inputContainer}>
+                  <input 
+                    type="text" 
+                    placeholder="Ask about your screen or conversation, or ↑ ↩ for Assist" 
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    style={styles.input}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  />
+                <button 
+                  onClick={handleSend} 
+                  style={styles.sendBtn}
+                >
+                  <SendIcon size={16} color="currentColor" />
+                </button>
+                </div>
+              </div>
+              
+              <div style={styles.footerRow}>
+                <div style={styles.modeRow}>
+                  {/* Study */}
+                  <div
+                    onClick={() => setMode("Study")}
+                    style={{
+                      ...styles.modeChip,
+                      ...(mode === 'Study' ? styles.modeChipActive : styles.modeChipInactive),
+                      color: mode === 'Study' ? '#8b5cf6' : 'rgba(255, 255, 255, 0.6)',
+                    }}
+                  >
                     Explain
-          </button>
-            <button 
-                    onClick={() => setMode('Solve')}
-                    style={mode === 'Solve' ? styles.modeBtnActive : styles.modeBtn}
+                  </div>
+                  {/* Solve */}
+                  <div
+                    onClick={() => setMode("Solve")}
+                    style={{
+                      ...styles.modeChip,
+                      ...(mode === 'Solve' ? styles.modeChipActive : styles.modeChipInactive),
+                      color: mode === 'Solve' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.6)',
+                    }}
                   >
                     Solve
+                  </div>
+                  {/* Cheat */}
+                  <div
+                    onClick={() => setMode("Cheat")}
+                    style={{
+                      ...styles.modeChip,
+                      ...(mode === 'Cheat' ? styles.modeChipActive : styles.modeChipInactive),
+                      color: mode === 'Cheat' ? '#ff5252' : 'rgba(255, 255, 255, 0.6)',
+                    }}
+                  >
+                    Cheat
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMessages([])}
+                  style={styles.clearChatBtn}
+                >
+                  Clear chat
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* --- TRANSCRIPT TAB CONTENT --- */}
+        {activeTab === 'transcript' && (
+          <div style={styles.transcriptView}>
+            {/* Toolbar */}
+            <div style={styles.transcriptToolbar}>
+              <div style={{fontSize: '11px', fontWeight: 600, color: isListening ? (isAudioDetected ? '#4caf50' : '#ff5252') : '#666', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px'}}>
+                {isListening ? (
+                  <>
+                    <span style={{display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isAudioDetected ? '#4caf50' : '#ff5252', animation: isAudioDetected ? 'none' : 'pulse-red 1.5s ease-in-out infinite'}}></span>
+                    {isAudioDetected ? "🔊 Audio Detected" : "🔴 Listening..."}
+                  </>
+                ) : (
+                  "⏸ Paused"
+                )}
+              </div>
+              <div style={{display: 'flex', gap: '6px', alignItems: 'center'}}>
+                <button onClick={() => handleTranscriptAction('copy')} style={styles.toolBtn} title="Copy all transcript">
+                  <CopyIcon size={14} color="currentColor" />
+                  <span>Copy All</span>
+                </button>
+                <button onClick={() => handleTranscriptAction('summarize')} style={styles.toolBtn} title="Summarize with AI">
+                  <ZapIcon size={14} color="currentColor" />
+                  <span>Summarize</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Text Stream */}
+            <div style={styles.transcriptContent}>
+              {transcriptSegments.length === 0 && !isListening ? (
+                <div style={styles.transcriptEmpty}>
+                  <div style={{marginBottom: '10px', fontSize: '20px'}}>🎙️</div>
+                  <div>Microphone is ready.</div>
+                  <div style={{fontSize: '11px', opacity: 0.5}}>Use the controls in the top bar to start recording.</div>
+                </div>
+              ) : (
+                <>
+                  {transcriptSegments.map((seg, i) => (
+                    <div key={i} style={styles.transcriptRow}>
+                      <span style={styles.timestamp}>{seg.time}</span>
+                      <span style={styles.transcriptLineText}>{seg.text}</span>
+                    </div>
+                  ))}
+                  {isListening && (
+                    <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '8px'}}>
+                      Listening...
+                    </div>
+                  )}
+                </>
+              )}
+              <div ref={transcriptEndRef} />
+            </div>
+          </div>
+        )}
+
+        {/* --- NOTES TAB CONTENT --- */}
+        {activeTab === 'notes' && (
+          <div style={styles.notesView}>
+            {/* Quick Actions Bar */}
+            <div style={styles.notesToolbar}>
+              <span style={{fontSize: '11px', fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
+                Study Tools
+              </span>
+              <button 
+                onClick={clearNotesState} 
+                style={styles.toolBtn} 
+                title="Clear all notes"
+              >
+                <ClearIcon size={14} color="currentColor" />
+                <span>Clear</span>
+              </button>
+            </div>
+
+            {/* Action Buttons Grid */}
+            <div style={styles.notesActionsGrid}>
+              <button 
+                onClick={handleExtractKeyConcepts}
+                disabled={notesState.isLoading.concepts}
+                style={{
+                  ...styles.notesActionBtn,
+                  borderColor: notesState.activeSection === 'concepts' ? '#8b5cf6' : 'rgba(255,255,255,0.1)'
+                }}
+              >
+                <LightbulbIcon size={18} color="#8b5cf6" />
+                <span style={styles.notesActionLabel}>Key Concepts</span>
+                {notesState.isLoading.concepts && <span style={styles.loadingDot}>...</span>}
+              </button>
+
+              <button 
+                onClick={handleExtractMainPoints}
+                disabled={notesState.isLoading.mainPoints}
+                style={{
+                  ...styles.notesActionBtn,
+                  borderColor: notesState.mainPoints.length > 0 ? '#0ea5e9' : 'rgba(255,255,255,0.1)'
+                }}
+              >
+                <TargetIcon size={18} color="#0ea5e9" />
+                <span style={styles.notesActionLabel}>Main Points</span>
+                {notesState.isLoading.mainPoints && <span style={styles.loadingDot}>...</span>}
+              </button>
+
+              <button 
+                onClick={handleGenerateNotes}
+                disabled={notesState.isLoading.notes}
+                style={{
+                  ...styles.notesActionBtn,
+                  borderColor: notesState.activeSection === 'notes' ? '#22c55e' : 'rgba(255,255,255,0.1)'
+                }}
+              >
+                <ListIcon size={18} color="#22c55e" />
+                <span style={styles.notesActionLabel}>Simplified Notes</span>
+                {notesState.isLoading.notes && <span style={styles.loadingDot}>...</span>}
+              </button>
+
+              <button 
+                onClick={handleGenerateRecap}
+                disabled={notesState.isLoading.recap}
+                style={{
+                  ...styles.notesActionBtn,
+                  borderColor: notesState.activeSection === 'recap' ? '#f59e0b' : 'rgba(255,255,255,0.1)'
+                }}
+              >
+                <StarIcon size={18} color="#f59e0b" />
+                <span style={styles.notesActionLabel}>End Recap</span>
+                {notesState.isLoading.recap && <span style={styles.loadingDot}>...</span>}
+              </button>
+
+              <button 
+                onClick={handleGenerateStudyGuide}
+                disabled={notesState.isLoading.studyGuide}
+                style={{
+                  ...styles.notesActionBtn,
+                  ...styles.notesActionBtnWide,
+                  borderColor: notesState.activeSection === 'studyguide' ? '#ec4899' : 'rgba(255,255,255,0.1)'
+                }}
+              >
+                <BookIcon size={18} color="#ec4899" />
+                <span style={styles.notesActionLabel}>One-Click Study Guide</span>
+                {notesState.isLoading.studyGuide && <span style={styles.loadingDot}>...</span>}
+              </button>
+            </div>
+
+            {/* Results Display Area */}
+            <div style={styles.notesResultsArea}>
+              {/* Empty State */}
+              {!notesState.keyConcepts.length && !notesState.mainPoints.length && 
+               !notesState.simplifiedNotes && !notesState.recap && !notesState.studyGuide && 
+               !Object.values(notesState.isLoading).some(v => v) && (
+                <div style={styles.notesEmptyState}>
+                  <FileTextIcon size={32} color="rgba(255,255,255,0.2)" />
+                  <p style={{marginTop: '12px', fontSize: '13px', color: '#666'}}>
+                    {transcriptLog || scannedText 
+                      ? "Click a button above to analyze your lecture content"
+                      : "Record audio or scan screen to get started"}
+                  </p>
+                  {(transcriptLog || scannedText) && (
+                    <p style={{fontSize: '11px', color: '#555', marginTop: '4px'}}>
+                      {transcriptLog ? `📝 ${transcriptLog.split(' ').length} words in transcript` : ''}
+                      {transcriptLog && scannedText ? ' • ' : ''}
+                      {scannedText ? '📷 Screen captured' : ''}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Loading State */}
+              {Object.values(notesState.isLoading).some(v => v) && (
+                <div style={styles.notesLoadingState}>
+                  <div style={styles.loadingSpinner}></div>
+                  <p style={{marginTop: '12px', fontSize: '13px', color: '#888'}}>Analyzing lecture content...</p>
+                </div>
+              )}
+
+              {/* Key Concepts Results */}
+              {(notesState.keyConcepts.length > 0 || notesState.definitions.length > 0) && !notesState.isLoading.concepts && (
+                <div style={styles.notesSection}>
+                  <div style={styles.notesSectionHeader}>
+                    <LightbulbIcon size={16} color="#8b5cf6" />
+                    <span>Key Concepts</span>
+                    <button 
+                      onClick={() => handleCopyNotesContent(
+                        `KEY CONCEPTS:\n${notesState.keyConcepts.map(c => `• ${c}`).join('\n')}\n\nDEFINITIONS:\n${notesState.definitions.map(d => `• ${d.term}: ${d.definition}`).join('\n')}`
+                      )}
+                      style={styles.copySmallBtn}
+                    >
+                      <CopyIcon size={12} color="currentColor" />
+                    </button>
+                  </div>
+                  <div style={styles.conceptsList}>
+                    {notesState.keyConcepts.map((concept, i) => (
+                      <div key={i} style={styles.conceptItem}>
+                        <span style={styles.conceptBullet}>•</span>
+                        <span>{concept}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {notesState.definitions.length > 0 && (
+                    <>
+                      <div style={{...styles.notesSectionHeader, marginTop: '12px'}}>
+                        <span style={{fontSize: '11px', color: '#888'}}>Definitions</span>
+                      </div>
+                      <div style={styles.definitionsList}>
+                        {notesState.definitions.map((def, i) => (
+                          <div key={i} style={styles.definitionItem}>
+                            <span style={styles.definitionTerm}>{def.term}:</span>
+                            <span style={styles.definitionText}>{def.definition}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Main Points Results */}
+              {notesState.mainPoints.length > 0 && !notesState.isLoading.mainPoints && (
+                <div style={styles.notesSection}>
+                  <div style={styles.notesSectionHeader}>
+                    <TargetIcon size={16} color="#0ea5e9" />
+                    <span>Main Teaching Points</span>
+                    <button 
+                      onClick={() => handleCopyNotesContent(notesState.mainPoints.map((p, i) => `${i+1}. ${p}`).join('\n'))}
+                      style={styles.copySmallBtn}
+                    >
+                      <CopyIcon size={12} color="currentColor" />
+                    </button>
+                  </div>
+                  <div style={styles.mainPointsList}>
+                    {notesState.mainPoints.map((point, i) => (
+                      <div key={i} style={styles.mainPointItem}>
+                        <span style={styles.mainPointNumber}>{i + 1}</span>
+                        <span>{point}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Simplified Notes Results */}
+              {notesState.simplifiedNotes && !notesState.isLoading.notes && (
+                <div style={styles.notesSection}>
+                  <div style={styles.notesSectionHeader}>
+                    <ListIcon size={16} color="#22c55e" />
+                    <span>Simplified Notes</span>
+                    <button 
+                      onClick={() => handleCopyNotesContent(notesState.simplifiedNotes)}
+                      style={styles.copySmallBtn}
+                    >
+                      <CopyIcon size={12} color="currentColor" />
+                    </button>
+                  </div>
+                  <div style={styles.simplifiedNotesContent}>
+                    {notesState.simplifiedNotes}
+                  </div>
+                </div>
+              )}
+
+              {/* Recap Results */}
+              {notesState.recap && !notesState.isLoading.recap && (
+                <div style={styles.notesSection}>
+                  <div style={styles.notesSectionHeader}>
+                    <StarIcon size={16} color="#f59e0b" />
+                    <span>Lecture Recap</span>
+                    <button 
+                      onClick={() => handleCopyNotesContent(
+                        `SUMMARY:\n${notesState.recap?.summary}\n\nTOPICS TO REVIEW:\n${notesState.recap?.reviewTopics.map(t => `• ${t}`).join('\n')}\n\nNEXT STEPS:\n${notesState.recap?.nextSteps.map(s => `• ${s}`).join('\n')}`
+                      )}
+                      style={styles.copySmallBtn}
+                    >
+                      <CopyIcon size={12} color="currentColor" />
+                    </button>
+                  </div>
+                  <div style={styles.recapContent}>
+                    <div style={styles.recapSummary}>{notesState.recap.summary}</div>
+                    
+                    {notesState.recap.reviewTopics.length > 0 && (
+                      <div style={styles.recapSubsection}>
+                        <span style={styles.recapSubtitle}>📚 Topics to Review</span>
+                        <ul style={styles.recapList}>
+                          {notesState.recap.reviewTopics.map((topic, i) => (
+                            <li key={i}>{topic}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {notesState.recap.nextSteps.length > 0 && (
+                      <div style={styles.recapSubsection}>
+                        <span style={styles.recapSubtitle}>✅ Next Steps</span>
+                        <ul style={styles.recapList}>
+                          {notesState.recap.nextSteps.map((step, i) => (
+                            <li key={i}>{step}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Study Guide Results */}
+              {notesState.studyGuide && !notesState.isLoading.studyGuide && (
+                <div style={styles.notesSection}>
+                  <div style={styles.notesSectionHeader}>
+                    <BookIcon size={16} color="#ec4899" />
+                    <span>{notesState.studyGuide.title || 'Study Guide'}</span>
+                    <button 
+                      onClick={() => {
+                        const sg = notesState.studyGuide!;
+                        const content = [
+                          `# ${sg.title}\n`,
+                          `## Key Concepts\n${sg.keyConcepts.map(c => `• ${c}`).join('\n')}\n`,
+                          sg.definitions.length ? `## Definitions\n${sg.definitions.map(d => `• ${d.term}: ${d.definition}`).join('\n')}\n` : '',
+                          sg.formulas.length ? `## Formulas\n${sg.formulas.map(f => `• ${f}`).join('\n')}\n` : '',
+                          `## Main Takeaways\n${sg.mainTakeaways.map(t => `• ${t}`).join('\n')}\n`,
+                          `## Test-Likely Topics\n${sg.testLikelyTopics.map(t => `⭐ ${t}`).join('\n')}\n`,
+                          `## Study Tips\n${sg.studyTips.map(t => `💡 ${t}`).join('\n')}`
+                        ].filter(Boolean).join('\n');
+                        handleCopyNotesContent(content);
+                      }}
+                      style={styles.copySmallBtn}
+                    >
+                      <CopyIcon size={12} color="currentColor" />
+                    </button>
+                  </div>
+                  
+                  <div style={styles.studyGuideContent}>
+                    {/* Key Concepts */}
+                    {notesState.studyGuide.keyConcepts.length > 0 && (
+                      <div style={styles.sgSection}>
+                        <span style={styles.sgSectionTitle}>💡 Key Concepts</span>
+                        <div style={styles.sgList}>
+                          {notesState.studyGuide.keyConcepts.map((c, i) => (
+                            <span key={i} style={styles.sgChip}>{c}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Definitions */}
+                    {notesState.studyGuide.definitions.length > 0 && (
+                      <div style={styles.sgSection}>
+                        <span style={styles.sgSectionTitle}>📖 Definitions</span>
+                        {notesState.studyGuide.definitions.map((d, i) => (
+                          <div key={i} style={styles.sgDefinition}>
+                            <strong>{d.term}:</strong> {d.definition}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Formulas */}
+                    {notesState.studyGuide.formulas.length > 0 && (
+                      <div style={styles.sgSection}>
+                        <span style={styles.sgSectionTitle}>🔢 Formulas</span>
+                        {notesState.studyGuide.formulas.map((f, i) => (
+                          <div key={i} style={styles.sgFormula}>{f}</div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Main Takeaways */}
+                    {notesState.studyGuide.mainTakeaways.length > 0 && (
+                      <div style={styles.sgSection}>
+                        <span style={styles.sgSectionTitle}>🎯 Main Takeaways</span>
+                        <ul style={styles.sgBulletList}>
+                          {notesState.studyGuide.mainTakeaways.map((t, i) => (
+                            <li key={i}>{t}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Test-Likely Topics */}
+                    {notesState.studyGuide.testLikelyTopics.length > 0 && (
+                      <div style={styles.sgSection}>
+                        <span style={styles.sgSectionTitle}>⭐ Likely on Test</span>
+                        <div style={styles.sgList}>
+                          {notesState.studyGuide.testLikelyTopics.map((t, i) => (
+                            <span key={i} style={{...styles.sgChip, background: 'rgba(236,72,153,0.15)', borderColor: 'rgba(236,72,153,0.3)'}}>{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Study Tips */}
+                    {notesState.studyGuide.studyTips.length > 0 && (
+                      <div style={styles.sgSection}>
+                        <span style={styles.sgSectionTitle}>📝 Study Tips</span>
+                        {notesState.studyGuide.studyTips.map((tip, i) => (
+                          <div key={i} style={styles.sgTip}>💡 {tip}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </GlassCard>
+      )}
+
+      {/* --- CONTROL BAR CONTAINER (Centered Above Main Card) --- */}
+      <div style={styles.controlBarContainer}>
+        <div style={styles.controlBar}>
+          <button 
+            style={{
+              ...styles.controlBtn, 
+              ...styles.controlBtnCircle,
+              transition: 'all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1)'
+            }}
+            title="Incognito Mode"
+            onClick={toggleStealth}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.backgroundColor = isDetectable
+                ? 'rgba(255, 255, 255, 0.1)'
+                : 'rgba(211, 47, 47, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <IncognitoIcon
+              size={16}
+              color={isDetectable ? '#aaa' : '#ff5252'}
+            />
+          </button>
+          
+          {/* SMART EYE BUTTON */}
+          <div 
+            style={{position: 'relative', display: 'flex', alignItems: 'center'}}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            <button 
+              onClick={() => scanScreen()} 
+              style={{
+                ...styles.controlBtn, 
+                color: isScanning ? '#0ea5e9' : (scannedText ? 'white' : '#aaa'),
+                position: 'relative'
+              }}
+              title="Scan Screen"
+            >
+              <EyeIcon size={16} color={isScanning ? '#0ea5e9' : (scannedText ? 'white' : '#aaa')} />
+            </button>
+            
+            {/* The "Live" Dot (Shows if we have context) */}
+            {!isScanning && scannedText && (
+              <div style={{
+                position: 'absolute', 
+                top: 2, 
+                right: 2, 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                background: '#4caf50', 
+                border: '1px solid #1a1a1a',
+                zIndex: 10
+              }} />
+            )}
+
+            {/* The Tooltip (Only shows on hover) */}
+            {showTooltip && (
+              <div style={{
+                position: 'absolute', 
+                top: '30px', 
+                right: '-10px',
+                background: 'rgba(0,0,0,0.9)', 
+                border: '1px solid rgba(255,255,255,0.1)',
+                padding: '6px 10px', 
+                borderRadius: '6px',
+                fontSize: '10px', 
+                color: '#ccc', 
+                whiteSpace: 'nowrap' as const,
+                zIndex: 100, 
+                backdropFilter: 'blur(4px)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+              }}>
+                Last scan: <span style={{color: '#fff', fontWeight: 700}}>{lastScanned}</span>
+              </div>
+            )}
+          </div>
+          
+          <div style={styles.mediaControls}>
+            <button 
+              onClick={toggleListening}
+              style={{
+                ...styles.mediaBtn,
+                ...getMediaButtonBaseStyles()
+              }}
+              title={isListening ? "Pause Recording" : "Start Recording"}
+            >
+              <span style={{ 
+                filter: 'drop-shadow(0 0 0px rgba(255, 255, 255, 0))', 
+                transition: 'filter 0.1s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.1s cubic-bezier(0.22, 0.61, 0.36, 1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {isListening ? <PauseIcon size={14} color="currentColor" /> : <PlayIcon size={14} color="currentColor" />}
+              </span>
+            </button>
+            <button 
+              onClick={() => {
+                if (isListening) toggleListening();
+              }}
+              style={{
+                ...styles.mediaBtn,
+                ...getMediaButtonBaseStyles()
+              }}
+              title="Stop Recording"
+            >
+              <span style={{ 
+                filter: 'drop-shadow(0 0 0px rgba(255, 255, 255, 0))', 
+                transition: 'filter 0.1s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.1s cubic-bezier(0.22, 0.61, 0.36, 1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <StopIcon size={14} color="currentColor" />
+              </span>
             </button>
           </div>
           
-                <div style={styles.inputFieldWrapper}>
-                  <input
-                    ref={inputRef}
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.ctrlKey) {
-                        e.preventDefault();
-                        inputText.trim() ? handleSendWithContext() : handleAnalyze();
-                }
-              }}
-                    placeholder={scannedText ? "Ask a follow-up..." : "Type or click Analyze"}
-                    style={styles.inputField}
-                    disabled={isScanning || isThinking}
-                  />
-            <button 
-                    onClick={inputText.trim() ? handleSendWithContext : handleAnalyze}
-                    disabled={isScanning || isThinking}
-                    style={styles.actionBtn}
-                  >
-                    {isScanning ? "..." : (inputText.trim() ? <SendIcon size={14} /> : <ScreenIcon size={14} />)}
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsCardVisible(!isCardVisible)}
+            style={styles.controlBtn}
+            title={isCardVisible ? "Hide" : "Show"}
+          >
+            {isCardVisible ? <ChevronUpIcon size={16} color="#aaa" /> : <ChevronDownIcon size={16} color="#aaa" />}
+          </button>
+          
+          <div style={styles.separator}></div>
+          
+          <div 
+            style={{...styles.controlBtn, ...({WebkitAppRegion: 'drag'} as any), cursor: 'move'}}
+            title="Move Window (Drag)"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <MenuIcon size={16} color="#aaa" />
           </div>
         </div>
-          )}
 
-          {/* Resize Handle (Visual) */}
-          <div style={styles.resizeHandle}></div>
-        </GlassCard>
-      )}
+        {/* --- CLOSE BUTTON (Right Next to Control Bar) --- */}
+        <button 
+          onClick={handleClose}
+          style={styles.closeButton}
+          title="Close"
+        >
+          <XIcon size={16} color="#aaa" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -736,7 +1716,124 @@ const styles: Record<string, React.CSSProperties> = {
   emptyText: { fontSize: '14px', color: '#888', fontWeight: 500 },
   shortcutsHint: { fontSize: '11px', color: '#555', marginTop: '8px', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' },
   
-  footer: { padding: '12px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.05)' },
+  footer: { 
+    padding: '10px 14px', 
+    borderTop: '1px solid rgba(255,255,255,0.05)' 
+  },
+  presetsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap' as const,
+    gap: '6px',
+    marginBottom: '8px'
+  },
+  footerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    marginTop: '4px'
+  },
+  inputWrapper: {
+    marginBottom: '6px'
+  },
+  inputContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '999px',
+    padding: '6px 10px',
+    transition: 'all 0.2s ease'
+  },
+  input: { 
+    flex: 1, 
+    background: 'transparent', 
+    border: 'none', 
+    color: 'rgba(255, 255, 255, 0.9)', 
+    fontSize: '13px', 
+    outline: 'none',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    lineHeight: '1.5'
+  },
+  sendBtn: { 
+    minWidth: '32px', 
+    height: '28px', 
+    borderRadius: '999px', 
+    border: '0',
+    color: 'hsla(0, 0%, 90%, 1)',
+    fontWeight: 600, 
+    fontSize: '14px',
+    cursor: 'pointer', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    transition: 'all 0.1s cubic-bezier(0.22, 0.61, 0.36, 1)',
+    position: 'relative',
+    overflow: 'hidden',
+    padding: '0 10px',
+    letterSpacing: '0.05em',
+    lineHeight: '1',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    background: 'linear-gradient(135deg, #646cff 0%, #4c54d4 100%)'
+  },
+  modeRow: { 
+    display: 'flex', 
+    justifyContent: 'flex-start', 
+    gap: '14px',
+    paddingTop: '4px' 
+  },
+  modeChip: { 
+    fontSize: '10px', 
+    fontWeight: 600, 
+    textTransform: 'uppercase' as const, 
+    letterSpacing: '1px', 
+    cursor: 'pointer', 
+    padding: '6px 12px', 
+    borderRadius: '8px',
+    position: 'relative',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    userSelect: 'none' as const,
+    overflow: 'hidden',
+  },
+  modeChipActive: {
+    opacity: 1,
+    transform: 'scale(1.08) translateY(-1px)',
+    background: 'rgba(255, 255, 255, 0.08)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+  },
+  modeChipInactive: {
+    opacity: 0.5,
+    transform: 'scale(1)',
+    borderBottomWidth: '0px',
+    background: 'transparent',
+    boxShadow: 'none',
+  },
+  presetChip: {
+    borderRadius: '999px',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'transparent',
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: '11px',
+    padding: '4px 10px',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
+    transition: 'all 0.15s ease-out',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  },
+  clearChatBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'rgba(255, 255, 255, 0.45)',
+    fontSize: '11px',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    borderRadius: '6px',
+    transition: 'all 0.15s ease-out',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  },
   contextRow: { display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' },
   contextPill: { fontSize: '10px', background: 'rgba(34,197,94,0.1)', color: '#4ade80', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.2)' },
   clearContextBtn: { background: 'none', border: 'none', fontSize: '10px', color: '#666', cursor: 'pointer', marginLeft: 'auto' },
@@ -772,7 +1869,376 @@ const styles: Record<string, React.CSSProperties> = {
   },
   iconBtnBig: { width: '32px', height: '32px', borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   vSep: { width: '1px', height: '16px', background: 'rgba(255,255,255,0.2)' },
-  primaryBtn: { padding: '8px 16px', borderRadius: '8px', background: '#646cff', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '13px' }
+  primaryBtn: { padding: '8px 16px', borderRadius: '8px', background: '#646cff', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '13px' },
+  
+  // Control Bar Styles (Top Center)
+  controlBarContainer: {
+    position: 'absolute',
+    top: '12px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    zIndex: 1000,
+    pointerEvents: 'auto',
+    ...({WebkitAppRegion: 'no-drag'} as any)
+  },
+  controlBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    backgroundColor: 'rgba(20, 20, 25, 0.65)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    padding: '4px',
+    borderRadius: '20px',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.03)',
+    transition: 'all 0.2s ease-out'
+  },
+  controlBtn: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px',
+    borderRadius: '6px',
+    transition: '0.2s',
+    color: '#aaa',
+    minWidth: '28px',
+    height: '28px',
+    pointerEvents: 'auto',
+    position: 'relative',
+    zIndex: 1001
+  },
+  controlBtnCircle: {
+    borderRadius: '50%',
+    padding: '6px'
+  },
+  mediaControls: {
+    display: 'flex',
+    gap: '2px',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '8px',
+    padding: '3px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  mediaBtn: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px 6px',
+    borderRadius: '6px',
+    transition: 'all 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)',
+    color: 'rgba(255, 255, 255, 0.6)',
+    minWidth: '24px',
+    height: '24px',
+    position: 'relative',
+    pointerEvents: 'auto',
+    zIndex: 1001
+  },
+  separator: {
+    width: '1px',
+    height: '16px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    margin: '0 2px'
+  },
+  closeButton: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(20, 20, 25, 0.65)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.03)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease-out',
+    color: '#aaa',
+    flexShrink: 0,
+    pointerEvents: 'auto',
+    zIndex: 1001
+  },
+  
+  // --- NOTES TAB STYLES ---
+  notesView: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden'
+  },
+  notesToolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '10px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)'
+  },
+  notesActionsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '8px',
+    padding: '12px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)'
+  },
+  notesActionBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 12px',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    color: '#fff'
+  },
+  notesActionBtnWide: {
+    gridColumn: 'span 2'
+  },
+  notesActionLabel: {
+    fontSize: '12px',
+    fontWeight: 500,
+    color: '#ccc'
+  },
+  loadingDot: {
+    marginLeft: 'auto',
+    color: '#888',
+    animation: 'pulse 1s infinite'
+  },
+  notesResultsArea: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '14px'
+  },
+  notesEmptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    textAlign: 'center',
+    padding: '20px'
+  },
+  notesLoadingState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%'
+  },
+  loadingSpinner: {
+    width: '32px',
+    height: '32px',
+    border: '3px solid rgba(255,255,255,0.1)',
+    borderTopColor: '#8b5cf6',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+  notesSection: {
+    marginBottom: '16px',
+    padding: '12px',
+    background: 'rgba(255,255,255,0.02)',
+    borderRadius: '10px',
+    border: '1px solid rgba(255,255,255,0.05)'
+  },
+  notesSectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '10px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#fff'
+  },
+  copySmallBtn: {
+    marginLeft: 'auto',
+    background: 'none',
+    border: 'none',
+    color: '#666',
+    cursor: 'pointer',
+    padding: '4px',
+    borderRadius: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'color 0.2s'
+  },
+  conceptsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  conceptItem: {
+    display: 'flex',
+    gap: '8px',
+    fontSize: '12px',
+    color: '#ccc',
+    lineHeight: '1.5'
+  },
+  conceptBullet: {
+    color: '#8b5cf6',
+    fontWeight: 700
+  },
+  definitionsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  definitionItem: {
+    fontSize: '12px',
+    lineHeight: '1.5',
+    padding: '8px',
+    background: 'rgba(139,92,246,0.08)',
+    borderRadius: '6px',
+    borderLeft: '2px solid #8b5cf6'
+  },
+  definitionTerm: {
+    fontWeight: 600,
+    color: '#a78bfa',
+    marginRight: '4px'
+  },
+  definitionText: {
+    color: '#ccc'
+  },
+  mainPointsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  mainPointItem: {
+    display: 'flex',
+    gap: '10px',
+    fontSize: '12px',
+    color: '#ccc',
+    lineHeight: '1.5'
+  },
+  mainPointNumber: {
+    minWidth: '20px',
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(14,165,233,0.2)',
+    color: '#0ea5e9',
+    borderRadius: '50%',
+    fontSize: '11px',
+    fontWeight: 700,
+    flexShrink: 0
+  },
+  simplifiedNotesContent: {
+    fontSize: '12px',
+    color: '#ccc',
+    lineHeight: '1.7',
+    whiteSpace: 'pre-wrap'
+  },
+  recapContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  recapSummary: {
+    fontSize: '13px',
+    color: '#fff',
+    lineHeight: '1.6',
+    padding: '10px',
+    background: 'rgba(245,158,11,0.1)',
+    borderRadius: '8px',
+    borderLeft: '3px solid #f59e0b'
+  },
+  recapSubsection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  recapSubtitle: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  recapList: {
+    margin: 0,
+    paddingLeft: '20px',
+    fontSize: '12px',
+    color: '#ccc',
+    lineHeight: '1.6'
+  },
+  studyGuideContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px'
+  },
+  sgSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  sgSectionTitle: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#ec4899',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  sgList: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px'
+  },
+  sgChip: {
+    fontSize: '11px',
+    padding: '4px 10px',
+    background: 'rgba(139,92,246,0.15)',
+    border: '1px solid rgba(139,92,246,0.25)',
+    borderRadius: '999px',
+    color: '#ccc'
+  },
+  sgDefinition: {
+    fontSize: '12px',
+    color: '#ccc',
+    lineHeight: '1.5',
+    padding: '6px 8px',
+    background: 'rgba(255,255,255,0.03)',
+    borderRadius: '6px'
+  },
+  sgFormula: {
+    fontFamily: 'monospace',
+    fontSize: '12px',
+    color: '#22c55e',
+    padding: '8px 10px',
+    background: 'rgba(34,197,94,0.1)',
+    borderRadius: '6px',
+    border: '1px solid rgba(34,197,94,0.2)'
+  },
+  sgBulletList: {
+    margin: 0,
+    paddingLeft: '18px',
+    fontSize: '12px',
+    color: '#ccc',
+    lineHeight: '1.6'
+  },
+  sgTip: {
+    fontSize: '12px',
+    color: '#ccc',
+    padding: '8px 10px',
+    background: 'rgba(255,255,255,0.03)',
+    borderRadius: '6px',
+    lineHeight: '1.5'
+  }
 };
 
 export default Overlay;

@@ -22,17 +22,176 @@ function createMainWindow() {
       contextIsolation: true
     }
   });
+  mainWindow.webContents.setUserAgent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  );
   mainWindow.on("ready-to-show", () => {
     mainWindow?.show();
+    mainWindow?.focus();
   });
+  if (utils.is.dev) {
+    mainWindow.show();
+  }
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    electron.shell.openExternal(details.url);
+    if (details.url.startsWith("visnly://")) {
+      handleOAuthCallback(details.url);
+      return { action: "deny" };
+    }
     return { action: "deny" };
   });
+  mainWindow.webContents.on("will-navigate", (event, navigationUrl) => {
+    console.log("🔗 Will navigate to:", navigationUrl);
+    let isVisnlyDomain = false;
+    try {
+      const url = new URL(navigationUrl);
+      const hostname = url.hostname.toLowerCase();
+      isVisnlyDomain = hostname === "visnly.com" || hostname === "www.visnly.com";
+    } catch (e) {
+      isVisnlyDomain = navigationUrl.includes("visnly.com") || navigationUrl.includes("www.visnly.com");
+    }
+    if (isVisnlyDomain) {
+      if (navigationUrl.includes("/auth/callback")) {
+        console.log("🔐 INTERCEPTING OAuth callback");
+        event.preventDefault();
+        let callbackUrl = null;
+        try {
+          const url = new URL(navigationUrl);
+          const code = url.searchParams.get("code");
+          if (code) {
+            console.log("✅ Extracted code (PKCE):", code.substring(0, 20) + "...");
+            callbackUrl = `visnly://auth/callback?code=${code}`;
+          } else {
+            const hashMatch = navigationUrl.match(/#(.+)$/);
+            if (hashMatch) {
+              const hash = hashMatch[1];
+              console.log("✅ Extracted hash fragment (implicit flow)");
+              callbackUrl = `visnly://auth/callback#${hash}`;
+            } else {
+              console.warn("⚠️ No code or hash found in callback URL");
+            }
+          }
+        } catch (e) {
+          console.error("❌ Error parsing callback URL:", e);
+        }
+        if (callbackUrl) {
+          console.log("📤 Sending OAuth callback to renderer:", callbackUrl.substring(0, 80) + "...");
+          handleOAuthCallback(callbackUrl);
+          const sessionConfirmed = new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+              console.log("⏱️ Timeout waiting for session confirmation, reloading anyway");
+              resolve();
+            }, 3e3);
+            electron.ipcMain.once("oauth-session-set", () => {
+              clearTimeout(timeout);
+              console.log("✅ Session confirmed by renderer, reloading now");
+              resolve();
+            });
+          });
+          sessionConfirmed.then(() => {
+            console.log("🔄 Reloading app after OAuth intercept");
+            if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+              mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+            } else {
+              mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+            }
+          });
+        } else {
+          setTimeout(() => {
+            console.log("🔄 Reloading app (no callback URL extracted)");
+            if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+              mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+            } else {
+              mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+            }
+          }, 50);
+        }
+      } else {
+        console.log("🚫 BLOCKING navigation to website:", navigationUrl);
+        event.preventDefault();
+        setTimeout(() => {
+          if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+            mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+          } else {
+            mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+          }
+        }, 50);
+      }
+      return;
+    }
+    if (navigationUrl.startsWith("visnly://")) {
+      event.preventDefault();
+      handleOAuthCallback(navigationUrl);
+      setTimeout(() => {
+        if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+          mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+        } else {
+          mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+        }
+      }, 50);
+      return;
+    }
+  });
+  mainWindow.webContents.on("did-finish-load", () => {
+    const currentUrl = mainWindow.webContents.getURL();
+    let isVisnlyDomain = false;
+    try {
+      const url = new URL(currentUrl);
+      const hostname = url.hostname.toLowerCase();
+      isVisnlyDomain = hostname === "visnly.com" || hostname === "www.visnly.com";
+    } catch (e) {
+      isVisnlyDomain = false;
+    }
+    if (isVisnlyDomain && !currentUrl.includes("localhost") && !currentUrl.includes("127.0.0.1")) {
+      console.log("🚫 Website loaded in app window - extracting tokens and reloading app:", currentUrl);
+      mainWindow.webContents.executeJavaScript(`
+        (function() {
+          const hash = window.location.hash;
+          if (hash && (hash.includes('access_token') || hash.includes('code='))) {
+            return hash.substring(1); // Remove the #
+          }
+          return null;
+        })();
+      `).then((hashFragment) => {
+        if (hashFragment) {
+          console.log("✅ Extracted hash fragment from loaded page");
+          const callbackUrl = `visnly://auth/callback#${hashFragment}`;
+          const encodedCallback = encodeURIComponent(callbackUrl);
+          console.log("💾 OAuth callback extracted, reloading app with callback parameter");
+          if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+            mainWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}?oauth_callback=${encodedCallback}`);
+          } else {
+            mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"), {
+              query: { oauth_callback: encodedCallback }
+            });
+          }
+        } else {
+          setTimeout(() => {
+            if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+              mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+            } else {
+              mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+            }
+          }, 100);
+        }
+      }).catch((e) => {
+        console.error("Error extracting hash:", e);
+        if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+          mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+        } else {
+          mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+        }
+      });
+    }
+  });
   if (utils.is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    console.log("Loading dev URL:", process.env["ELECTRON_RENDERER_URL"]);
     mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
+    console.log("Loading production file:", path.join(__dirname, "../renderer/index.html"));
     mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+  }
+  if (utils.is.dev) {
+    mainWindow.webContents.openDevTools();
   }
 }
 function createOverlayWindow() {
@@ -105,7 +264,7 @@ electron.app.whenReady().then(() => {
   }
   electron.app.on("open-url", (event, url2) => {
     event.preventDefault();
-    handleOAuthCallback(url2);
+    handleOAuthCallback2(url2);
   });
   if (process.platform !== "darwin") {
     electron.app.on("second-instance", (_, commandLine) => {
@@ -115,19 +274,29 @@ electron.app.whenReady().then(() => {
       }
       const url2 = commandLine.find((arg) => arg.startsWith(`${PROTOCOL_NAME}://`));
       if (url2) {
-        handleOAuthCallback(url2);
+        handleOAuthCallback2(url2);
       }
     });
   }
   const url = process.argv.find((arg) => arg.startsWith(`${PROTOCOL_NAME}://`));
   if (url) {
-    handleOAuthCallback(url);
+    handleOAuthCallback2(url);
   }
-  function handleOAuthCallback(url2) {
-    const urlObj = new URL(url2);
-    const hash = urlObj.hash.substring(1);
+  function handleOAuthCallback2(url2) {
+    console.log("Main process received OAuth callback:", url2);
     if (mainWindow) {
-      mainWindow.webContents.send("oauth-callback", hash);
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      mainWindow.show();
+    }
+    if (mainWindow) {
+      mainWindow.webContents.send("oauth-callback", url2);
+    } else {
+      electron.app.once("browser-window-created", () => {
+        if (mainWindow) {
+          mainWindow.webContents.send("oauth-callback", url2);
+        }
+      });
     }
   }
   electron.app.on("browser-window-created", (_, window) => {
@@ -194,6 +363,12 @@ electron.app.whenReady().then(() => {
         break;
     }
     overlayWindow.setPosition(newX, newY);
+  });
+  electron.ipcMain.on("load-oauth-url", (_event, url2) => {
+    if (mainWindow) {
+      console.log("🔐 Loading OAuth URL in app window (stays in app):", url2);
+      mainWindow.loadURL(url2);
+    }
   });
   createMainWindow();
   createOverlayWindow();

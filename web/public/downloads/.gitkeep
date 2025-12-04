@@ -1,0 +1,4 @@
+# This directory contains the Visnly installer
+# The installer will be placed here after running: npm run build:production
+# in the study-layer directory
+

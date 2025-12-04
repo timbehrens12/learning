@@ -365,3 +365,77 @@ export const ClearIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColo
   </svg>
 );
 
+// --- Notes & Study Icons ---
+
+export const FileTextIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+    <polyline points="14 2 14 8 20 8"></polyline>
+    <line x1="16" y1="13" x2="8" y2="13"></line>
+    <line x1="16" y1="17" x2="8" y2="17"></line>
+    <polyline points="10 9 9 9 8 9"></polyline>
+  </svg>
+);
+
+export const ListIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"></line>
+    <line x1="8" y1="12" x2="21" y2="12"></line>
+    <line x1="8" y1="18" x2="21" y2="18"></line>
+    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+  </svg>
+);
+
+export const LightbulbIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18h6"></path>
+    <path d="M10 22h4"></path>
+    <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+  </svg>
+);
+
+export const TargetIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <circle cx="12" cy="12" r="6"></circle>
+    <circle cx="12" cy="12" r="2"></circle>
+  </svg>
+);
+
+export const StarIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+  </svg>
+);
+
+export const ClipboardIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+  </svg>
+);
+
+export const AwardIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="7"></circle>
+    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+  </svg>
+);
+
+export const HashIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="9" x2="20" y2="9"></line>
+    <line x1="4" y1="15" x2="20" y2="15"></line>
+    <line x1="10" y1="3" x2="8" y2="21"></line>
+    <line x1="16" y1="3" x2="14" y2="21"></line>
+  </svg>
+);
+
+export const ChevronRightIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+);
+

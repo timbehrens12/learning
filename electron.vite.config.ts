@@ -28,12 +28,23 @@ export default defineConfig({
     }
   },
   renderer: {
+    base: './',
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [react()]
+    plugins: [react()],
+    build: {
+      assetsDir: 'assets',
+      rollupOptions: {
+        output: {
+          assetFileNames: 'assets/[name].[ext]',
+          chunkFileNames: 'assets/[name].js',
+          entryFileNames: 'assets/[name].js'
+        }
+      }
+    }
   }
 })
 
