@@ -23,20 +23,236 @@ function createMainWindow(): void {
     }
   })
 
+  // Set a modern user agent so Google serves the modern OAuth UI
+  // This prevents Google from showing the old 2014-style OAuth page
+  mainWindow.webContents.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  )
+
+  // DevTools only open in dev mode (see createOverlayWindow for dev mode DevTools)
+
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+    mainWindow?.focus()
   })
+  
+  // Show window immediately in dev mode
+  if (is.dev) {
+    mainWindow.show()
+  }
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    // Don't open external windows - handle everything in the app
+    // If it's a visnly:// protocol, handle it
+    if (details.url.startsWith('visnly://')) {
+      handleOAuthCallback(details.url)
+      return { action: 'deny' }
+    }
+    // For OAuth flows, load in the same window (handled by load-oauth-url IPC)
     return { action: 'deny' }
+  })
+  
+  // Handle navigation events to catch OAuth redirects
+  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    console.log('🔗 Will navigate to:', navigationUrl)
+    
+    // Check if the URL's hostname is actually visnly.com (not just in query params)
+    let isVisnlyDomain = false
+    try {
+      const url = new URL(navigationUrl)
+      const hostname = url.hostname.toLowerCase()
+      isVisnlyDomain = hostname === 'visnly.com' || hostname === 'www.visnly.com'
+    } catch (e) {
+      // If URL parsing fails, fall back to string check
+      isVisnlyDomain = navigationUrl.includes('visnly.com') || navigationUrl.includes('www.visnly.com')
+    }
+    
+    // BLOCK ALL navigation to the website (except during OAuth callback)
+    if (isVisnlyDomain) {
+      // If it's the callback, extract tokens from hash or code from query
+      if (navigationUrl.includes('/auth/callback')) {
+        console.log('🔐 INTERCEPTING OAuth callback')
+        event.preventDefault()
+        
+        let callbackUrl: string | null = null
+        
+        try {
+          const url = new URL(navigationUrl)
+          
+          // Check for code in query (PKCE flow)
+          const code = url.searchParams.get('code')
+          if (code) {
+            console.log('✅ Extracted code (PKCE):', code.substring(0, 20) + '...')
+            callbackUrl = `visnly://auth/callback?code=${code}`
+          } else {
+            // Check for hash fragment (implicit flow - access_token)
+            // The hash will be in the full URL, not in the URL object
+            const hashMatch = navigationUrl.match(/#(.+)$/)
+            if (hashMatch) {
+              const hash = hashMatch[1]
+              console.log('✅ Extracted hash fragment (implicit flow)')
+              // Send full callback URL with hash to renderer
+              callbackUrl = `visnly://auth/callback#${hash}`
+            } else {
+              console.warn('⚠️ No code or hash found in callback URL')
+            }
+          }
+        } catch (e) {
+          console.error('❌ Error parsing callback URL:', e)
+        }
+        
+        // Send callback to renderer to set session
+        if (callbackUrl) {
+          console.log('📤 Sending OAuth callback to renderer:', callbackUrl.substring(0, 80) + '...')
+          handleOAuthCallback(callbackUrl)
+          
+          // Set up a one-time listener for session confirmation
+          const sessionConfirmed = new Promise<void>((resolve) => {
+            const timeout = setTimeout(() => {
+              console.log('⏱️ Timeout waiting for session confirmation, reloading anyway')
+              resolve()
+            }, 3000) // 3 second timeout
+            
+            ipcMain.once('oauth-session-set', () => {
+              clearTimeout(timeout)
+              console.log('✅ Session confirmed by renderer, reloading now')
+              resolve()
+            })
+          })
+          
+          // Wait for session confirmation, then reload
+          sessionConfirmed.then(() => {
+            console.log('🔄 Reloading app after OAuth intercept')
+            if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+              mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+            } else {
+              mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+            }
+          })
+        } else {
+          // No callback URL extracted, just reload
+          setTimeout(() => {
+            console.log('🔄 Reloading app (no callback URL extracted)')
+            if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+              mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+            } else {
+              mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+            }
+          }, 50)
+        }
+      } else {
+        // Block any other navigation to the website
+        console.log('🚫 BLOCKING navigation to website:', navigationUrl)
+        event.preventDefault()
+        
+        // Reload the app
+        setTimeout(() => {
+          if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+            mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+          } else {
+            mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+          }
+        }, 50)
+      }
+      return
+    }
+    
+    // If navigating to visnly:// protocol, handle it and prevent navigation
+    if (navigationUrl.startsWith('visnly://')) {
+      event.preventDefault()
+      handleOAuthCallback(navigationUrl)
+      // Reload the app after handling callback
+      setTimeout(() => {
+        if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+          mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+        } else {
+          mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+        }
+      }, 50)
+      return
+    }
+  })
+  
+  // ALSO catch when the page actually loads the website (did-finish-load)
+  mainWindow.webContents.on('did-finish-load', () => {
+    const currentUrl = mainWindow.webContents.getURL()
+    
+    // Check if the URL's hostname is actually visnly.com (not just in query params)
+    let isVisnlyDomain = false
+    try {
+      const url = new URL(currentUrl)
+      const hostname = url.hostname.toLowerCase()
+      isVisnlyDomain = hostname === 'visnly.com' || hostname === 'www.visnly.com'
+    } catch (e) {
+      // If URL parsing fails, skip this check
+      isVisnlyDomain = false
+    }
+    
+    // Only intercept if it's actually the visnly.com domain (callback page)
+    if (isVisnlyDomain && !currentUrl.includes('localhost') && !currentUrl.includes('127.0.0.1')) {
+      console.log('🚫 Website loaded in app window - extracting tokens and reloading app:', currentUrl)
+      
+      // Try to extract hash fragment from the loaded page
+      mainWindow.webContents.executeJavaScript(`
+        (function() {
+          const hash = window.location.hash;
+          if (hash && (hash.includes('access_token') || hash.includes('code='))) {
+            return hash.substring(1); // Remove the #
+          }
+          return null;
+        })();
+      `).then((hashFragment: string | null) => {
+        if (hashFragment) {
+          console.log('✅ Extracted hash fragment from loaded page')
+          const callbackUrl = `visnly://auth/callback#${hashFragment}`
+          
+          // Encode callback URL and pass it as query parameter when reloading
+          // This works across domains (unlike localStorage)
+          const encodedCallback = encodeURIComponent(callbackUrl)
+          console.log('💾 OAuth callback extracted, reloading app with callback parameter')
+          
+          // Reload with callback as query parameter
+          if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+            mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}?oauth_callback=${encodedCallback}`)
+          } else {
+            mainWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+              query: { oauth_callback: encodedCallback }
+            })
+          }
+        } else {
+          // No hash found, just reload
+          setTimeout(() => {
+            if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+              mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+            } else {
+              mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+            }
+          }, 100)
+        }
+      }).catch((e) => {
+        console.error('Error extracting hash:', e)
+        // Still reload the app
+        if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+          mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+        } else {
+          mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+        }
+      })
+    }
   })
 
   // Load the standard Dashboard URL
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    console.log('Loading dev URL:', process.env['ELECTRON_RENDERER_URL'])
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
+    console.log('Loading production file:', join(__dirname, '../renderer/index.html'))
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+  
+  // Open DevTools in dev mode for debugging
+  if (is.dev) {
+    mainWindow.webContents.openDevTools()
   }
 }
 
@@ -149,13 +365,29 @@ app.whenReady().then(() => {
   }
 
   function handleOAuthCallback(url: string) {
-    // Extract the URL hash/fragment which contains the OAuth tokens
-    const urlObj = new URL(url)
-    const hash = urlObj.hash.substring(1) // Remove the #
+    console.log('Main process received OAuth callback:', url)
     
-    // Send the callback URL to the renderer process
+    // Focus the main window when callback is received
     if (mainWindow) {
-      mainWindow.webContents.send('oauth-callback', hash)
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+      mainWindow.show()
+    }
+    
+    // For PKCE flow, the code is in query params: visnly://auth/callback?code=...
+    // For implicit flow, tokens are in hash: visnly://auth/callback#access_token=...
+    // We'll send the full URL string and let the renderer parse it
+    
+    // Send the full callback URL to the renderer process
+    if (mainWindow) {
+      mainWindow.webContents.send('oauth-callback', url)
+    } else {
+      // Window not ready yet, wait for it
+      app.once('browser-window-created', () => {
+        if (mainWindow) {
+          mainWindow.webContents.send('oauth-callback', url)
+        }
+      })
     }
   }
 
@@ -254,6 +486,15 @@ app.whenReady().then(() => {
     }
     
     overlayWindow.setPosition(newX, newY)
+  })
+
+  // Handle OAuth URL loading - load in app window instead of external browser
+  ipcMain.on('load-oauth-url', (_event, url: string) => {
+    if (mainWindow) {
+      console.log('🔐 Loading OAuth URL in app window (stays in app):', url)
+      mainWindow.loadURL(url)
+      // The will-navigate handler above will catch the redirect and extract the code
+    }
   })
 
   // 1. Create Dashboard
