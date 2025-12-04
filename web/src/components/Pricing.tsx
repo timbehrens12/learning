@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, Sparkles, Loader2, Zap, Trophy, BookOpen } from 'lucide-react';
+import { Check, Sparkles, Loader2, Star, Crown, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Navbar } from './Navbar';
 import { LiquidBackground } from './LiquidBackground';
@@ -62,17 +62,18 @@ export const Pricing = () => {
       credits: 50,
       price: 9.99,
       pricePerCredit: 0.20,
-      icon: <BookOpen className="w-6 h-6 text-indigo-400" strokeWidth={1.5} />,
+      icon: <Star className="w-6 h-6 text-indigo-400" strokeWidth={1.5} fill="currentColor" />,
       features: ['Week of homework help', 'Perfect for midterms', 'Casual usage'],
       cta: 'Get 50 Credits',
       popular: false,
+      badge: 'Best Seller'
     },
     {
       name: 'Power Pack',
       credits: 250,
       price: 34.99,
       pricePerCredit: 0.14,
-      icon: <Trophy className="w-6 h-6 text-yellow-400" strokeWidth={1.5} />,
+      icon: <Crown className="w-6 h-6 text-yellow-400" strokeWidth={1.5} fill="currentColor" />,
       features: ['Full semester coverage', 'Best price per credit', 'Priority support'],
       cta: 'Get 250 Credits',
       popular: true,
@@ -83,7 +84,7 @@ export const Pricing = () => {
       credits: 100,
       price: 16.99,
       pricePerCredit: 0.17,
-      icon: <Zap className="w-6 h-6 text-purple-400" strokeWidth={1.5} />,
+      icon: <BookOpen className="w-6 h-6 text-purple-400" strokeWidth={1.5} fill="currentColor" />,
       features: ['Month of study help', 'Finals week ready', 'Serious study sessions'],
       cta: 'Get 100 Credits',
       popular: false,
@@ -153,13 +154,13 @@ export const Pricing = () => {
                 {pkg.popular && (
                   <div className="absolute -inset-0.5 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-3xl opacity-20 group-hover:opacity-40 transition-opacity blur-xl" />
                 )}
-                
+
                 <div className={`relative h-full p-8 rounded-3xl border backdrop-blur-xl flex flex-col transition-all duration-300 ${
-                  pkg.popular 
-                    ? 'bg-[#0A0A0A] border-indigo-500/30' 
+                  pkg.popular
+                    ? 'bg-[#0A0A0A] border-indigo-500/30'
                     : 'bg-black/20 border-white/10 hover:border-white/20'
                 }`}>
-                  {pkg.popular && (
+                  {pkg.badge && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                       {pkg.badge}
                     </div>
